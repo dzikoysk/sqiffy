@@ -9,9 +9,6 @@ import com.dzikoysk.sqiffy.DataType.UUID_VARCHAR
 import com.dzikoysk.sqiffy.DataType.VARCHAR
 import com.dzikoysk.sqiffy.IndexType.UNIQUE_INDEX
 import com.dzikoysk.sqiffy.PropertyDefinitionType.RENAME
-import com.dzikoysk.sqiffy.exposed.DatabaseConnection
-import com.dzikoysk.sqiffy.exposed.createDataSource
-import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -81,39 +78,40 @@ class MainTest {
             threadPool = 1
         )
 
-        DatabaseConnection(dataSource, Database.connect(dataSource)).use { databaseConnection ->
-            val user = User(
-                id = 69,
-                name = "Panda",
-                uuid = UUID.randomUUID(),
-                displayName = "Sadge"
-            )
+        dataSource
+            .toDatabaseConnection()
+            .use { databaseConnection ->
+                val user = User(
+                    id = 69,
+                    name = "Panda",
+                    uuid = UUID.randomUUID(),
+                    displayName = "Sadge"
+                )
 
-            transaction {
-                UserTable.insert {
-                    it[UserTable.id] = user.id
-                    it[UserTable.name] = user.name
-                    it[UserTable.uuid] = user.uuid
-                    it[UserTable.displayName] = user.displayName
-                }
-            }
-
-            val userFromDatabase = transaction(databaseConnection.database) {
-                UserTable.select { UserTable.displayName eq "Panda" }
-                    .first()
-                    .let {
-                        User(
-                            id = it[UserTable.id],
-                            name = it[UserTable.name],
-                            uuid = it[UserTable.uuid],
-                            displayName = it[UserTable.displayName]
-                        )
+                transaction {
+                    UserTable.insert {
+                        it[UserTable.id] = user.id
+                        it[UserTable.name] = user.name
+                        it[UserTable.uuid] = user.uuid
+                        it[UserTable.displayName] = user.displayName
                     }
+                }
+
+                val userFromDatabase = transaction(databaseConnection.database) {
+                    UserTable.select { UserTable.displayName eq "Panda" }
+                        .first()
+                        .let {
+                            User(
+                                id = it[UserTable.id],
+                                name = it[UserTable.name],
+                                uuid = it[UserTable.uuid],
+                                displayName = it[UserTable.displayName]
+                            )
+                        }
+                }
+
+                println(userFromDatabase)
             }
-
-            println(userFromDatabase)
-        }
-
     }
 
 }

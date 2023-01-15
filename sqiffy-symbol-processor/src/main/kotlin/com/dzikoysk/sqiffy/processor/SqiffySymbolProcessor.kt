@@ -29,7 +29,7 @@ class SqiffySymbolProcessorProvider : SymbolProcessorProvider {
     )
 
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
-        Thread.sleep(4000) // wait for debugger
+        Thread.sleep(4000) // wait for debugger xD
 
         return SqiffySymbolProcessor(
             KspContext(
@@ -46,12 +46,23 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
     private val entityGenerator = EntityGenerator(context)
     private val exposedTableGenerator = ExposedTableGenerator(context)
 
-    @OptIn(KspExperimental::class)
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val tables = resolver.getSymbolsWithAnnotation(Definition::class.qualifiedName!!)
             .filterIsInstance<KSClassDeclaration>()
             .associateBy { it.simpleName.asString().substringBeforeLast("Definition") }
 
+        generateChangeLog(tables)
+        generateDls(tables)
+
+        return emptyList()
+    }
+
+    private fun generateChangeLog(tables: Map<String, KSClassDeclaration>) {
+
+    }
+
+    @OptIn(KspExperimental::class)
+    private fun generateDls(tables: Map<String, KSClassDeclaration>) {
         tables.forEach { (name, type) ->
             val definition = type.getAnnotationsByType(Definition::class).first()
             val properties = LinkedList<PropertyData>()
@@ -78,14 +89,12 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
             entityGenerator.generateEntityClass(name, type, properties)
             exposedTableGenerator.generateTableClass(name, type, properties)
         }
-
-        return emptyList()
     }
 
     private fun <T> LinkedList<T>.replaceFirst(condition: (T) -> Boolean, value: (T) -> T): Boolean =
         indexOfFirst(condition)
             .takeIf { it != -1}
             ?.also { this[it] = value(this[it]) } != null
-            //?: run { add(value(null)) }
+            //?: run { add(value(null)) } // for .replaceFirstOrAdd
 
 }

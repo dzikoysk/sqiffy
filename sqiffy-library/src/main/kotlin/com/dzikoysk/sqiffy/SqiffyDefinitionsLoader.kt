@@ -1,4 +1,4 @@
-package com.dzikoysk.sqiffy.sql
+package com.dzikoysk.sqiffy
 
 class SqiffyDefinitionsLoader {
 

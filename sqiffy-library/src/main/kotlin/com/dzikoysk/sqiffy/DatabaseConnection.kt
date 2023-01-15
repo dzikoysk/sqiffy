@@ -1,4 +1,4 @@
-package com.dzikoysk.sqiffy.exposed
+package com.dzikoysk.sqiffy
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -23,4 +23,10 @@ fun createDataSource(driver: String, url: String, threadPool: Int, username: Str
             username?.also { this.username = it }
             password?.also { this.password = it }
         }
+    )
+
+fun HikariDataSource.toDatabaseConnection(): DatabaseConnection =
+    DatabaseConnection(
+        databaseSource = this,
+        database = Database.connect(this)
     )
