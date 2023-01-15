@@ -13,10 +13,10 @@ import com.dzikoysk.sqiffy.DataType.TEXT
 import com.dzikoysk.sqiffy.DataType.TIMESTAMP
 import com.dzikoysk.sqiffy.DataType.UUID_VARCHAR
 import com.dzikoysk.sqiffy.DataType.VARCHAR
+import com.dzikoysk.sqiffy.DefinitionEntry
 import com.dzikoysk.sqiffy.PropertyData
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.google.devtools.ksp.processing.Dependencies
-import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -29,11 +29,11 @@ import org.jetbrains.exposed.sql.Table
 
 class ExposedTableGenerator(private val context: KspContext) {
 
-    internal fun generateTableClass(name: String, type: KSClassDeclaration, properties: List<PropertyData>) {
-        val tableClass = FileSpec.builder(type.packageName.asString(), name +  "Table")
+    internal fun generateTableClass(definitionEntry: DefinitionEntry, properties: List<PropertyData>) {
+        val tableClass = FileSpec.builder(definitionEntry.packageName, definitionEntry.name +  "Table")
             .addImport("org.jetbrains.exposed.sql.javatime", "date", "datetime", "timestamp")
             .addType(
-                TypeSpec.objectBuilder(name + "Table")
+                TypeSpec.objectBuilder(definitionEntry.name + "Table")
                 .superclass(Table::class)
                 .also { typebuilder ->
                     properties.forEach {

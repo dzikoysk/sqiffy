@@ -5,6 +5,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
+import kotlin.annotation.AnnotationRetention.RUNTIME
 import kotlin.reflect.KClass
 
 internal const val NULL_STRING = "~NULL-STRING~"
@@ -37,6 +38,7 @@ enum class IndexType {
     UNIQUE_INDEX
 }
 
+@Retention(RUNTIME)
 annotation class Definition(
     val value: Array<DefinitionVersion>
 )

@@ -1,11 +1,13 @@
 package com.dzikoysk.sqiffy.processor
 
 import com.dzikoysk.sqiffy.Definition
+import com.dzikoysk.sqiffy.DefinitionEntry
 import com.dzikoysk.sqiffy.PropertyData
 import com.dzikoysk.sqiffy.PropertyDefinitionType.ADD
 import com.dzikoysk.sqiffy.PropertyDefinitionType.REMOVE
 import com.dzikoysk.sqiffy.PropertyDefinitionType.RENAME
 import com.dzikoysk.sqiffy.PropertyDefinitionType.RETYPE
+import com.dzikoysk.sqiffy.generator.BaseSchemeGenerator
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.dzikoysk.sqiffy.processor.generators.EntityGenerator
 import com.dzikoysk.sqiffy.processor.generators.ExposedTableGenerator
@@ -45,29 +47,34 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
 
     private val entityGenerator = EntityGenerator(context)
     private val exposedTableGenerator = ExposedTableGenerator(context)
+    private val baseSchemeGenerator = BaseSchemeGenerator()
 
+    @OptIn(KspExperimental::class)
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val tables = resolver.getSymbolsWithAnnotation(Definition::class.qualifiedName!!)
             .filterIsInstance<KSClassDeclaration>()
-            .associateBy { it.simpleName.asString().substringBeforeLast("Definition") }
+            .map {
+                DefinitionEntry(
+                    packageName = it.packageName.asString(),
+                    name = it.simpleName.asString().substringBeforeLast("Definition"),
+                    definition = it.getAnnotationsByType(Definition::class).first(),
+                )
+            }
+            .toList()
 
-        generateChangeLog(tables)
-        generateDls(tables)
+        if (tables.isNotEmpty()) {
+            baseSchemeGenerator.generateChangeLog(tables)
+            generateDls(tables)
+        }
 
         return emptyList()
     }
 
-    private fun generateChangeLog(tables: Map<String, KSClassDeclaration>) {
-
-    }
-
-    @OptIn(KspExperimental::class)
-    private fun generateDls(tables: Map<String, KSClassDeclaration>) {
-        tables.forEach { (name, type) ->
-            val definition = type.getAnnotationsByType(Definition::class).first()
+    private fun generateDls(tables: List<DefinitionEntry>) {
+        tables.forEach {
             val properties = LinkedList<PropertyData>()
 
-            for (definitionVersion in definition.value) {
+            for (definitionVersion in it.definition.value) {
                 for (property in definitionVersion.properties) {
                     val convertedProperty = PropertyData(
                         name = property.name,
@@ -86,8 +93,8 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
                 }
             }
 
-            entityGenerator.generateEntityClass(name, type, properties)
-            exposedTableGenerator.generateTableClass(name, type, properties)
+            entityGenerator.generateEntityClass(it, properties)
+            exposedTableGenerator.generateTableClass(it, properties)
         }
     }
 

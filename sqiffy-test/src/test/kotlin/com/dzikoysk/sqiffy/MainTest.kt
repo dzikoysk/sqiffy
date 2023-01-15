@@ -9,6 +9,7 @@ import com.dzikoysk.sqiffy.DataType.UUID_VARCHAR
 import com.dzikoysk.sqiffy.DataType.VARCHAR
 import com.dzikoysk.sqiffy.IndexType.UNIQUE_INDEX
 import com.dzikoysk.sqiffy.PropertyDefinitionType.RENAME
+import com.dzikoysk.sqiffy.generator.BaseSchemeGenerator
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -16,7 +17,7 @@ import org.junit.jupiter.api.Test
 import java.io.File
 import java.util.UUID
 import kotlin.io.path.absolutePathString
-
+import kotlin.reflect.full.findAnnotation
 
 @Definition([
     DefinitionVersion(
@@ -65,6 +66,24 @@ object GuildDefinition
 object UserDefinition
 
 class MainTest {
+
+    @Test
+    fun testBaseSchemeGenerator() {
+        val baseSchemeGenerator = BaseSchemeGenerator()
+        
+        val result = baseSchemeGenerator.generateChangeLog(
+            listOf(
+                UserDefinition::class.findAnnotation<Definition>()!!,
+                GuildDefinition::class.findAnnotation()!!,
+            ).map {
+                DefinitionEntry(
+                    packageName = "com.dzikoysk.sqiffy",
+                    name = it::class.simpleName!!.substringBeforeLast("Definition"),
+                    definition = it
+                )
+            }
+        )
+    }
 
     @Test
     fun test() {
