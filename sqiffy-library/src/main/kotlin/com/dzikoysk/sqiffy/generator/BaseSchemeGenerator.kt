@@ -26,6 +26,8 @@ import com.dzikoysk.sqiffy.toPropertyData
 import java.util.ArrayDeque
 import java.util.Deque
 import java.util.LinkedList
+import kotlin.reflect.KClass
+import kotlin.reflect.full.findAnnotation
 
 class BaseSchemeGenerator {
 
@@ -34,6 +36,17 @@ class BaseSchemeGenerator {
         var name: String,
         var properties: LinkedList<PropertyData> = LinkedList()
     )
+
+    fun generateChangeLog(vararg classes: KClass<*>): LinkedHashMap<String, MutableList<String>> =
+        generateChangeLog(
+            classes.map {
+                DefinitionEntry(
+                    packageName = it.java.packageName,
+                    name = it::class.simpleName!!.substringBeforeLast("Definition"),
+                    definition = it.findAnnotation()!!
+                )
+            }
+        )
 
     fun generateChangeLog(tables: List<DefinitionEntry>): LinkedHashMap<String, MutableList<String>> {
         val sqlGenerator = MySqlGenerator()

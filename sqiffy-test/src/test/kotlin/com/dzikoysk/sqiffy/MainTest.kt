@@ -10,16 +10,14 @@ import com.dzikoysk.sqiffy.DataType.VARCHAR
 import com.dzikoysk.sqiffy.IndexType.UNIQUE_INDEX
 import com.dzikoysk.sqiffy.PropertyDefinitionType.RENAME
 import com.dzikoysk.sqiffy.generator.BaseSchemeGenerator
-import com.dzikoysk.sqiffy.shared.executeQuery
+import com.dzikoysk.sqiffy.shared.createTestDatabaseFile
+import com.dzikoysk.sqiffy.shared.runMigrations
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Test
-import java.io.File
 import java.util.UUID
 import kotlin.io.path.absolutePathString
-import kotlin.reflect.full.findAnnotation
 
 @Definition([
     DefinitionVersion(
@@ -72,19 +70,7 @@ class MainTest {
     @Test
     fun testBaseSchemeGenerator() {
         val baseSchemeGenerator = BaseSchemeGenerator()
-
-        val result = baseSchemeGenerator.generateChangeLog(
-            listOf(
-                UserDefinition::class.findAnnotation<Definition>()!!,
-                GuildDefinition::class.findAnnotation()!!,
-            ).map {
-                DefinitionEntry(
-                    packageName = "com.dzikoysk.sqiffy",
-                    name = it::class.simpleName!!.substringBeforeLast("Definition"),
-                    definition = it
-                )
-            }
-        )
+        val result = baseSchemeGenerator.generateChangeLog(UserDefinition::class, GuildDefinition::class)
 
         result.forEach {
             println(it.key)
@@ -96,43 +82,18 @@ class MainTest {
 
     @Test
     fun test() {
-        val dbFile = File.createTempFile("test-database", ".db")
-            .also { it.deleteOnExit() }
-            .toPath()
-
         val dataSource = createDataSource(
             driver = "org.h2.Driver",
-            url = "jdbc:h2:${dbFile.absolutePathString()};MODE=MYSQL",
+            url = "jdbc:h2:${createTestDatabaseFile("test-database").absolutePathString()};MODE=MYSQL",
             threadPool = 1
         )
 
-        dataSource
-            .toDatabaseConnection()
-            .use { databaseConnection ->
-                val baseSchemeGenerator = BaseSchemeGenerator()
+        dataSource.toDatabaseConnection().use { databaseConnection ->
+            transaction(databaseConnection.database) {
+                val result = BaseSchemeGenerator().generateChangeLog(UserDefinition::class, GuildDefinition::class)
+                result.runMigrations(databaseConnection.database)
 
-                val result = baseSchemeGenerator.generateChangeLog(
-                    listOf(
-                        UserDefinition::class.findAnnotation<Definition>()!!,
-                        GuildDefinition::class.findAnnotation()!!,
-                    ).map {
-                        DefinitionEntry(
-                            packageName = "com.dzikoysk.sqiffy",
-                            name = it::class.simpleName!!.substringBeforeLast("Definition"),
-                            definition = it
-                        )
-                    }
-                )
-
-                transaction(databaseConnection.database) {
-                    result.forEach { (version, changes) ->
-                        changes.forEach { change ->
-                            println(change)
-                            println(TransactionManager.current().connection.executeQuery("$change;"))
-                        }
-                    }
-                }
-
+                // generated entity
                 val user = User(
                     id = 69,
                     name = "Panda",
@@ -140,30 +101,27 @@ class MainTest {
                     displayName = "Sadge"
                 )
 
-                transaction(databaseConnection.database) {
-                    UserTable.insert {
-                        it[UserTable.id] = user.id
-                        it[UserTable.name] = user.name
-                        it[UserTable.uuid] = user.uuid
-                        it[UserTable.displayName] = user.displayName
-                    }
+                UserTable.insert {
+                    it[UserTable.id] = user.id
+                    it[UserTable.name] = user.name
+                    it[UserTable.uuid] = user.uuid
+                    it[UserTable.displayName] = user.displayName
                 }
 
-                val userFromDatabase = transaction(databaseConnection.database) {
-                    UserTable.select { UserTable.name eq "Panda" }
-                        .first()
-                        .let {
-                            User(
-                                id = it[UserTable.id],
-                                name = it[UserTable.name],
-                                uuid = it[UserTable.uuid],
-                                displayName = it[UserTable.displayName]
-                            )
-                        }
-                }
+                val userFromDatabase = UserTable.select { UserTable.name eq "Panda" }
+                    .first()
+                    .let {
+                        User(
+                            id = it[UserTable.id],
+                            name = it[UserTable.name],
+                            uuid = it[UserTable.uuid],
+                            displayName = it[UserTable.displayName]
+                        )
+                    }
 
                 println(userFromDatabase)
             }
+        }
     }
 
 }
