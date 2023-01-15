@@ -8,8 +8,8 @@ import java.util.UUID
 import kotlin.annotation.AnnotationRetention.RUNTIME
 import kotlin.reflect.KClass
 
-internal const val NULL_STRING = "~NULL-STRING~"
-internal object NULL_CLASS
+const val NULL_STRING = "~NULL-STRING~"
+object NULL_CLASS
 
 enum class DataType(val javaType: KClass<*>) {
     NULL_TYPE(NULL_CLASS::class),
@@ -74,11 +74,20 @@ annotation class Property(
 
 data class PropertyData(
     val name: String,
-    val type: DataType,
-    val details: String,
+    val type: DataType?,
+    val details: String?,
     val nullable: Boolean,
     val autoIncrement: Boolean,
 )
+
+fun Property.toPropertyData(): PropertyData =
+    PropertyData(
+        name = name,
+        type = type.takeIf { it != NULL_TYPE },
+        details = details.takeIf { it != NULL_STRING },
+        nullable = nullable,
+        autoIncrement = autoincrement
+    )
 
 @Target()
 annotation class Constraint(

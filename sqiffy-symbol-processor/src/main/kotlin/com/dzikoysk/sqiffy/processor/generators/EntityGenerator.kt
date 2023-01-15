@@ -22,7 +22,7 @@ class EntityGenerator(private val context: KspContext) {
                         FunSpec.constructorBuilder()
                         .also { constructorBuilder ->
                             properties.forEach {
-                                constructorBuilder.addParameter(it.name, it.type.javaType)
+                                constructorBuilder.addParameter(it.name, it.type!!.javaType)
                             }
                         }
                         .build()
@@ -30,7 +30,7 @@ class EntityGenerator(private val context: KspContext) {
                     .also { typeBuilder ->
                         properties.forEach {
                             typeBuilder.addProperty(
-                                PropertySpec.builder(it.name, it.type.javaType)
+                                PropertySpec.builder(it.name, it.type!!.javaType)
                                     .initializer(it.name)
                                     .build()
                             )

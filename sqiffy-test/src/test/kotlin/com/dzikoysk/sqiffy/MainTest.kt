@@ -10,8 +10,10 @@ import com.dzikoysk.sqiffy.DataType.VARCHAR
 import com.dzikoysk.sqiffy.IndexType.UNIQUE_INDEX
 import com.dzikoysk.sqiffy.PropertyDefinitionType.RENAME
 import com.dzikoysk.sqiffy.generator.BaseSchemeGenerator
+import com.dzikoysk.sqiffy.shared.executeQuery
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -70,7 +72,7 @@ class MainTest {
     @Test
     fun testBaseSchemeGenerator() {
         val baseSchemeGenerator = BaseSchemeGenerator()
-        
+
         val result = baseSchemeGenerator.generateChangeLog(
             listOf(
                 UserDefinition::class.findAnnotation<Definition>()!!,
@@ -83,6 +85,13 @@ class MainTest {
                 )
             }
         )
+
+        result.forEach {
+            println(it.key)
+            it.value.forEach {
+                println("  $it")
+            }
+        }
     }
 
     @Test
@@ -100,6 +109,30 @@ class MainTest {
         dataSource
             .toDatabaseConnection()
             .use { databaseConnection ->
+                val baseSchemeGenerator = BaseSchemeGenerator()
+
+                val result = baseSchemeGenerator.generateChangeLog(
+                    listOf(
+                        UserDefinition::class.findAnnotation<Definition>()!!,
+                        GuildDefinition::class.findAnnotation()!!,
+                    ).map {
+                        DefinitionEntry(
+                            packageName = "com.dzikoysk.sqiffy",
+                            name = it::class.simpleName!!.substringBeforeLast("Definition"),
+                            definition = it
+                        )
+                    }
+                )
+
+                transaction(databaseConnection.database) {
+                    result.forEach { (version, changes) ->
+                        changes.forEach { change ->
+                            println(change)
+                            println(TransactionManager.current().connection.executeQuery("$change;"))
+                        }
+                    }
+                }
+
                 val user = User(
                     id = 69,
                     name = "Panda",
@@ -107,7 +140,7 @@ class MainTest {
                     displayName = "Sadge"
                 )
 
-                transaction {
+                transaction(databaseConnection.database) {
                     UserTable.insert {
                         it[UserTable.id] = user.id
                         it[UserTable.name] = user.name
@@ -117,7 +150,7 @@ class MainTest {
                 }
 
                 val userFromDatabase = transaction(databaseConnection.database) {
-                    UserTable.select { UserTable.displayName eq "Panda" }
+                    UserTable.select { UserTable.name eq "Panda" }
                         .first()
                         .let {
                             User(

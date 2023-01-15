@@ -11,6 +11,7 @@ import com.dzikoysk.sqiffy.generator.BaseSchemeGenerator
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.dzikoysk.sqiffy.processor.generators.EntityGenerator
 import com.dzikoysk.sqiffy.processor.generators.ExposedTableGenerator
+import com.dzikoysk.sqiffy.shared.replaceFirst
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -63,7 +64,7 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
             .toList()
 
         if (tables.isNotEmpty()) {
-            baseSchemeGenerator.generateChangeLog(tables)
+            // baseSchemeGenerator.generateChangeLog(tables)
             generateDls(tables)
         }
 
@@ -97,11 +98,5 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
             exposedTableGenerator.generateTableClass(it, properties)
         }
     }
-
-    private fun <T> LinkedList<T>.replaceFirst(condition: (T) -> Boolean, value: (T) -> T): Boolean =
-        indexOfFirst(condition)
-            .takeIf { it != -1}
-            ?.also { this[it] = value(this[it]) } != null
-            //?: run { add(value(null)) } // for .replaceFirstOrAdd
 
 }

@@ -35,10 +35,11 @@ class ExposedTableGenerator(private val context: KspContext) {
             .addType(
                 TypeSpec.objectBuilder(definitionEntry.name + "Table")
                 .superclass(Table::class)
+                .addSuperclassConstructorParameter(CodeBlock.of(q(definitionEntry.definition.value.first().name)))
                 .also { typebuilder ->
                     properties.forEach {
                         typebuilder.addProperty(
-                            PropertySpec.builder(it.name, Column::class.asTypeName().parameterizedBy(it.type.javaType.asTypeName()))
+                            PropertySpec.builder(it.name, Column::class.asTypeName().parameterizedBy(it.type!!.javaType.asTypeName()))
                                 .initializer(CodeBlock.builder().add(generateColumnInitializer(it)).build())
                                 .build()
                         )
@@ -71,7 +72,7 @@ class ExposedTableGenerator(private val context: KspContext) {
             }
         }
 
-    private fun q(text: String) =
-        '"' + text + '"'
+    private fun q(text: String): String =
+        '"' + "\\\"" + text + "\\\"" + '"'
 
 }

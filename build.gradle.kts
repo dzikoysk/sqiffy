@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.dzikoysk"
-version = "1.0-SNAPSHOT"
+version = "0.0.1"
 
 allprojects {
     apply(plugin = "java-library")
