@@ -7,7 +7,7 @@ import com.dzikoysk.sqiffy.PropertyDefinitionType.ADD
 import com.dzikoysk.sqiffy.PropertyDefinitionType.REMOVE
 import com.dzikoysk.sqiffy.PropertyDefinitionType.RENAME
 import com.dzikoysk.sqiffy.PropertyDefinitionType.RETYPE
-import com.dzikoysk.sqiffy.generator.BaseSchemeGenerator
+import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.dzikoysk.sqiffy.processor.generators.EntityGenerator
 import com.dzikoysk.sqiffy.processor.generators.ExposedTableGenerator
@@ -48,7 +48,7 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
 
     private val entityGenerator = EntityGenerator(context)
     private val exposedTableGenerator = ExposedTableGenerator(context)
-    private val baseSchemeGenerator = BaseSchemeGenerator()
+    private val baseSchemeGenerator = ChangeLogGenerator()
 
     @OptIn(KspExperimental::class)
     override fun process(resolver: Resolver): List<KSAnnotated> {

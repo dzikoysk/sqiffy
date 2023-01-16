@@ -9,7 +9,7 @@ import com.dzikoysk.sqiffy.DataType.UUID_VARCHAR
 import com.dzikoysk.sqiffy.DataType.VARCHAR
 import com.dzikoysk.sqiffy.IndexType.UNIQUE_INDEX
 import com.dzikoysk.sqiffy.PropertyDefinitionType.RENAME
-import com.dzikoysk.sqiffy.generator.BaseSchemeGenerator
+import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator
 import com.dzikoysk.sqiffy.shared.createTestDatabaseFile
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
@@ -68,7 +68,7 @@ class MainTest {
 
     @Test
     fun testBaseSchemeGenerator() {
-        val baseSchemeGenerator = BaseSchemeGenerator()
+        val baseSchemeGenerator = ChangeLogGenerator()
         val changeLog = baseSchemeGenerator.generateChangeLog(UserDefinition::class, GuildDefinition::class)
 
         changeLog.changes.forEach { (version, changes) ->
@@ -87,7 +87,7 @@ class MainTest {
 
         dataSource.toDatabaseConnection().use { databaseConnection ->
             transaction(databaseConnection.database) {
-                val changeLog = BaseSchemeGenerator().generateChangeLog(UserDefinition::class, GuildDefinition::class)
+                val changeLog = ChangeLogGenerator().generateChangeLog(UserDefinition::class, GuildDefinition::class)
                 changeLog.runMigrations(databaseConnection.database)
 
                 // generated entity
