@@ -71,8 +71,8 @@ val dataSource = createDataSource(
 
 dataSource.toDatabaseConnection().use { databaseConnection ->
     transaction(databaseConnection.database) {
-        val result = BaseSchemeGenerator().generateChangeLog(UserDefinition::class, GuildDefinition::class)
-        result.runMigrations(databaseConnection.database)
+        val changeLog = BaseSchemeGenerator().generateChangeLog(UserDefinition::class, GuildDefinition::class)
+        changeLog.runMigrations(databaseConnection.database)
 
         // generated entity
         val user = User(

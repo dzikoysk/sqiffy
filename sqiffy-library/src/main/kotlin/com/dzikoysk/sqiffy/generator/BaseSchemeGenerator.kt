@@ -1,5 +1,6 @@
 package com.dzikoysk.sqiffy.generator
 
+import com.dzikoysk.sqiffy.ChangeLog
 import com.dzikoysk.sqiffy.DataType.BINARY
 import com.dzikoysk.sqiffy.DataType.BLOB
 import com.dzikoysk.sqiffy.DataType.BOOLEAN
@@ -37,7 +38,7 @@ class BaseSchemeGenerator {
         var properties: LinkedList<PropertyData> = LinkedList()
     )
 
-    fun generateChangeLog(vararg classes: KClass<*>): LinkedHashMap<String, MutableList<String>> =
+    fun generateChangeLog(vararg classes: KClass<*>): ChangeLog =
         generateChangeLog(
             classes.map {
                 DefinitionEntry(
@@ -48,7 +49,7 @@ class BaseSchemeGenerator {
             }
         )
 
-    fun generateChangeLog(tables: List<DefinitionEntry>): LinkedHashMap<String, MutableList<String>> {
+    fun generateChangeLog(tables: List<DefinitionEntry>): ChangeLog {
         val sqlGenerator = MySqlGenerator()
 
         val allVersions = tables.asSequence()
@@ -119,7 +120,7 @@ class BaseSchemeGenerator {
         }
 
         // println(baseScheme)
-        return changeLog
+        return ChangeLog(changeLog)
     }
 
 }

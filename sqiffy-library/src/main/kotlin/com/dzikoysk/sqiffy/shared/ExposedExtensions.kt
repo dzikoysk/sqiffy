@@ -1,26 +1,12 @@
 package com.dzikoysk.sqiffy.shared
 
-import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.statements.api.ExposedConnection
 import org.jetbrains.exposed.sql.statements.api.PreparedStatementApi
-import org.jetbrains.exposed.sql.transactions.TransactionManager
-import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.nio.file.Path
-
-fun LinkedHashMap<String, MutableList<String>>.runMigrations(database: Database) {
-    transaction(database) {
-        forEach { (version, changes) ->
-            changes.forEach { change ->
-                println(change)
-                println(TransactionManager.current().connection.executeQuery("$change;"))
-            }
-        }
-    }
-}
 
 fun ExposedConnection<*>.executeQuery(
     query: String,

@@ -11,7 +11,6 @@ import com.dzikoysk.sqiffy.IndexType.UNIQUE_INDEX
 import com.dzikoysk.sqiffy.PropertyDefinitionType.RENAME
 import com.dzikoysk.sqiffy.generator.BaseSchemeGenerator
 import com.dzikoysk.sqiffy.shared.createTestDatabaseFile
-import com.dzikoysk.sqiffy.shared.runMigrations
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -70,13 +69,11 @@ class MainTest {
     @Test
     fun testBaseSchemeGenerator() {
         val baseSchemeGenerator = BaseSchemeGenerator()
-        val result = baseSchemeGenerator.generateChangeLog(UserDefinition::class, GuildDefinition::class)
+        val changeLog = baseSchemeGenerator.generateChangeLog(UserDefinition::class, GuildDefinition::class)
 
-        result.forEach {
-            println(it.key)
-            it.value.forEach {
-                println("  $it")
-            }
+        changeLog.changes.forEach { (version, changes) ->
+            println(version)
+            changes.forEach { println("  $it") }
         }
     }
 
@@ -90,8 +87,8 @@ class MainTest {
 
         dataSource.toDatabaseConnection().use { databaseConnection ->
             transaction(databaseConnection.database) {
-                val result = BaseSchemeGenerator().generateChangeLog(UserDefinition::class, GuildDefinition::class)
-                result.runMigrations(databaseConnection.database)
+                val changeLog = BaseSchemeGenerator().generateChangeLog(UserDefinition::class, GuildDefinition::class)
+                changeLog.runMigrations(databaseConnection.database)
 
                 // generated entity
                 val user = User(
