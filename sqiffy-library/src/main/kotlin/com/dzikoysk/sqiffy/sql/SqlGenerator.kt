@@ -27,6 +27,16 @@ interface SqlGenerator {
 
     fun removeColumn(tableName: String, columnName: String): String
 
+    /* Constraints */
+
+    fun createPrimaryKey(tableName: String, name: String, on: String): String
+
+    fun removePrimaryKey(tableName: String, name: String): String
+
+    fun createForeignKey(tableName: String, name: String, on: String, foreignTable: String, foreignColumn: String): String
+
+    fun removeForeignKey(tableName: String, name: String): String
+
 }
 
 class MySqlGenerator : SqlGenerator {
@@ -45,6 +55,18 @@ class MySqlGenerator : SqlGenerator {
 
     override fun removeColumn(tableName: String, columnName: String): String =
         """ALTER TABLE "$tableName" DROP COLUMN "$columnName""""
+
+    override fun createPrimaryKey(tableName: String, name: String, on: String): String =
+        """ALTER TABLE "$tableName" ADD CONSTRAINT "$name" PRIMARY KEY ("$on")"""
+
+    override fun removePrimaryKey(tableName: String, name: String): String =
+        """ALTER TABLE "$tableName" DROP PRIMARY KEY"""
+
+    override fun createForeignKey(tableName: String, name: String, on: String, foreignTable: String, foreignColumn: String): String =
+        """ALTER TABLE "$tableName" ADD FOREIGN KEY ("$on") REFERENCES "$foreignTable"("$foreignColumn")"""
+
+    override fun removeForeignKey(tableName: String, name: String): String =
+        """ALTER TABLE "$tableName" DROP FOREIGN KEY "$name""""
 
     private fun createDataType(property: PropertyData): String =
         with (property) {

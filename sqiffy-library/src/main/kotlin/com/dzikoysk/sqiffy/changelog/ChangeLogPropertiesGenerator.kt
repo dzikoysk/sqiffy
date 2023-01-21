@@ -13,12 +13,12 @@ class ChangeLogPropertiesGenerator {
     internal fun generateProperties(context: ChangeLogGeneratorContext) {
         with(context) {
             when {
-                changeToApply.name != NULL_STRING && state.name != changeToApply.name -> {
+                changeToApply.name != NULL_STRING && state.tableName != changeToApply.name -> {
                     // rename table
-                    registerChange(sqlGenerator.renameTable(state.name, changeToApply.name))
-                    state.name = changeToApply.name
+                    registerChange(sqlGenerator.renameTable(state.tableName, changeToApply.name))
+                    state.tableName = changeToApply.name
                 }
-                currentScheme.none { it.name == state.name } -> {
+                currentScheme.none { it.tableName == state.tableName } -> {
                     generateNewTable(context)
                     return // properties are up-to-date
                 }
@@ -36,7 +36,7 @@ class ChangeLogPropertiesGenerator {
             changeToApply.properties
                 .map { it.toPropertyData() }
                 .let { propertyDataList ->
-                    registerChange(sqlGenerator.createTable(state.name, propertyDataList))
+                    registerChange(sqlGenerator.createTable(state.tableName, propertyDataList))
                     state.properties.addAll(propertyDataList)
                 }
 
@@ -54,18 +54,18 @@ class ChangeLogPropertiesGenerator {
 
                 when (propertyChange.definitionType) {
                     ADD -> {
-                        registerChange(sqlGenerator.createColumn(state.name, property))
+                        registerChange(sqlGenerator.createColumn(state.tableName, property))
                         properties.add(property)
                     }
                     RENAME -> {
-                        registerChange(sqlGenerator.renameColumn(state.name, propertyChange.name, propertyChange.rename))
+                        registerChange(sqlGenerator.renameColumn(state.tableName, propertyChange.name, propertyChange.rename))
                         properties.replaceFirst({ it.name == propertyChange.name }, { it.copy(name = propertyChange.rename) })
                     }
                     RETYPE -> {
                         // SQLite may not support this
                     }
                     REMOVE -> {
-                        registerChange(sqlGenerator.removeColumn(state.name, property.name))
+                        registerChange(sqlGenerator.removeColumn(state.tableName, property.name))
                         properties.removeIf { it.name == property.name }
                     }
                 }

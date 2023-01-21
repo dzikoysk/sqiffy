@@ -14,7 +14,8 @@ import kotlin.reflect.full.findAnnotation
 
 internal data class TableAnalysisState(
     val changesToApply: Deque<DefinitionVersion>,
-    var name: String,
+    val source: String,
+    var tableName: String,
     val properties: MutableList<PropertyData> = mutableListOf(),
     val constraints: MutableList<ConstraintData> = mutableListOf(),
     val indices: MutableList<IndexData> = mutableListOf()
@@ -29,6 +30,7 @@ internal data class ChangeLogGeneratorContext(
 ) {
 
     fun registerChange(change: String) = changes.add(change)
+    fun registerChange(supplier: SqlGenerator.() -> String) = registerChange(supplier.invoke(sqlGenerator))
 
 }
 
@@ -43,6 +45,7 @@ class ChangeLogGenerator {
         generateChangeLog(
             classes.map {
                 DefinitionEntry(
+                    source = it.qualifiedName!!,
                     packageName = it.java.packageName,
                     name = it::class.simpleName!!.substringBeforeLast("Definition"),
                     definition = it.findAnnotation()!!
@@ -60,7 +63,8 @@ class ChangeLogGenerator {
         val states = tables.associateWith {
             TableAnalysisState(
                 changesToApply = ArrayDeque(it.definition.value.toList()),
-                name = it.definition.value.first().name,
+                source = it.source,
+                tableName = it.definition.value.first().name,
             )
         }
 
@@ -68,26 +72,44 @@ class ChangeLogGenerator {
         val changeLog = linkedMapOf<String, MutableList<String>>()
 
         for (version in allVersions) {
+            val changes = changeLog.computeIfAbsent(version) { mutableListOf() }
+            val contexts = mutableListOf<ChangeLogGeneratorContext>()
+            val constraints = mutableListOf<Runnable>()
+            val indices = mutableListOf<Runnable>()
+
             for ((definitionEntry, state) in states) {
                 when {
                     state.changesToApply.isEmpty() -> continue
                     state.changesToApply.peek().version != version ->  continue
                 }
 
-                val context = ChangeLogGeneratorContext(
+                val baseContext = ChangeLogGeneratorContext(
                     sqlGenerator = sqlGenerator,
                     currentScheme = currentScheme,
                     changeToApply = state.changesToApply.poll(),
                     state = state
                 )
 
-                changeLogPropertiesGenerator.generateProperties(context)
-                changeLogConstraintsGenerator.generateConstraints(context)
-                changeLogIndicesGenerator.generateIndices(context)
+                val propertiesContext = baseContext.copy(changes = mutableListOf())
+                changeLogPropertiesGenerator.generateProperties(propertiesContext)
+                contexts.add(propertiesContext)
 
-                val changes = changeLog.computeIfAbsent(version) { mutableListOf() }
-                changes.addAll(context.changes)
+                constraints.add {
+                    val constraintsContext = baseContext.copy(changes = mutableListOf())
+                    changeLogConstraintsGenerator.generateConstraints(constraintsContext)
+                    contexts.add(constraintsContext)
+                }
+
+                indices.add {
+                    val indicesContext = baseContext.copy(changes = mutableListOf())
+                    changeLogIndicesGenerator.generateIndices(indicesContext)
+                    contexts.add(indicesContext)
+                }
             }
+
+            constraints.forEach { it.run() }
+            indices.forEach { it.run() }
+            contexts.forEach { changes.addAll(it.changes) }
         }
 
         return ChangeLog(changeLog)

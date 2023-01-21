@@ -56,6 +56,7 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
             .filterIsInstance<KSClassDeclaration>()
             .map {
                 DefinitionEntry(
+                    source = it.qualifiedName!!.asString(),
                     packageName = it.packageName.asString(),
                     name = it.simpleName.asString().substringBeforeLast("Definition"),
                     definition = it.getAnnotationsByType(Definition::class).first(),

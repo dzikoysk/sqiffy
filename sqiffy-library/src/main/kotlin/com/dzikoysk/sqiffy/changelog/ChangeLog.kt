@@ -5,7 +5,6 @@ import com.dzikoysk.sqiffy.Version
 import com.dzikoysk.sqiffy.shared.executeQuery
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.TransactionManager
-import org.jetbrains.exposed.sql.transactions.TransactionManager.Companion
 import org.jetbrains.exposed.sql.transactions.transaction
 
 data class ChangeLog(

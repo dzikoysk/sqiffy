@@ -13,7 +13,7 @@ enum class IndexType {
 @Target()
 annotation class Index(
     val definitionType: IndexDefinitionType = IndexDefinitionType.ADD,
-    val value: IndexType,
+    val type: IndexType,
     val columns: Array<String>
 )
 

@@ -27,7 +27,7 @@ import kotlin.io.path.absolutePathString
             Property(name = "owner", type = INT)
         ],
         constraints = [
-            Constraint(FOREIGN_KEY, referenced = UserDefinition::class, on = "id")
+            Constraint(type = FOREIGN_KEY,  on = "id", name = "fk_id", referenced = UserDefinition::class, references = "id")
         ]
     )
 ])
@@ -43,10 +43,10 @@ object GuildDefinition
             Property(name = "name", type = VARCHAR, details = "16"),
         ],
         constraints = [
-            Constraint(PRIMARY_KEY, on = "id"),
+            Constraint(type = PRIMARY_KEY, name = "pk_id", on = "id"),
         ],
         indices = [
-            Index(UNIQUE_INDEX, columns = ["name"])
+            Index(type = UNIQUE_INDEX, columns = ["name"])
         ]
     ),
     DefinitionVersion(

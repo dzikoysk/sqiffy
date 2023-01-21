@@ -15,7 +15,8 @@ enum class ConstraintType {
 @Target()
 annotation class Constraint(
     val definitionType: ConstraintDefinitionType = ConstraintDefinitionType.ADD,
-    val value: ConstraintType,
+    val type: ConstraintType,
+    val name: String,
     val on: String,
     val referenced: KClass<*> = NULL_CLASS::class,
     val references: String = NULL_STRING
@@ -23,16 +24,19 @@ annotation class Constraint(
 
 sealed interface ConstraintData {
     val type: ConstraintType
+    val name: String
     val on: String
 }
 
 data class PrimaryKey(
+    override val name: String,
     override val on: String
 ) : ConstraintData {
     override val type: ConstraintType = ConstraintType.PRIMARY_KEY
 }
 
 data class ForeignKey(
+    override val name: String,
     override val on: String,
     val referenced: KClass<*>,
     val references: String
