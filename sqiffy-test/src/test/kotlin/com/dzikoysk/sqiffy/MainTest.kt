@@ -12,6 +12,9 @@ import com.dzikoysk.sqiffy.IndexDefinitionOperation.REMOVE_INDEX
 import com.dzikoysk.sqiffy.IndexType.INDEX
 import com.dzikoysk.sqiffy.IndexType.UNIQUE_INDEX
 import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RENAME
+import com.dzikoysk.sqiffy.Versions.V_1_0_0
+import com.dzikoysk.sqiffy.Versions.V_1_0_1
+import com.dzikoysk.sqiffy.Versions.V_1_0_2
 import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator
 import com.dzikoysk.sqiffy.shared.createTestDatabaseFile
 import org.jetbrains.exposed.sql.insert
@@ -21,9 +24,15 @@ import org.junit.jupiter.api.Test
 import java.util.UUID
 import kotlin.io.path.absolutePathString
 
+private object Versions {
+    const val V_1_0_0 = "1.0.0"
+    const val V_1_0_1 = "1.0.1"
+    const val V_1_0_2 = "1.0.2"
+}
+
 @Definition([
     DefinitionVersion(
-        version = "1.0.0",
+        version = V_1_0_0,
         name = "guilds_table",
         properties = [
             Property(name = "id", type = INT, autoincrement = true),
@@ -34,13 +43,13 @@ import kotlin.io.path.absolutePathString
         ]
     ),
     DefinitionVersion(
-        version = "1.0.1",
+        version = V_1_0_1,
         constraints = [
             Constraint(REMOVE_CONSTRAINT, type = FOREIGN_KEY, name = "fk_id")
         ]
     ),
     DefinitionVersion(
-        version = "1.0.2",
+        version = V_1_0_2,
         constraints = [
             Constraint(type = FOREIGN_KEY, on = "id", name = "fk_id", referenced = UserDefinition::class, references = "id")
         ]
@@ -50,7 +59,7 @@ object GuildDefinition
 
 @Definition([
     DefinitionVersion(
-        version = "1.0.0",
+        version = V_1_0_0,
         name = "users_table",
         properties = [
             Property(name = "id", type = INT, autoincrement = true),
@@ -66,7 +75,7 @@ object GuildDefinition
         ]
     ),
     DefinitionVersion(
-        version = "1.0.1",
+        version = V_1_0_1,
         properties = [
             Property(name = "display_name", type = VARCHAR, details = "48", nullable = true)
         ],
@@ -76,7 +85,7 @@ object GuildDefinition
 ]
     ),
     DefinitionVersion(
-        version = "1.0.2",
+        version = V_1_0_2,
         properties = [
             Property(operation = RENAME, name = "display_name", rename = "displayName")
         ]
