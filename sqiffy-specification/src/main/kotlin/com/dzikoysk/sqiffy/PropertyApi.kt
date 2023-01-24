@@ -16,8 +16,6 @@ annotation class Property(
     val type: DataType = NULL_TYPE,
     val details: String = NULL_STRING,
     val rename: String = NULL_STRING,
-    val retypeType: DataType = NULL_TYPE,
-    val retypeDetails: String = NULL_STRING,
     val nullable: Boolean = false,
     val autoincrement: Boolean = false
 )

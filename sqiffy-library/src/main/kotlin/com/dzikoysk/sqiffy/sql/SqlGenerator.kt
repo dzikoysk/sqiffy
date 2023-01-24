@@ -17,13 +17,19 @@ import com.dzikoysk.sqiffy.PropertyData
 
 interface SqlGenerator {
 
+    /* Table */
+
     fun createTable(name: String, properties: List<PropertyData>): String
 
     fun renameTable(currentName: String, renameTo: String): String
 
+    /* Columns */
+
     fun createColumn(tableName: String, property: PropertyData): String
 
     fun renameColumn(tableName: String, currentName: String, renameTo: String): String
+
+    fun retypeColumn(tableName: String, property: PropertyData): String
 
     fun removeColumn(tableName: String, columnName: String): String
 
@@ -60,6 +66,9 @@ class MySqlGenerator : SqlGenerator {
 
     override fun renameColumn(tableName: String, currentName: String, renameTo: String): String =
         """ALTER TABLE "$tableName" RENAME COLUMN "$currentName" TO "$renameTo""""
+
+    override fun retypeColumn(tableName: String, property: PropertyData): String =
+        """ALTER TABLE "$tableName" MODIFY "${property.name}" ${createDataType(property)}"""
 
     override fun removeColumn(tableName: String, columnName: String): String =
         """ALTER TABLE "$tableName" DROP COLUMN "$columnName""""
@@ -106,6 +115,10 @@ class MySqlGenerator : SqlGenerator {
 
             if (!nullable) {
                 dataType += " NOT NULL"
+            }
+
+            if (autoIncrement) {
+                dataType += " AUTO_INCREMENT"
             }
 
             dataType

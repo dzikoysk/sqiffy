@@ -12,6 +12,7 @@ import com.dzikoysk.sqiffy.IndexDefinitionOperation.REMOVE_INDEX
 import com.dzikoysk.sqiffy.IndexType.INDEX
 import com.dzikoysk.sqiffy.IndexType.UNIQUE_INDEX
 import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RENAME
+import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RETYPE
 import com.dzikoysk.sqiffy.Versions.V_1_0_0
 import com.dzikoysk.sqiffy.Versions.V_1_0_1
 import com.dzikoysk.sqiffy.Versions.V_1_0_2
@@ -64,7 +65,7 @@ object GuildDefinition
         properties = [
             Property(name = "id", type = INT, autoincrement = true),
             Property(name = "uuid", type = UUID_VARCHAR),
-            Property(name = "name", type = VARCHAR, details = "16"),
+            Property(name = "name", type = VARCHAR, details = "12"),
         ],
         constraints = [
             Constraint(type = PRIMARY_KEY, name = "pk_id", on = "id"),
@@ -77,6 +78,7 @@ object GuildDefinition
     DefinitionVersion(
         version = V_1_0_1,
         properties = [
+            Property(operation = RETYPE, name = "name", type = VARCHAR, details = "24"),
             Property(name = "display_name", type = VARCHAR, details = "48", nullable = true)
         ],
         indices = [

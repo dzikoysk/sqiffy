@@ -1,5 +1,6 @@
 package com.dzikoysk.sqiffy.changelog
 
+import com.dzikoysk.sqiffy.DataType.NULL_TYPE
 import com.dzikoysk.sqiffy.NULL_STRING
 import com.dzikoysk.sqiffy.PropertyDefinitionOperation.ADD
 import com.dzikoysk.sqiffy.PropertyDefinitionOperation.REMOVE
@@ -13,9 +14,11 @@ class ChangeLogPropertiesGenerator {
     internal fun generateProperties(context: ChangeLogGeneratorContext) {
         with(context) {
             when {
+                /* rename table */
                 changeToApply.name != NULL_STRING && state.tableName != changeToApply.name -> {
-                    // rename table
-                    registerChange(sqlGenerator.renameTable(state.tableName, changeToApply.name))
+                    registerChange {
+                        renameTable(state.tableName, changeToApply.name)
+                    }
                     state.tableName = changeToApply.name
                 }
                 currentScheme.none { it.tableName == state.tableName } -> {
@@ -36,7 +39,9 @@ class ChangeLogPropertiesGenerator {
             changeToApply.properties
                 .map { it.toPropertyData() }
                 .let { propertyDataList ->
-                    registerChange(sqlGenerator.createTable(state.tableName, propertyDataList))
+                    registerChange {
+                        createTable(state.tableName, propertyDataList)
+                    }
                     state.properties.addAll(propertyDataList)
                 }
 
@@ -50,23 +55,62 @@ class ChangeLogPropertiesGenerator {
 
             // detect properties change in existing table
             for (propertyChange in changeToApply.properties) {
-                val property = propertyChange.toPropertyData()
-
                 when (propertyChange.operation) {
                     ADD -> {
-                        registerChange(sqlGenerator.createColumn(state.tableName, property))
+                        val property = propertyChange.toPropertyData()
+
+                        require(properties.none { it.name == property.name }) { "Cannot add property ${property.name} to ${state.tableName} because it already exists" }
                         properties.add(property)
+
+                        registerChange {
+                            createColumn(state.tableName, property)
+                        }
                     }
                     RENAME -> {
-                        registerChange(sqlGenerator.renameColumn(state.tableName, propertyChange.name, propertyChange.rename))
-                        properties.replaceFirst({ it.name == propertyChange.name }, { it.copy(name = propertyChange.rename) })
+                        val replaced = properties.replaceFirst(
+                            condition = { it.name == propertyChange.name },
+                            newValue = { currentProperty ->
+                                currentProperty.copy(
+                                    name = propertyChange.rename
+                                        .takeIf { it != NULL_STRING }
+                                        ?: throw IllegalStateException("Cannot rename property ${propertyChange.name} to null in ${state.tableName}")
+                                )
+                            }
+                        )
+
+                        require(replaced) { "Cannot rename property ${propertyChange.name} to ${propertyChange.rename} in ${state.tableName} because it does not exist" }
+
+                        registerChange {
+                            renameColumn(state.tableName, propertyChange.name, propertyChange.rename)
+                        }
                     }
+                    // <!> SQLite may not support this
                     RETYPE -> {
-                        // SQLite may not support this
+                        val currentProperty = state.properties
+                            .firstOrNull { it.name == propertyChange.name }
+                            ?: throw IllegalStateException("Cannot retype property ${propertyChange.name} in ${state.tableName} because it does not exist")
+
+                        val newProperty = currentProperty.copy(
+                            type = propertyChange.type.takeIf { it != NULL_TYPE },
+                            details = propertyChange.details.takeIf { it != NULL_STRING },
+                        )
+
+                        properties.replaceFirst(
+                            condition = { it.name == propertyChange.name },
+                            newValue = { _ -> newProperty }
+                        )
+
+                        registerChange {
+                            retypeColumn(state.tableName, newProperty)
+                        }
                     }
                     REMOVE -> {
-                        registerChange(sqlGenerator.removeColumn(state.tableName, property.name))
-                        properties.removeIf { it.name == property.name }
+                        val removed = properties.removeIf { it.name == propertyChange.name }
+                        require(removed) { "Cannot remove property ${propertyChange.name} from ${state.tableName} because it does not exist" }
+
+                        registerChange {
+                            removeColumn(state.tableName, propertyChange.name)
+                        }
                     }
                 }
             }

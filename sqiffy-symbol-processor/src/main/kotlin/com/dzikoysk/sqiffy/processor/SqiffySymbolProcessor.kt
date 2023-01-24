@@ -93,7 +93,7 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
                     when (property.operation) {
                         ADD -> properties.add(convertedProperty)
                         RENAME -> require(properties.replaceFirst({ it.name == property.name }, { it.copy(name = property.rename) }))
-                        RETYPE -> require(properties.replaceFirst({ it.name == property.name }, { it.copy(type = property.retypeType, details = property.retypeDetails) }))
+                        RETYPE -> require(properties.replaceFirst({ it.name == property.name }, { it.copy(type = property.type, details = property.details) }))
                         REMOVE -> properties.removeIf { it.name == property.name }
                     }
                 }
