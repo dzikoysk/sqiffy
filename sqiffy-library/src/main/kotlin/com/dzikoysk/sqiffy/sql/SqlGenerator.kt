@@ -70,7 +70,7 @@ class MySqlGenerator : SqlGenerator {
 
     private fun createDataType(property: PropertyData): String =
         with (property) {
-            when (type) {
+            var dataType = when (type) {
                 CHAR -> "CHAR($details)"
                 UUID_VARCHAR -> "VARCHAR(36)"
                 VARCHAR -> "VARCHAR($details)"
@@ -86,6 +86,12 @@ class MySqlGenerator : SqlGenerator {
                 TIMESTAMP -> "TIMESTAMP"
                 else -> throw UnsupportedOperationException("Cannot create data type based on $property")
             }
+
+            if (!nullable) {
+                dataType += " NOT NULL"
+            }
+
+            dataType
         }
 
 }

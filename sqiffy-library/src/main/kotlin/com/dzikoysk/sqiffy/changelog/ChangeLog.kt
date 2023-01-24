@@ -16,7 +16,7 @@ data class ChangeLog(
             changes.forEach { (version, changes) ->
                 changes.forEach { change ->
                     println(change)
-                    println(TransactionManager.current().connection.executeQuery("$change;"))
+                    TransactionManager.current().connection.executeQuery("$change;")
                 }
             }
         }

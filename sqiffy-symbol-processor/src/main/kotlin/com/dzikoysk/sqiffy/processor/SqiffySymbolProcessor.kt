@@ -7,11 +7,14 @@ import com.dzikoysk.sqiffy.PropertyDefinitionType.ADD
 import com.dzikoysk.sqiffy.PropertyDefinitionType.REMOVE
 import com.dzikoysk.sqiffy.PropertyDefinitionType.RENAME
 import com.dzikoysk.sqiffy.PropertyDefinitionType.RETYPE
+import com.dzikoysk.sqiffy.TypeDefinition
+import com.dzikoysk.sqiffy.TypeFactory
 import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.dzikoysk.sqiffy.processor.generators.EntityGenerator
 import com.dzikoysk.sqiffy.processor.generators.ExposedTableGenerator
 import com.dzikoysk.sqiffy.shared.replaceFirst
+import com.google.devtools.ksp.KSTypeNotPresentException
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -23,6 +26,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import java.util.LinkedList
+import kotlin.reflect.KClass
 
 class SqiffySymbolProcessorProvider : SymbolProcessorProvider {
 
@@ -32,7 +36,7 @@ class SqiffySymbolProcessorProvider : SymbolProcessorProvider {
     )
 
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
-        Thread.sleep(4000) // wait for debugger xD
+        Thread.sleep(10000) // wait for debugger xD
 
         return SqiffySymbolProcessor(
             KspContext(
@@ -48,7 +52,6 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
 
     private val entityGenerator = EntityGenerator(context)
     private val exposedTableGenerator = ExposedTableGenerator(context)
-    private val baseSchemeGenerator = ChangeLogGenerator()
 
     @OptIn(KspExperimental::class)
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -65,7 +68,8 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
             .toList()
 
         if (tables.isNotEmpty()) {
-            // baseSchemeGenerator.generateChangeLog(tables)
+            val baseSchemeGenerator = ChangeLogGenerator(KspTypeFactory())
+            baseSchemeGenerator.generateChangeLog(tables)
             generateDls(tables)
         }
 
@@ -73,10 +77,10 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
     }
 
     private fun generateDls(tables: List<DefinitionEntry>) {
-        tables.forEach {
+        tables.forEach { table ->
             val properties = LinkedList<PropertyData>()
 
-            for (definitionVersion in it.definition.value) {
+            for (definitionVersion in table.definition.value) {
                 for (property in definitionVersion.properties) {
                     val convertedProperty = PropertyData(
                         name = property.name,
@@ -95,9 +99,28 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
                 }
             }
 
-            entityGenerator.generateEntityClass(it, properties)
-            exposedTableGenerator.generateTableClass(it, properties)
+            entityGenerator.generateEntityClass(table, properties)
+            exposedTableGenerator.generateTableClass(table, properties)
         }
     }
+
+}
+
+private class KspTypeFactory : TypeFactory {
+
+    @OptIn(KspExperimental::class)
+    override fun <A : Annotation> getTypeDefinition(annotation: A, supplier: A.() -> KClass<*>): TypeDefinition =
+        try {
+            supplier(annotation)
+            throw IllegalStateException("Property accessor should throw KSTypeNotPresentException")
+        } catch (exception: KSTypeNotPresentException) {
+            exception.ksType.let {
+                TypeDefinition(
+                    packageName = it.declaration.packageName.asString(),
+                    qualifiedName = it.declaration.qualifiedName!!.asString(),
+                    simpleName = it.declaration.simpleName.asString()
+                )
+            }
+        }
 
 }

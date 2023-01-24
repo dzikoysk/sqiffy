@@ -5,6 +5,7 @@ import com.dzikoysk.sqiffy.DefinitionEntry
 import com.dzikoysk.sqiffy.DefinitionVersion
 import com.dzikoysk.sqiffy.IndexData
 import com.dzikoysk.sqiffy.PropertyData
+import com.dzikoysk.sqiffy.TypeFactory
 import com.dzikoysk.sqiffy.sql.MySqlGenerator
 import com.dzikoysk.sqiffy.sql.SqlGenerator
 import java.util.ArrayDeque
@@ -22,6 +23,7 @@ internal data class TableAnalysisState(
 )
 
 internal data class ChangeLogGeneratorContext(
+    val typeFactory: TypeFactory,
     val sqlGenerator: SqlGenerator,
     val currentScheme: MutableList<TableAnalysisState>,
     val changeToApply: DefinitionVersion,
@@ -34,7 +36,7 @@ internal data class ChangeLogGeneratorContext(
 
 }
 
-class ChangeLogGenerator {
+class ChangeLogGenerator(private val typeFactory: TypeFactory) {
 
     private val changeLogPropertiesGenerator = ChangeLogPropertiesGenerator()
     private val changeLogConstraintsGenerator = ChangeLogConstraintsGenerator()
@@ -64,7 +66,7 @@ class ChangeLogGenerator {
             TableAnalysisState(
                 changesToApply = ArrayDeque(it.definition.value.toList()),
                 source = it.source,
-                tableName = it.definition.value.first().name,
+                tableName = it.definition.value.firstOrNull()?.name ?: throw IllegalStateException("Class ${it.source} has @Definition annotation without any scheme version"),
             )
         }
 
@@ -84,6 +86,7 @@ class ChangeLogGenerator {
                 }
 
                 val baseContext = ChangeLogGeneratorContext(
+                    typeFactory = typeFactory,
                     sqlGenerator = sqlGenerator,
                     currentScheme = currentScheme,
                     changeToApply = state.changesToApply.poll(),

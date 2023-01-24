@@ -38,7 +38,7 @@ data class PrimaryKey(
 data class ForeignKey(
     override val name: String,
     override val on: String,
-    val referenced: KClass<*>,
+    val referenced: TypeDefinition,
     val references: String
 ) : ConstraintData {
     override val type: ConstraintType = ConstraintType.FOREIGN_KEY

@@ -68,7 +68,7 @@ class MainTest {
 
     @Test
     fun testBaseSchemeGenerator() {
-        val baseSchemeGenerator = ChangeLogGenerator()
+        val baseSchemeGenerator = ChangeLogGenerator(RuntimeTypeFactory())
         val changeLog = baseSchemeGenerator.generateChangeLog(UserDefinition::class, GuildDefinition::class)
 
         changeLog.changes.forEach { (version, changes) ->
@@ -87,7 +87,7 @@ class MainTest {
 
         dataSource.toDatabaseConnection().use { databaseConnection ->
             transaction(databaseConnection.database) {
-                val changeLog = ChangeLogGenerator().generateChangeLog(UserDefinition::class, GuildDefinition::class)
+                val changeLog = ChangeLogGenerator(RuntimeTypeFactory()).generateChangeLog(UserDefinition::class, GuildDefinition::class)
                 changeLog.runMigrations(databaseConnection.database)
 
                 // generated entity
