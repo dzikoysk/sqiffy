@@ -17,7 +17,7 @@ annotation class Constraint(
     val definitionType: ConstraintDefinitionType = ConstraintDefinitionType.ADD,
     val type: ConstraintType,
     val name: String,
-    val on: String,
+    val on: String = NULL_STRING,
     val referenced: KClass<*> = NULL_CLASS::class,
     val references: String = NULL_STRING
 )

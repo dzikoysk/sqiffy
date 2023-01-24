@@ -63,7 +63,7 @@ class MySqlGenerator : SqlGenerator {
         """ALTER TABLE "$tableName" DROP PRIMARY KEY"""
 
     override fun createForeignKey(tableName: String, name: String, on: String, foreignTable: String, foreignColumn: String): String =
-        """ALTER TABLE "$tableName" ADD FOREIGN KEY ("$on") REFERENCES "$foreignTable"("$foreignColumn")"""
+        """ALTER TABLE "$tableName" ADD CONSTRAINT "$name" FOREIGN KEY ("$on") REFERENCES "$foreignTable"("$foreignColumn")"""
 
     override fun removeForeignKey(tableName: String, name: String): String =
         """ALTER TABLE "$tableName" DROP FOREIGN KEY "$name""""

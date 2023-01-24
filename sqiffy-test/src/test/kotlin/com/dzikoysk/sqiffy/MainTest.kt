@@ -2,6 +2,7 @@
 
 package com.dzikoysk.sqiffy
 
+import com.dzikoysk.sqiffy.ConstraintDefinitionType.REMOVE
 import com.dzikoysk.sqiffy.ConstraintType.FOREIGN_KEY
 import com.dzikoysk.sqiffy.ConstraintType.PRIMARY_KEY
 import com.dzikoysk.sqiffy.DataType.INT
@@ -27,7 +28,19 @@ import kotlin.io.path.absolutePathString
             Property(name = "owner", type = INT)
         ],
         constraints = [
-            Constraint(type = FOREIGN_KEY,  on = "id", name = "fk_id", referenced = UserDefinition::class, references = "id")
+            Constraint(type = FOREIGN_KEY, on = "id", name = "fk_id", referenced = UserDefinition::class, references = "id")
+        ]
+    ),
+    DefinitionVersion(
+        version = "1.0.1",
+        constraints = [
+            Constraint(definitionType = REMOVE, type = FOREIGN_KEY, name = "fk_id")
+        ]
+    ),
+    DefinitionVersion(
+        version = "1.0.2",
+        constraints = [
+            Constraint(type = FOREIGN_KEY, on = "id", name = "fk_id", referenced = UserDefinition::class, references = "id")
         ]
     )
 ])

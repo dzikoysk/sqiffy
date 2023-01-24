@@ -59,13 +59,15 @@ internal class ChangeLogConstraintsGenerator {
                 ADD -> {
                     val foreignKey = ForeignKey(
                         name = constraint.name,
-                        on = constraint.on,
+                        on = constraint.on
+                            .takeIf { it != NULL_STRING }
+                            ?: throw IllegalStateException("Foreign key declaration misses `on` property"),
                         referenced = typeFactory.getTypeDefinition(constraint) { referenced }
                             .takeIf { it.qualifiedName != NULL_CLASS::class.qualifiedName }
                             ?: throw IllegalStateException("Foreign key declaration misses `referenced` class"),
                         references = constraint.references
                             .takeUnless { it == NULL_STRING }
-                            ?: throw IllegalStateException("")
+                            ?: throw IllegalStateException("Foreign key declaration misses `references` property")
                     )
 
                     val foreignTable = currentScheme
