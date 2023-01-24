@@ -1,10 +1,10 @@
 package com.dzikoysk.sqiffy.changelog
 
 import com.dzikoysk.sqiffy.NULL_STRING
-import com.dzikoysk.sqiffy.PropertyDefinitionType.ADD
-import com.dzikoysk.sqiffy.PropertyDefinitionType.REMOVE
-import com.dzikoysk.sqiffy.PropertyDefinitionType.RENAME
-import com.dzikoysk.sqiffy.PropertyDefinitionType.RETYPE
+import com.dzikoysk.sqiffy.PropertyDefinitionOperation.ADD
+import com.dzikoysk.sqiffy.PropertyDefinitionOperation.REMOVE
+import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RENAME
+import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RETYPE
 import com.dzikoysk.sqiffy.shared.replaceFirst
 import com.dzikoysk.sqiffy.toPropertyData
 
@@ -29,7 +29,7 @@ class ChangeLogPropertiesGenerator {
 
     private fun generateNewTable(context: ChangeLogGeneratorContext) {
         with(context) {
-            if (changeToApply.properties.any { it.definitionType != ADD }) {
+            if (changeToApply.properties.any { it.operation != ADD }) {
                 throw IllegalStateException("You can only add properties to a new table scheme")
             }
 
@@ -52,7 +52,7 @@ class ChangeLogPropertiesGenerator {
             for (propertyChange in changeToApply.properties) {
                 val property = propertyChange.toPropertyData()
 
-                when (propertyChange.definitionType) {
+                when (propertyChange.operation) {
                     ADD -> {
                         registerChange(sqlGenerator.createColumn(state.tableName, property))
                         properties.add(property)

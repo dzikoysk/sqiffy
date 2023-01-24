@@ -3,10 +3,10 @@ package com.dzikoysk.sqiffy.processor
 import com.dzikoysk.sqiffy.Definition
 import com.dzikoysk.sqiffy.DefinitionEntry
 import com.dzikoysk.sqiffy.PropertyData
-import com.dzikoysk.sqiffy.PropertyDefinitionType.ADD
-import com.dzikoysk.sqiffy.PropertyDefinitionType.REMOVE
-import com.dzikoysk.sqiffy.PropertyDefinitionType.RENAME
-import com.dzikoysk.sqiffy.PropertyDefinitionType.RETYPE
+import com.dzikoysk.sqiffy.PropertyDefinitionOperation.ADD
+import com.dzikoysk.sqiffy.PropertyDefinitionOperation.REMOVE
+import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RENAME
+import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RETYPE
 import com.dzikoysk.sqiffy.TypeDefinition
 import com.dzikoysk.sqiffy.TypeFactory
 import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator
@@ -90,7 +90,7 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
                         autoIncrement = property.autoincrement
                     )
 
-                    when (property.definitionType) {
+                    when (property.operation) {
                         ADD -> properties.add(convertedProperty)
                         RENAME -> require(properties.replaceFirst({ it.name == property.name }, { it.copy(name = property.rename) }))
                         RETYPE -> require(properties.replaceFirst({ it.name == property.name }, { it.copy(type = property.retypeType, details = property.retypeDetails) }))

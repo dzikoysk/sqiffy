@@ -3,8 +3,8 @@ package com.dzikoysk.sqiffy
 import kotlin.reflect.KClass
 
 enum class ConstraintDefinitionType {
-    ADD,
-    REMOVE
+    ADD_CONSTRAINT,
+    REMOVE_CONSTRAINT
 }
 
 enum class ConstraintType {
@@ -14,7 +14,7 @@ enum class ConstraintType {
 
 @Target()
 annotation class Constraint(
-    val definitionType: ConstraintDefinitionType = ConstraintDefinitionType.ADD,
+    val definitionType: ConstraintDefinitionType = ConstraintDefinitionType.ADD_CONSTRAINT,
     val type: ConstraintType,
     val name: String,
     val on: String = NULL_STRING,

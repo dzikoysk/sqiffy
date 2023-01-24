@@ -2,14 +2,16 @@
 
 package com.dzikoysk.sqiffy
 
-import com.dzikoysk.sqiffy.ConstraintDefinitionType.REMOVE
+import com.dzikoysk.sqiffy.ConstraintDefinitionType.REMOVE_CONSTRAINT
 import com.dzikoysk.sqiffy.ConstraintType.FOREIGN_KEY
 import com.dzikoysk.sqiffy.ConstraintType.PRIMARY_KEY
 import com.dzikoysk.sqiffy.DataType.INT
 import com.dzikoysk.sqiffy.DataType.UUID_VARCHAR
 import com.dzikoysk.sqiffy.DataType.VARCHAR
+import com.dzikoysk.sqiffy.IndexDefinitionOperation.REMOVE_INDEX
+import com.dzikoysk.sqiffy.IndexType.INDEX
 import com.dzikoysk.sqiffy.IndexType.UNIQUE_INDEX
-import com.dzikoysk.sqiffy.PropertyDefinitionType.RENAME
+import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RENAME
 import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator
 import com.dzikoysk.sqiffy.shared.createTestDatabaseFile
 import org.jetbrains.exposed.sql.insert
@@ -34,7 +36,7 @@ import kotlin.io.path.absolutePathString
     DefinitionVersion(
         version = "1.0.1",
         constraints = [
-            Constraint(definitionType = REMOVE, type = FOREIGN_KEY, name = "fk_id")
+            Constraint(REMOVE_CONSTRAINT, type = FOREIGN_KEY, name = "fk_id")
         ]
     ),
     DefinitionVersion(
@@ -59,19 +61,24 @@ object GuildDefinition
             Constraint(type = PRIMARY_KEY, name = "pk_id", on = "id"),
         ],
         indices = [
-            Index(type = UNIQUE_INDEX, columns = ["name"])
+            Index(type = INDEX, name = "idx_id", columns = ["id"]),
+            Index(type = UNIQUE_INDEX, name = "uq_name", columns = ["name"])
         ]
     ),
     DefinitionVersion(
         version = "1.0.1",
         properties = [
             Property(name = "display_name", type = VARCHAR, details = "48", nullable = true)
-        ]
+        ],
+        indices = [
+            Index(operation = REMOVE_INDEX, type = INDEX, name = "idx_id"),
+            Index(type = INDEX, name = "idx_id", columns = ["id"])
+]
     ),
     DefinitionVersion(
         version = "1.0.2",
         properties = [
-            Property(RENAME, name = "display_name", rename = "displayName")
+            Property(operation = RENAME, name = "display_name", rename = "displayName")
         ]
     )
 ])

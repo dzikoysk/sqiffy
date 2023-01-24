@@ -37,6 +37,14 @@ interface SqlGenerator {
 
     fun removeForeignKey(tableName: String, name: String): String
 
+    /* Indices */
+
+    fun createIndex(tableName: String, name: String, on: List<String>): String
+
+    fun createUniqueIndex(tableName: String, name: String, on: List<String>): String
+
+    fun removeIndex(tableName: String, name: String): String
+
 }
 
 class MySqlGenerator : SqlGenerator {
@@ -68,6 +76,15 @@ class MySqlGenerator : SqlGenerator {
     override fun removeForeignKey(tableName: String, name: String): String =
         """ALTER TABLE "$tableName" DROP FOREIGN KEY "$name""""
 
+    override fun createIndex(tableName: String, name: String, on: List<String>): String =
+        """CREATE INDEX "$name" ON "$tableName" (${createIndexColumns(on)})"""
+
+    override fun createUniqueIndex(tableName: String, name: String, on: List<String>): String =
+        """CREATE UNIQUE INDEX "$name" ON "$tableName" (${createIndexColumns(on)})"""
+
+    override fun removeIndex(tableName: String, name: String): String =
+        """DROP INDEX "$name" ON "$tableName""""
+
     private fun createDataType(property: PropertyData): String =
         with (property) {
             var dataType = when (type) {
@@ -93,5 +110,8 @@ class MySqlGenerator : SqlGenerator {
 
             dataType
         }
+
+    private fun createIndexColumns(columns: List<String>): String =
+        columns.joinToString(separator = ", ") { "\"$it\"" }
 
 }

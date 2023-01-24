@@ -1,8 +1,8 @@
 package com.dzikoysk.sqiffy.changelog
 
 import com.dzikoysk.sqiffy.Constraint
-import com.dzikoysk.sqiffy.ConstraintDefinitionType.ADD
-import com.dzikoysk.sqiffy.ConstraintDefinitionType.REMOVE
+import com.dzikoysk.sqiffy.ConstraintDefinitionType.ADD_CONSTRAINT
+import com.dzikoysk.sqiffy.ConstraintDefinitionType.REMOVE_CONSTRAINT
 import com.dzikoysk.sqiffy.ConstraintType.FOREIGN_KEY
 import com.dzikoysk.sqiffy.ConstraintType.PRIMARY_KEY
 import com.dzikoysk.sqiffy.ForeignKey
@@ -26,7 +26,7 @@ internal class ChangeLogConstraintsGenerator {
     private fun generatePrimaryKey(context: ChangeLogGeneratorContext, constraint: Constraint) =
         with (context) {
             when (constraint.definitionType) {
-                ADD -> {
+                ADD_CONSTRAINT -> {
                     val primaryKey = PrimaryKey(
                         name = constraint.name,
                         on = constraint.on
@@ -46,9 +46,13 @@ internal class ChangeLogConstraintsGenerator {
 
                     state.constraints.add(primaryKey)
                 }
-                REMOVE -> {
-                    require(state.constraints.any { it.type == PRIMARY_KEY }) { "Table ${state.tableName} doesn't have primary key to remove" }
-                    registerChange { removePrimaryKey(state.tableName, constraint.name) }
+                REMOVE_CONSTRAINT -> {
+                    val removed = state.constraints.removeIf { it.name == constraint.name && it.type == PRIMARY_KEY }
+                    require(removed) { "Table ${state.tableName} doesn't have primary key to remove" }
+
+                    registerChange {
+                        removePrimaryKey(state.tableName, constraint.name)
+                    }
                 }
             }
         }
@@ -56,7 +60,7 @@ internal class ChangeLogConstraintsGenerator {
     private fun generateForeignKey(context: ChangeLogGeneratorContext, constraint: Constraint) =
         with (context) {
             when (constraint.definitionType) {
-                ADD -> {
+                ADD_CONSTRAINT -> {
                     val foreignKey = ForeignKey(
                         name = constraint.name,
                         on = constraint.on
@@ -91,7 +95,7 @@ internal class ChangeLogConstraintsGenerator {
 
                     state.constraints.add(foreignKey)
                 }
-                REMOVE -> {
+                REMOVE_CONSTRAINT -> {
                     val removed = state.constraints.removeIf { it.name == constraint.name }
                     require(removed) { "Cannot remove foreign key, constraint ${constraint.name} not found" }
 

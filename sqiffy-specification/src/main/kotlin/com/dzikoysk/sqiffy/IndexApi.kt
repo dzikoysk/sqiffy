@@ -1,8 +1,8 @@
 package com.dzikoysk.sqiffy
 
-enum class IndexDefinitionType {
-    ADD,
-    REMOVE
+enum class IndexDefinitionOperation {
+    ADD_INDEX,
+    REMOVE_INDEX
 }
 
 enum class IndexType {
@@ -12,12 +12,14 @@ enum class IndexType {
 
 @Target()
 annotation class Index(
-    val definitionType: IndexDefinitionType = IndexDefinitionType.ADD,
+    val operation: IndexDefinitionOperation = IndexDefinitionOperation.ADD_INDEX,
     val type: IndexType,
-    val columns: Array<String>
+    val name: String,
+    val columns: Array<String> = []
 )
 
 data class IndexData(
     val type: IndexType,
+    val name: String,
     val columns: List<String>
 )

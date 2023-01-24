@@ -2,7 +2,7 @@ package com.dzikoysk.sqiffy
 
 import com.dzikoysk.sqiffy.DataType.NULL_TYPE
 
-enum class PropertyDefinitionType {
+enum class PropertyDefinitionOperation {
     ADD,
     RENAME,
     RETYPE,
@@ -11,7 +11,7 @@ enum class PropertyDefinitionType {
 
 @Target()
 annotation class Property(
-    val definitionType: PropertyDefinitionType = PropertyDefinitionType.ADD,
+    val operation: PropertyDefinitionOperation = PropertyDefinitionOperation.ADD,
     val name: String,
     val type: DataType = NULL_TYPE,
     val details: String = NULL_STRING,
