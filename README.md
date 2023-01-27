@@ -1,7 +1,13 @@
 # Sqiffy 
 
-**sqiffy** _(or just squiffy 🍹)_ - Compound **SQ**L framework with type-safe DSL API generated at compile-time from scheme d**iff**.
+**sqiffy** _(or just squiffy 🍹)_ - Experimental compound **SQ**L framework with type-safe DSL API generated at compile-time from scheme d**iff**.
 It is dedicated for applications, plugins & libraries responsible for internal database management.
+
+Table of contents:
+1. [What it does?](#what-it-does)
+2. [Supports](#supports)
+3. [How to use](#how-to-use)
+4. [Comparison with alternatives](#comparison-with-alternatives)
 
 ### What it does?
 
@@ -10,12 +16,15 @@ It is dedicated for applications, plugins & libraries responsible for internal d
    1. Converts table definitions into versioned changelog, similar to [Liquibase](https://github.com/liquibase/liquibase)
    2. Generates up-to-date entity data classes for Kotlin with [KotlinPoet](https://github.com/square/kotlinpoet)
    3. Creates bindings for [Exposed (<ins>DSL</ins>)](https://github.com/JetBrains/Exposed) framework
+   4. Validates schemes and bindings to eliminate typos and invalid operations
 3. When application starts, you can run set of prepared versioned migrations against current database state
 
 ### Supports
 
-* MySQL/MariaDB
-* H2 (MySQL Mode)
+* [x] MySQL/MariaDB
+* [x] H2 (MySQL Mode)
+* [ ] PostgreSQL
+* [ ] SQLite
 
 ### How to use
 
@@ -152,4 +161,152 @@ val userFromDatabase = sqiffy.transaction {
 
 println(userFromDatabase)
 sqiffy.close()
+```
+
+### Comparison with alternatives
+
+The comparison shows differences between multiple approaches to database management,
+there's no "best" approach, it's all about your preferences and needs. 
+Sqiffy combines some known mechanisms to address issues of other approaches within the ecosystem of bundled applications shared among multiple users.
+
+<table>
+    <tr>
+        <th>Approach</th>
+        <th>Easy to use</th>
+        <th>Control over the schema</th>
+        <th>One source of truth</th>
+        <th>Multiple dialects</th>
+        <th>Automated migrations</th>
+        <th>Type-safe</th>
+        <th>Compile-time validation</th>
+        <th>DSL</th>
+    </tr>
+    <tr>
+        <td>
+            <b>Raw</b>
+            <p>
+                You want to avoid complex libraries and use raw SQL.
+                Because of that, it increases amount of code you have to write, 
+                and it's error-prone.
+            </p>
+        </td>
+        <td>✗</td>
+        <td>✔</td>
+        <td>✗</td>
+        <td>✗</td>
+        <td>✗</td>
+        <td>✗</td>
+        <td>✗</td>
+        <td>✗</td>
+    </tr>
+    <tr>
+        <td>
+            <b>SQL wrapper</b>
+            <p>
+                Libraries like JDBI simplifies interaction with raw SQL and entities, 
+                but there's still much to do around it manually.
+            </p>
+        </td>
+        <td>✗</td>
+        <td>✓</td>
+        <td>✗</td>
+        <td>✗</td>
+        <td>✗</td>
+        <td>✗</td>
+        <td>✗</td>
+        <td>½</td>
+    </tr>
+    <tr>
+        <td>
+            <b>ORM</b>
+            <p>
+                ORM libraries promise to handle all the database stuff for you,
+                but you're party losing control over the implementation and it may turn against you.
+            </p>
+        </td>
+        <td>✓</td>
+        <td>✗</td>
+        <td>✓</td>
+        <td>✓</td>
+        <td>½</td>
+        <td>½</td>
+        <td>✗</td>
+        <td>½</td>
+    </tr>
+    <tr>
+        <td>
+            <b>DSL</b>
+            <p>
+                Libraries like Exposed DSL provides very convenient type-safe API and basic scheme generators, 
+                but you partly lose control over the schema and you may encounter several issues with their API that doesn't cover all your needs.
+            </p>
+        </td>
+        <td>✓</td>
+        <td>✓</td>
+        <td>✓</td>
+        <td>½</td>
+        <td>½</td>
+        <td>½</td>
+        <td>½</td>
+        <td>✓</td>
+    </tr>
+    <tr>
+        <td>
+            <b>DSL/ORM + Liquibase/Flyway</b>
+            <p>
+                Migrations are a must-have for any database management system,
+                but it's not easy to implement them in a type-safe way and implement them for multiple dialects & users.
+            </p>
+        </td>
+        <td>½</td>
+        <td>✓</td>
+        <td>✗</td>
+        <td>½</td>
+        <td>✓</td>
+        <td>½</td>
+        <td>✗</td>
+        <td>N/A</td>
+    </tr>
+    <tr>
+        <td>
+            <b>JOOQ</b>
+            <p>
+                JOOQ defines a new category,
+                and while it's pretty good escape from regular DSL and uncontrolled ORMs, 
+                it targets enterprise products with an existing databases controlled by 3rd party sources, so
+                it's not that good for any kind of bundled application.
+            </p>
+        </td>
+        <td>✓</td>
+        <td>N/A</td>
+        <td>✓</td>
+        <td>½</td>
+        <td>✓</td>
+        <td>✓</td>
+        <td>✓</td>
+        <td>✓</td>
+    </tr>
+    <tr>
+        <td>
+            <b>Sqiffy</b>
+            <p>
+                Combines several features mentioned above as opt-in and handles bundled database schema changelog.
+            </p>
+        </td>
+        <td>✓</td>
+        <td>✓</td>
+        <td>✓</td>
+        <td>✓</td>
+        <td>✓</td>
+        <td>✓</td>
+        <td>✓</td>
+        <td>✓</td>
+    </tr>
+</table>
+
+```
+✓ - Yes
+✗ - No
+½ - Partially or not exactly matching our target (bundled apps with swappable database & dialects)
+N/A - Not applicable or given library is not responsible for this feature
 ```
