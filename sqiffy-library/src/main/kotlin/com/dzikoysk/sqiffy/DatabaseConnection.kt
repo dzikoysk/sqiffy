@@ -17,7 +17,7 @@ data class DatabaseConnection(
 
 }
 
-fun createDataSource(driver: String, url: String, threadPool: Int, username: String? = null, password: String? = null): HikariDataSource =
+fun createHikariDataSource(driver: String, url: String, threadPool: Int, username: String? = null, password: String? = null): HikariDataSource =
     HikariDataSource(
         HikariConfig().apply {
             this.jdbcUrl = url

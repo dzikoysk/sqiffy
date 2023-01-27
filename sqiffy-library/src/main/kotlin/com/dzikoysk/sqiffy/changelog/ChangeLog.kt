@@ -1,27 +1,17 @@
 package com.dzikoysk.sqiffy.changelog
 
-import com.dzikoysk.sqiffy.shared.executeQuery
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.transactions.TransactionManager
-import org.jetbrains.exposed.sql.transactions.transaction
-
 typealias Version = String
 typealias Query = String
-typealias Queries = MutableList<Query>
 
-data class ChangeLog(
-    val changes: LinkedHashMap<Version, Queries>
-) {
+class ChangeLog(
+    val changes: List<VersionChange>
+)
 
-    fun runMigrations(database: Database) {
-        transaction(database) {
-            changes.forEach { (version, changes) ->
-                changes.forEach { change ->
-                    println(change)
-                    TransactionManager.current().connection.executeQuery("$change;")
-                }
-            }
-        }
-    }
+data class VersionChange(
+    val version: Version,
+    val changes: List<Query>
+)
 
-}
+data class Change(
+    val query: Query
+)
