@@ -176,7 +176,7 @@ Sqiffy combines some known mechanisms to address issues of other approaches with
         <th>Control over the schema</th>
         <th>One source of truth</th>
         <th>Multiple dialects</th>
-        <th>Automated migrations</th>
+        <th>Auto-migrations</th>
         <th>Type-safe</th>
         <th>Compile-time validation</th>
         <th>DSL</th>
@@ -191,7 +191,7 @@ Sqiffy combines some known mechanisms to address issues of other approaches with
             </p>
         </td>
         <td>✗</td>
-        <td>✔</td>
+        <td>✓</td>
         <td>✗</td>
         <td>✗</td>
         <td>✗</td>
