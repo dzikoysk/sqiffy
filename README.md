@@ -23,7 +23,7 @@ Table of contents:
 
 * [x] MySQL/MariaDB
 * [x] H2 (MySQL Mode)
-* [ ] PostgreSQL
+* [x] PostgreSQL
 * [ ] SQLite
 
 ### How to use

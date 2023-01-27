@@ -9,7 +9,7 @@ class ChangeLog(
 
 data class VersionChange(
     val version: Version,
-    val changes: List<Query>
+    val changes: List<Change>
 )
 
 data class Change(

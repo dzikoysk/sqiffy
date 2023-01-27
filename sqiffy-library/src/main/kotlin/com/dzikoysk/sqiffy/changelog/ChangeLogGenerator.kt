@@ -41,7 +41,7 @@ class ChangeLogGenerator(private val typeFactory: TypeFactory) {
     private val changeLogPropertiesGenerator = ChangeLogPropertiesGenerator()
     private val changeLogConstraintsGenerator = ChangeLogConstraintsGenerator()
     private val changeLogIndicesGenerator = ChangeLogIndicesGenerator()
-    private val sqlGenerator = MySqlGenerator()
+    private val sqlGenerator = MySqlGenerator
 
     fun generateChangeLog(vararg classes: KClass<*>): ChangeLog =
         generateChangeLog(
@@ -71,7 +71,7 @@ class ChangeLogGenerator(private val typeFactory: TypeFactory) {
         }
 
         val currentScheme = mutableListOf<TableAnalysisState>()
-        val changeLog = linkedMapOf<String, MutableList<String>>()
+        val changeLog = linkedMapOf<Version, MutableList<Query>>()
 
         for (version in allVersions) {
             val changes = changeLog.computeIfAbsent(version) { mutableListOf() }
@@ -79,7 +79,7 @@ class ChangeLogGenerator(private val typeFactory: TypeFactory) {
             val constraints = mutableListOf<Runnable>()
             val indices = mutableListOf<Runnable>()
 
-            for ((definitionEntry, state) in states) {
+            for ((_, state) in states) {
                 when {
                     state.changesToApply.isEmpty() -> continue
                     state.changesToApply.peek().version != version ->  continue
@@ -115,7 +115,14 @@ class ChangeLogGenerator(private val typeFactory: TypeFactory) {
             contexts.forEach { changes.addAll(it.changes) }
         }
 
-        return ChangeLog(changeLog)
+        return changeLog
+            .map { (version, changes) ->
+                VersionChange(
+                    version = version,
+                    changes = changes.map { Change(it) }
+                )
+            }
+            .let { ChangeLog(it) }
     }
 
 }

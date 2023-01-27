@@ -81,9 +81,9 @@ open class Sqiffy(
             changesToApply.forEach { (version, changes) ->
                 logger.log(Level.INFO, "Applying changes for version $version")
 
-                changes.forEach { change ->
-                    logger.log(Level.DEBUG, change)
-                    TransactionManager.current().connection.executeQuery("$change;")
+                changes.forEach {
+                    logger.log(Level.DEBUG, it.query)
+                    TransactionManager.current().connection.executeQuery("${it.query};")
                 }
             }
 

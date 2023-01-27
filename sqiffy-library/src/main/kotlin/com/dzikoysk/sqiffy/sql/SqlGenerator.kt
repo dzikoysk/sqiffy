@@ -53,7 +53,7 @@ interface SqlGenerator {
 
 }
 
-class MySqlGenerator : SqlGenerator {
+abstract class GenericSqlGenerator : SqlGenerator {
 
     override fun createTable(name: String, properties: List<PropertyData>): String =
         """CREATE TABLE "$name" (${properties.joinToString(separator = ", ") { "\"${it.name}\" ${createDataType(it)}" }})"""
@@ -128,3 +128,7 @@ class MySqlGenerator : SqlGenerator {
         columns.joinToString(separator = ", ") { "\"$it\"" }
 
 }
+
+object MySqlGenerator : GenericSqlGenerator()
+
+object PostgreSqlGenerator : GenericSqlGenerator()
