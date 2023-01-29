@@ -1,3 +1,5 @@
+description = "Sqiffy Symbol Processor | KSP implementation of Sqiffy specification"
+
 dependencies {
     implementation(project(":sqiffy-specification"))
     implementation(project(":sqiffy-library"))

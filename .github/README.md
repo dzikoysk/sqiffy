@@ -1,4 +1,4 @@
-# Sqiffy 
+# Sqiffy [![CI](https://github.com/dzikoysk/sqiffy/actions/workflows/gradle.yml/badge.svg)](https://github.com/dzikoysk/sqiffy/actions/workflows/gradle.yml) ![Maven Central](https://img.shields.io/maven-central/v/com.dzikoysk.sqiffy/sqiffy-specification)
 
 **sqiffy** _(or just squiffy 🍹)_ - Experimental compound **SQ**L framework with type-safe DSL API generated at compile-time from scheme d**iff**.
 It is dedicated for applications, plugins & libraries responsible for internal database management.
@@ -27,6 +27,21 @@ Table of contents:
 * [ ] SQLite
 
 ### How to use
+
+Gradle _(kts)_:
+
+```kotlin
+plugins {
+    id("com.google.devtools.ksp") version "1.8.0-1.0.8"
+}
+
+dependencies {
+    val sqiffy = "0.0.1"
+    ksp("com.dzikoysk.sqiffy:sqiffy-symbol-processor:$sqiffy") // annotation processor
+    implementation("com.dzikoysk.sqiffy:sqiffy-specification:$sqiffy") // annotations & compile-time api
+    implementation("com.dzikoysk.sqiffy:sqiffy-library:$sqiffy") // core library & implementation
+}
+```
 
 Describe your table using versioned definitions:
 
