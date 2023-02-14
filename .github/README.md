@@ -5,7 +5,7 @@ It is dedicated for applications, plugins & libraries responsible for internal d
 
 Table of contents:
 1. [What it does?](#what-it-does)
-2. [Supports](#supports)
+2. [Supported](#supported)
 3. [How to use](#how-to-use)
 4. [Comparison with alternatives](#comparison-with-alternatives)
 
@@ -19,7 +19,7 @@ Table of contents:
    4. Validates schemes and bindings to eliminate typos and invalid operations
 3. When application starts, you can run set of prepared versioned migrations against current database state
 
-### Supports
+### Supported
 
 * [x] MySQL/MariaDB
 * [x] H2 (MySQL Mode)
@@ -36,7 +36,7 @@ plugins {
 }
 
 dependencies {
-    val sqiffy = "0.0.1"
+    val sqiffy = "1.0.0-alpha.6"
     ksp("com.dzikoysk.sqiffy:sqiffy-symbol-processor:$sqiffy") // annotation processor
     implementation("com.dzikoysk.sqiffy:sqiffy-specification:$sqiffy") // annotations & compile-time api
     implementation("com.dzikoysk.sqiffy:sqiffy-library:$sqiffy") // core library & implementation
