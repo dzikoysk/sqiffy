@@ -15,7 +15,7 @@ enum class DataType(val javaType: KClass<*>) {
     CHAR(Char::class),
     UUID_BINARY(UUID::class),
     @Deprecated("Might be removed")
-    UUID_VARCHAR(UUID::class),
+    UUID_VARCHAR(String::class),
     VARCHAR(String::class),
     BINARY(ByteArray::class),
     TEXT(String::class),

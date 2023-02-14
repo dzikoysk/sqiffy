@@ -130,7 +130,7 @@ class ExampleTest {
                 it[UserTable.displayName] = user.displayName
             }
 
-            println(user)
+            println("Inserted user: $user")
         }
 
         // read entity from database with generated exposed dsl bindings
@@ -147,7 +147,7 @@ class ExampleTest {
                 }
         }
 
-        println(userFromDatabase)
+        println("Loaded user: $userFromDatabase")
         sqiffy.close()
     }
 
