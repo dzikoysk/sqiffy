@@ -11,6 +11,7 @@ import com.dzikoysk.sqiffy.DataType.FLOAT
 import com.dzikoysk.sqiffy.DataType.INT
 import com.dzikoysk.sqiffy.DataType.TEXT
 import com.dzikoysk.sqiffy.DataType.TIMESTAMP
+import com.dzikoysk.sqiffy.DataType.UUID_BINARY
 import com.dzikoysk.sqiffy.DataType.UUID_VARCHAR
 import com.dzikoysk.sqiffy.DataType.VARCHAR
 import com.dzikoysk.sqiffy.DefinitionEntry
@@ -58,7 +59,8 @@ class ExposedTableGenerator(private val context: KspContext) {
                 CHAR -> "char(${q(name)})"
                 VARCHAR -> "varchar(${q(name)}, ${property.details})"
                 BINARY -> "binary(${q(name)})"
-                UUID_VARCHAR -> "uuid(${q(name)})"
+                UUID_BINARY -> "uuid(${q(name)})"
+                UUID_VARCHAR -> "varchar(${q(name)}, 36)"
                 TEXT -> "text(${q(name)})"
                 BLOB -> "blob(${q(name)})"
                 BOOLEAN -> "bool(${q(name)})"

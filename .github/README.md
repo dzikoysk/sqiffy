@@ -58,7 +58,7 @@ object Versions {
         name = "users_table",
         properties = [
             Property(name = "id", type = INT, autoincrement = true),
-            Property(name = "uuid", type = UUID_VARCHAR),
+            Property(name = "uuid", type = UUID_BINARY),
             Property(name = "name", type = VARCHAR, details = "12"),
         ],
         constraints = [

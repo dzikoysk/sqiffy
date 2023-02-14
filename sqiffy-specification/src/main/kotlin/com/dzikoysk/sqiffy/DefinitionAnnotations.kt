@@ -13,6 +13,8 @@ object NULL_CLASS
 enum class DataType(val javaType: KClass<*>) {
     NULL_TYPE(NULL_CLASS::class),
     CHAR(Char::class),
+    UUID_BINARY(UUID::class),
+    @Deprecated("Might be removed")
     UUID_VARCHAR(UUID::class),
     VARCHAR(String::class),
     BINARY(ByteArray::class),

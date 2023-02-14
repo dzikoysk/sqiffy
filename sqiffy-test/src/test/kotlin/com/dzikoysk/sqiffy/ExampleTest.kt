@@ -6,7 +6,7 @@ import com.dzikoysk.sqiffy.ConstraintDefinitionType.REMOVE_CONSTRAINT
 import com.dzikoysk.sqiffy.ConstraintType.FOREIGN_KEY
 import com.dzikoysk.sqiffy.ConstraintType.PRIMARY_KEY
 import com.dzikoysk.sqiffy.DataType.INT
-import com.dzikoysk.sqiffy.DataType.UUID_VARCHAR
+import com.dzikoysk.sqiffy.DataType.UUID_BINARY
 import com.dzikoysk.sqiffy.DataType.VARCHAR
 import com.dzikoysk.sqiffy.IndexDefinitionOperation.REMOVE_INDEX
 import com.dzikoysk.sqiffy.IndexType.INDEX
@@ -36,7 +36,7 @@ object Versions {
         name = "users_table",
         properties = [
             Property(name = "id", type = INT, autoincrement = true),
-            Property(name = "uuid", type = UUID_VARCHAR),
+            Property(name = "uuid", type = UUID_BINARY),
             Property(name = "name", type = VARCHAR, details = "12"),
         ],
         constraints = [
@@ -129,6 +129,8 @@ class ExampleTest {
                 it[UserTable.uuid] = user.uuid
                 it[UserTable.displayName] = user.displayName
             }
+
+            println(user)
         }
 
         // read entity from database with generated exposed dsl bindings

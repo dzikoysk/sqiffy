@@ -20,21 +20,19 @@ allprojects {
     apply(plugin = "signing")
 
     group = "com.dzikoysk.sqiffy"
-    version = "0.0.1"
+    version = "1.0.0-alpha.6"
 
     java {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+
         withJavadocJar()
         withSourcesJar()
     }
 
-    java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
     tasks.withType<KotlinCompile>().configureEach {
         kotlinOptions {
-            jvmTarget = "11"
+            jvmTarget = JavaVersion.VERSION_1_8.toString()
             languageVersion = "1.8"
             freeCompilerArgs = listOf(
                 "-Xjvm-default=all", // For generating default methods in interfaces
@@ -44,7 +42,7 @@ allprojects {
     }
 
     repositories {
-        maven("https://maven.reposilite.com/maven-central")
+        mavenCentral()
     }
 
     afterEvaluate {
@@ -56,8 +54,8 @@ allprojects {
                     publications {
                         create<MavenPublication>("library") {
                             pom {
-                                name.set(projectName)
-                                description.set(projectDescription)
+                                name.set(projectName.trim())
+                                description.set(projectDescription.trim())
                                 url.set("https://github.com/dzikoysk/sqiffy")
 
                                 licenses {

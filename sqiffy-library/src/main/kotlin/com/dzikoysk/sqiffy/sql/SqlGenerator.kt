@@ -11,6 +11,7 @@ import com.dzikoysk.sqiffy.DataType.FLOAT
 import com.dzikoysk.sqiffy.DataType.INT
 import com.dzikoysk.sqiffy.DataType.TEXT
 import com.dzikoysk.sqiffy.DataType.TIMESTAMP
+import com.dzikoysk.sqiffy.DataType.UUID_BINARY
 import com.dzikoysk.sqiffy.DataType.UUID_VARCHAR
 import com.dzikoysk.sqiffy.DataType.VARCHAR
 import com.dzikoysk.sqiffy.PropertyData
@@ -98,6 +99,7 @@ abstract class GenericSqlGenerator : SqlGenerator {
         with (property) {
             var dataType = when (type) {
                 CHAR -> "CHAR($details)"
+                UUID_BINARY -> "BINARY(16)"
                 UUID_VARCHAR -> "VARCHAR(36)"
                 VARCHAR -> "VARCHAR($details)"
                 BINARY -> "BINARY($details)"
