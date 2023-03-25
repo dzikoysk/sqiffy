@@ -36,7 +36,7 @@ plugins {
 }
 
 dependencies {
-    val sqiffy = "1.0.0-alpha.6"
+    val sqiffy = "1.0.0-alpha.7"
     ksp("com.dzikoysk.sqiffy:sqiffy-symbol-processor:$sqiffy") // annotation processor
     implementation("com.dzikoysk.sqiffy:sqiffy-specification:$sqiffy") // annotations & compile-time api
     implementation("com.dzikoysk.sqiffy:sqiffy-library:$sqiffy") // core library & implementation
