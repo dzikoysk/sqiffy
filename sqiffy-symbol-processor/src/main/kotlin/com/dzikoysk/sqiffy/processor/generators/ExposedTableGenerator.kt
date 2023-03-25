@@ -37,13 +37,22 @@ class ExposedTableGenerator(private val context: KspContext) {
                 TypeSpec.objectBuilder(definitionEntry.name + "Table")
                 .superclass(Table::class)
                 .addSuperclassConstructorParameter(CodeBlock.of(q(definitionEntry.definition.value.first().name)))
-                .also { typebuilder ->
+                .also { typeBuilder ->
                     properties.forEach {
-                        typebuilder.addProperty(
-                            PropertySpec.builder(it.name, Column::class.asTypeName().parameterizedBy(it.type!!.javaType.asTypeName()))
-                                .initializer(CodeBlock.builder().add(generateColumnInitializer(it)).build())
-                                .build()
-                        )
+                        val propertyType = Column::class
+                            .asTypeName()
+                            .parameterizedBy(
+                                it.type!!
+                                    .javaType
+                                    .asTypeName()
+                                    .copy(nullable = it.nullable)
+                            )
+
+                        val property = PropertySpec.builder(it.name, propertyType)
+                            .initializer(CodeBlock.builder().add(generateColumnInitializer(it)).build())
+                            .build()
+
+                        typeBuilder.addProperty(property)
                     }
                 }
                 .build()
@@ -53,8 +62,8 @@ class ExposedTableGenerator(private val context: KspContext) {
         tableClass.writeTo(context.codeGenerator, Dependencies(true))
     }
 
-    private fun generateColumnInitializer(property: PropertyData): String =
-        with (property) {
+    private fun generateColumnInitializer(property: PropertyData): String {
+        var baseColumn = with(property) {
             when (property.type) {
                 CHAR -> "char(${q(name)})"
                 VARCHAR -> "varchar(${q(name)}, ${property.details})"
@@ -73,6 +82,17 @@ class ExposedTableGenerator(private val context: KspContext) {
                 else -> throw UnsupportedOperationException("Unsupported property type used as column ($property)")
             }
         }
+
+        if (property.autoIncrement) {
+            // baseColumn += ".autoIncrement()" Exposed sucks and quotes our already quoted column name
+        }
+
+        if (property.nullable) {
+            baseColumn += ".nullable()"
+        }
+
+        return baseColumn
+    }
 
     private fun q(text: String): String =
         '"' + "\\\"" + text + "\\\"" + '"'

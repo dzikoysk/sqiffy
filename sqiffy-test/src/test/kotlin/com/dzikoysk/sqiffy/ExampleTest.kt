@@ -123,14 +123,13 @@ class ExampleTest {
                 displayName = "Sadge"
             )
 
-            UserTable.insert {
-                it[UserTable.id] = user.id
+            val response = UserTable.insert {
                 it[UserTable.name] = user.name
                 it[UserTable.uuid] = user.uuid
                 it[UserTable.displayName] = user.displayName
             }
 
-            println("Inserted user: $user")
+            println("Inserted user: $user / $response")
         }
 
         // read entity from database with generated exposed dsl bindings
