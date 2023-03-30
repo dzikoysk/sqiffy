@@ -1,5 +1,6 @@
 package com.dzikoysk.sqiffy.processor.generators
 
+import com.dzikoysk.sqiffy.DataType
 import com.dzikoysk.sqiffy.DefinitionEntry
 import com.dzikoysk.sqiffy.PropertyData
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
@@ -15,18 +16,27 @@ import com.squareup.kotlinpoet.ksp.writeTo
 class EntityGenerator(private val context: KspContext) {
 
     internal fun generateEntityClass(definitionEntry: DefinitionEntry, properties: List<PropertyData>) {
-        val entityClass = FileSpec.builder(definitionEntry.packageName, definitionEntry.name)
+        generateEntityClass(definitionEntry.packageName, definitionEntry.name, properties)
+
+        if (properties.any { it.type == DataType.SERIAL }) { // TODO: Replace with check for PK+Serial
+            val requiredProperties = properties.filter { it.type != DataType.SERIAL }
+            generateEntityClass(definitionEntry.packageName, "Unidentified" + definitionEntry.name, requiredProperties)
+        }
+    }
+
+    private fun generateEntityClass(packageName: String, name: String, properties: List<PropertyData>) {
+        val entityClass = FileSpec.builder(packageName, name)
             .addType(
-                TypeSpec.classBuilder(definitionEntry.name)
+                TypeSpec.classBuilder(name)
                     .addModifiers(DATA)
                     .primaryConstructor(
                         FunSpec.constructorBuilder()
-                        .also { constructorBuilder ->
-                            properties.forEach {
-                                constructorBuilder.addParameter(it.name, it.type!!.javaType.asTypeName().copy(nullable = it.nullable))
+                            .also { constructorBuilder ->
+                                properties.forEach {
+                                    constructorBuilder.addParameter(it.name, it.type!!.javaType.asTypeName().copy(nullable = it.nullable))
+                                }
                             }
-                        }
-                        .build()
+                            .build()
                     )
                     .also { typeBuilder ->
                         properties.forEach {

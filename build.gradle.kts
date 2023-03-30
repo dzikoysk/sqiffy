@@ -94,12 +94,12 @@ allprojects {
 
 subprojects {
     dependencies {
-        val exposed = "0.41.1"
-        api("org.jetbrains.exposed:exposed-core:$exposed")
-        api("org.jetbrains.exposed:exposed-dao:$exposed")
-        api("org.jetbrains.exposed:exposed-jdbc:$exposed")
-        api("org.jetbrains.exposed:exposed-java-time:$exposed")
-        api("net.dzikoysk:exposed-upsert:1.1.0")
+//        val exposed = "0.41.1"
+//        api("org.jetbrains.exposed:exposed-core:$exposed")
+//        api("org.jetbrains.exposed:exposed-dao:$exposed")
+//        api("org.jetbrains.exposed:exposed-jdbc:$exposed")
+//        api("org.jetbrains.exposed:exposed-java-time:$exposed")
+//        api("net.dzikoysk:exposed-upsert:1.1.0")
         api("com.zaxxer:HikariCP:5.0.1")
 
         val junit = "5.8.2"

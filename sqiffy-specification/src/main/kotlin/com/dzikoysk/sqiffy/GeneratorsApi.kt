@@ -17,7 +17,7 @@ class TypeDefinition(
 
 fun KClass<*>.toTypeDefinition(): TypeDefinition =
     TypeDefinition(
-        packageName = java.packageName,
+        packageName = java.`package`.name,
         qualifiedName = qualifiedName!!,
         simpleName = simpleName!!
     )

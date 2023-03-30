@@ -17,15 +17,13 @@ annotation class Property(
     val details: String = NULL_STRING,
     val rename: String = NULL_STRING,
     val nullable: Boolean = false,
-    val autoincrement: Boolean = false
 )
 
 data class PropertyData(
     val name: String,
     val type: DataType?,
-    val details: String?,
-    val nullable: Boolean,
-    val autoIncrement: Boolean,
+    val details: String? = null,
+    val nullable: Boolean = false,
 )
 
 fun Property.toPropertyData(): PropertyData =
@@ -34,5 +32,4 @@ fun Property.toPropertyData(): PropertyData =
         type = type.takeIf { it != NULL_TYPE },
         details = details.takeIf { it != NULL_STRING },
         nullable = nullable,
-        autoIncrement = autoincrement
     )

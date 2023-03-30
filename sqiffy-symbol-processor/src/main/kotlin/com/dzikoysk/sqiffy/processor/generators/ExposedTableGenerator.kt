@@ -1,33 +1,6 @@
 package com.dzikoysk.sqiffy.processor.generators
 
-import com.dzikoysk.sqiffy.DataType.BINARY
-import com.dzikoysk.sqiffy.DataType.BLOB
-import com.dzikoysk.sqiffy.DataType.BOOLEAN
-import com.dzikoysk.sqiffy.DataType.CHAR
-import com.dzikoysk.sqiffy.DataType.DATE
-import com.dzikoysk.sqiffy.DataType.DATETIME
-import com.dzikoysk.sqiffy.DataType.DOUBLE
-import com.dzikoysk.sqiffy.DataType.FLOAT
-import com.dzikoysk.sqiffy.DataType.INT
-import com.dzikoysk.sqiffy.DataType.TEXT
-import com.dzikoysk.sqiffy.DataType.TIMESTAMP
-import com.dzikoysk.sqiffy.DataType.UUID_BINARY
-import com.dzikoysk.sqiffy.DataType.UUID_VARCHAR
-import com.dzikoysk.sqiffy.DataType.VARCHAR
-import com.dzikoysk.sqiffy.DefinitionEntry
-import com.dzikoysk.sqiffy.PropertyData
-import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
-import com.google.devtools.ksp.processing.Dependencies
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.asTypeName
-import com.squareup.kotlinpoet.ksp.writeTo
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.Table
-
+/*
 class ExposedTableGenerator(private val context: KspContext) {
 
     internal fun generateTableClass(definitionEntry: DefinitionEntry, properties: List<PropertyData>) {
@@ -98,3 +71,5 @@ class ExposedTableGenerator(private val context: KspContext) {
         '"' + "\\\"" + text + "\\\"" + '"'
 
 }
+
+ */

@@ -1,9 +1,13 @@
 package com.dzikoysk.sqiffy.changelog
 
+import com.dzikoysk.sqiffy.DefinitionEntry
+
+typealias TableName = String
 typealias Version = String
 typealias Query = String
 
-class ChangeLog(
+data class ChangeLog(
+    val tables: Map<DefinitionEntry, TableName>,
     val changes: List<VersionChange>
 )
 

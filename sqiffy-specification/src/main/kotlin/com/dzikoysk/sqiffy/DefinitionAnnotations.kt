@@ -1,5 +1,7 @@
 package com.dzikoysk.sqiffy
 
+import com.dzikoysk.sqiffy.Kind.DIRECT
+import com.dzikoysk.sqiffy.Kind.INDIRECT
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -10,23 +12,32 @@ import kotlin.reflect.KClass
 const val NULL_STRING = "~NULL-STRING~"
 object NULL_CLASS
 
-enum class DataType(val javaType: KClass<*>) {
-    NULL_TYPE(NULL_CLASS::class),
-    CHAR(Char::class),
-    UUID_BINARY(UUID::class),
-    @Deprecated("Might be removed")
-    UUID_VARCHAR(String::class),
-    VARCHAR(String::class),
-    BINARY(ByteArray::class),
-    TEXT(String::class),
-    BLOB(ByteArray::class),
-    BOOLEAN(Boolean::class),
-    INT(Int::class),
-    FLOAT(Float::class),
-    DOUBLE(Double::class),
-    DATE(LocalDate::class),
-    DATETIME(LocalDateTime::class),
-    TIMESTAMP(Instant::class)
+enum class Kind {
+    DIRECT,
+    INDIRECT
+}
+
+enum class DataType(
+    val kind: Kind,
+    val javaType: KClass<*>
+) {
+    /* Special types */
+    NULL_TYPE(INDIRECT, NULL_CLASS::class),
+    UUID_TYPE(INDIRECT, UUID::class),
+    SERIAL(INDIRECT, Int::class),
+    /* Regular types */
+    CHAR(DIRECT, Char::class),
+    VARCHAR(DIRECT, String::class),
+    BINARY(DIRECT, ByteArray::class),
+    TEXT(DIRECT, String::class),
+    BLOB(DIRECT, ByteArray::class),
+    BOOLEAN(DIRECT, Boolean::class),
+    INT(DIRECT, Int::class),
+    FLOAT(DIRECT, Float::class),
+    DOUBLE(DIRECT, Double::class),
+    DATE(DIRECT, LocalDate::class),
+    DATETIME(DIRECT, LocalDateTime::class),
+    TIMESTAMP(DIRECT, Instant::class)
 }
 
 @Retention(RUNTIME)

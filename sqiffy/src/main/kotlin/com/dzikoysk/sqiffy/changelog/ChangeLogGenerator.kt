@@ -6,7 +6,6 @@ import com.dzikoysk.sqiffy.DefinitionVersion
 import com.dzikoysk.sqiffy.IndexData
 import com.dzikoysk.sqiffy.PropertyData
 import com.dzikoysk.sqiffy.TypeFactory
-import com.dzikoysk.sqiffy.sql.MySqlGenerator
 import com.dzikoysk.sqiffy.sql.SqlGenerator
 import java.util.ArrayDeque
 import java.util.Deque
@@ -36,19 +35,21 @@ internal data class ChangeLogGeneratorContext(
 
 }
 
-class ChangeLogGenerator(private val typeFactory: TypeFactory) {
+class ChangeLogGenerator(
+    private val sqlGenerator: SqlGenerator,
+    private val typeFactory: TypeFactory
+) {
 
     private val changeLogPropertiesGenerator = ChangeLogPropertiesGenerator()
     private val changeLogConstraintsGenerator = ChangeLogConstraintsGenerator()
     private val changeLogIndicesGenerator = ChangeLogIndicesGenerator()
-    private val sqlGenerator = MySqlGenerator
 
     fun generateChangeLog(vararg classes: KClass<*>): ChangeLog =
         generateChangeLog(
             classes.map {
                 DefinitionEntry(
                     source = it.qualifiedName!!,
-                    packageName = it.java.packageName,
+                    packageName = it.java.`package`.name,
                     name = it::class.simpleName!!.substringBeforeLast("Definition"),
                     definition = it.findAnnotation()!!
                 )
@@ -122,7 +123,12 @@ class ChangeLogGenerator(private val typeFactory: TypeFactory) {
                     changes = changes.map { Change(it) }
                 )
             }
-            .let { ChangeLog(it) }
+            .let { changes ->
+                ChangeLog(
+                    tables = states.mapValues { it.value.tableName },
+                    changes = changes
+                )
+            }
     }
 
 }

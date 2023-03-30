@@ -9,11 +9,13 @@ import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RENAME
 import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RETYPE
 import com.dzikoysk.sqiffy.TypeDefinition
 import com.dzikoysk.sqiffy.TypeFactory
+import com.dzikoysk.sqiffy.changelog.ChangeLog
 import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.dzikoysk.sqiffy.processor.generators.EntityGenerator
-import com.dzikoysk.sqiffy.processor.generators.ExposedTableGenerator
+import com.dzikoysk.sqiffy.processor.generators.TableNamesGenerator
 import com.dzikoysk.sqiffy.shared.replaceFirst
+import com.dzikoysk.sqiffy.sql.PostgreSqlGenerator
 import com.google.devtools.ksp.KSTypeNotPresentException
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
@@ -51,7 +53,7 @@ class SqiffySymbolProcessorProvider : SymbolProcessorProvider {
 internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
 
     private val entityGenerator = EntityGenerator(context)
-    private val exposedTableGenerator = ExposedTableGenerator(context)
+    private val tableNamesGenerator = TableNamesGenerator(context)
 
     @OptIn(KspExperimental::class)
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -68,16 +70,16 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
             .toList()
 
         if (tables.isNotEmpty()) {
-            val baseSchemeGenerator = ChangeLogGenerator(KspTypeFactory())
-            baseSchemeGenerator.generateChangeLog(tables)
-            generateDls(tables)
+            val baseSchemeGenerator = ChangeLogGenerator(PostgreSqlGenerator, KspTypeFactory())
+            val changeLog = baseSchemeGenerator.generateChangeLog(tables)
+            generateDls(changeLog)
         }
 
         return emptyList()
     }
 
-    private fun generateDls(tables: List<DefinitionEntry>) {
-        tables.forEach { table ->
+    private fun generateDls(changeLog: ChangeLog) {
+        changeLog.tables.forEach { (table, name) ->
             val properties = LinkedList<PropertyData>()
 
             for (definitionVersion in table.definition.value) {
@@ -86,8 +88,7 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
                         name = property.name,
                         type = property.type,
                         details = property.details,
-                        nullable = property.nullable,
-                        autoIncrement = property.autoincrement
+                        nullable = property.nullable
                     )
 
                     when (property.operation) {
@@ -100,7 +101,7 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
             }
 
             entityGenerator.generateEntityClass(table, properties)
-            exposedTableGenerator.generateTableClass(table, properties)
+            tableNamesGenerator.generateTableNamesClass(table, name, properties)
         }
     }
 
