@@ -1,12 +1,11 @@
 package com.dzikoysk.sqiffy.changelog
 
-import com.dzikoysk.sqiffy.ConstraintData
-import com.dzikoysk.sqiffy.DefinitionEntry
-import com.dzikoysk.sqiffy.DefinitionVersion
-import com.dzikoysk.sqiffy.IndexData
-import com.dzikoysk.sqiffy.PropertyData
-import com.dzikoysk.sqiffy.TypeFactory
-import com.dzikoysk.sqiffy.sql.SqlGenerator
+import com.dzikoysk.sqiffy.definition.ConstraintData
+import com.dzikoysk.sqiffy.definition.DefinitionEntry
+import com.dzikoysk.sqiffy.definition.DefinitionVersion
+import com.dzikoysk.sqiffy.definition.IndexData
+import com.dzikoysk.sqiffy.definition.PropertyData
+import com.dzikoysk.sqiffy.definition.TypeFactory
 import java.util.ArrayDeque
 import java.util.Deque
 import kotlin.reflect.KClass
@@ -23,7 +22,7 @@ internal data class TableAnalysisState(
 
 internal data class ChangeLogGeneratorContext(
     val typeFactory: TypeFactory,
-    val sqlGenerator: SqlGenerator,
+    val sqlSchemeGenerator: SqlSchemeGenerator,
     val currentScheme: MutableList<TableAnalysisState>,
     val changeToApply: DefinitionVersion,
     val changes: MutableList<String> = mutableListOf(),
@@ -31,12 +30,12 @@ internal data class ChangeLogGeneratorContext(
 ) {
 
     fun registerChange(change: String) = changes.add(change)
-    fun registerChange(supplier: SqlGenerator.() -> String) = registerChange(supplier.invoke(sqlGenerator))
+    fun registerChange(supplier: SqlSchemeGenerator.() -> String) = registerChange(supplier.invoke(sqlSchemeGenerator))
 
 }
 
 class ChangeLogGenerator(
-    private val sqlGenerator: SqlGenerator,
+    private val sqlSchemeGenerator: SqlSchemeGenerator,
     private val typeFactory: TypeFactory
 ) {
 
@@ -88,7 +87,7 @@ class ChangeLogGenerator(
 
                 val baseContext = ChangeLogGeneratorContext(
                     typeFactory = typeFactory,
-                    sqlGenerator = sqlGenerator,
+                    sqlSchemeGenerator = sqlSchemeGenerator,
                     currentScheme = currentScheme,
                     changeToApply = state.changesToApply.poll(),
                     state = state

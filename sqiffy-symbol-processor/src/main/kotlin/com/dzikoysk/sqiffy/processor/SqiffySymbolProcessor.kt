@@ -1,21 +1,22 @@
 package com.dzikoysk.sqiffy.processor
 
-import com.dzikoysk.sqiffy.Definition
-import com.dzikoysk.sqiffy.DefinitionEntry
-import com.dzikoysk.sqiffy.PropertyData
-import com.dzikoysk.sqiffy.PropertyDefinitionOperation.ADD
-import com.dzikoysk.sqiffy.PropertyDefinitionOperation.REMOVE
-import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RENAME
-import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RETYPE
-import com.dzikoysk.sqiffy.TypeDefinition
-import com.dzikoysk.sqiffy.TypeFactory
+import com.dzikoysk.sqiffy.definition.Definition
+import com.dzikoysk.sqiffy.definition.DefinitionEntry
+import com.dzikoysk.sqiffy.definition.PropertyData
+import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
+import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.REMOVE
+import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RENAME
+import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RETYPE
+import com.dzikoysk.sqiffy.definition.TypeDefinition
+import com.dzikoysk.sqiffy.definition.TypeFactory
 import com.dzikoysk.sqiffy.changelog.ChangeLog
 import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
+import com.dzikoysk.sqiffy.processor.generators.DslTableGenerator
 import com.dzikoysk.sqiffy.processor.generators.EntityGenerator
 import com.dzikoysk.sqiffy.processor.generators.TableNamesGenerator
 import com.dzikoysk.sqiffy.shared.replaceFirst
-import com.dzikoysk.sqiffy.sql.PostgreSqlGenerator
+import com.dzikoysk.sqiffy.changelog.PostgreSqlSchemeGenerator
 import com.google.devtools.ksp.KSTypeNotPresentException
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
@@ -54,6 +55,7 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
 
     private val entityGenerator = EntityGenerator(context)
     private val tableNamesGenerator = TableNamesGenerator(context)
+    private val dslTableGenerator = DslTableGenerator(context)
 
     @OptIn(KspExperimental::class)
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -70,7 +72,7 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
             .toList()
 
         if (tables.isNotEmpty()) {
-            val baseSchemeGenerator = ChangeLogGenerator(PostgreSqlGenerator, KspTypeFactory())
+            val baseSchemeGenerator = ChangeLogGenerator(PostgreSqlSchemeGenerator, KspTypeFactory())
             val changeLog = baseSchemeGenerator.generateChangeLog(tables)
             generateDls(changeLog)
         }
@@ -102,6 +104,7 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
 
             entityGenerator.generateEntityClass(table, properties)
             tableNamesGenerator.generateTableNamesClass(table, name, properties)
+            dslTableGenerator.generateTableClass(table, properties)
         }
     }
 

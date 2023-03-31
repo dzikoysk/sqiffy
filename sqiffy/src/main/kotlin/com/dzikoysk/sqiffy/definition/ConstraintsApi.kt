@@ -1,5 +1,8 @@
-package com.dzikoysk.sqiffy
+package com.dzikoysk.sqiffy.definition
 
+import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.ADD_CONSTRAINT
+import com.dzikoysk.sqiffy.definition.ConstraintType.FOREIGN_KEY
+import com.dzikoysk.sqiffy.definition.ConstraintType.PRIMARY_KEY
 import kotlin.reflect.KClass
 
 enum class ConstraintDefinitionType {
@@ -14,7 +17,7 @@ enum class ConstraintType {
 
 @Target()
 annotation class Constraint(
-    val definitionType: ConstraintDefinitionType = ConstraintDefinitionType.ADD_CONSTRAINT,
+    val definitionType: ConstraintDefinitionType = ADD_CONSTRAINT,
     val type: ConstraintType,
     val name: String,
     val on: String = NULL_STRING,
@@ -32,7 +35,7 @@ data class PrimaryKey(
     override val name: String,
     override val on: String
 ) : ConstraintData {
-    override val type: ConstraintType = ConstraintType.PRIMARY_KEY
+    override val type: ConstraintType = PRIMARY_KEY
 }
 
 data class ForeignKey(
@@ -41,5 +44,5 @@ data class ForeignKey(
     val referenced: TypeDefinition,
     val references: String
 ) : ConstraintData {
-    override val type: ConstraintType = ConstraintType.FOREIGN_KEY
+    override val type: ConstraintType = FOREIGN_KEY
 }

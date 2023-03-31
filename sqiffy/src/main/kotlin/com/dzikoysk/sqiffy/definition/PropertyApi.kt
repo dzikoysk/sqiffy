@@ -1,6 +1,7 @@
-package com.dzikoysk.sqiffy
+package com.dzikoysk.sqiffy.definition
 
-import com.dzikoysk.sqiffy.DataType.NULL_TYPE
+import com.dzikoysk.sqiffy.definition.DataType.NULL_TYPE
+import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
 
 enum class PropertyDefinitionOperation {
     ADD,
@@ -11,7 +12,7 @@ enum class PropertyDefinitionOperation {
 
 @Target()
 annotation class Property(
-    val operation: PropertyDefinitionOperation = PropertyDefinitionOperation.ADD,
+    val operation: PropertyDefinitionOperation = ADD,
     val name: String,
     val type: DataType = NULL_TYPE,
     val details: String = NULL_STRING,

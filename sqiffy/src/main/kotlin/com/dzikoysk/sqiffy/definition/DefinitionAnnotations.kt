@@ -1,7 +1,7 @@
-package com.dzikoysk.sqiffy
+package com.dzikoysk.sqiffy.definition
 
-import com.dzikoysk.sqiffy.Kind.DIRECT
-import com.dzikoysk.sqiffy.Kind.INDIRECT
+import com.dzikoysk.sqiffy.definition.Kind.DIRECT
+import com.dzikoysk.sqiffy.definition.Kind.INDIRECT
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -30,9 +30,9 @@ enum class DataType(
     VARCHAR(DIRECT, String::class),
     BINARY(DIRECT, ByteArray::class),
     TEXT(DIRECT, String::class),
-    BLOB(DIRECT, ByteArray::class),
     BOOLEAN(DIRECT, Boolean::class),
     INT(DIRECT, Int::class),
+    LONG(DIRECT, Long::class),
     FLOAT(DIRECT, Float::class),
     DOUBLE(DIRECT, Double::class),
     DATE(DIRECT, LocalDate::class),

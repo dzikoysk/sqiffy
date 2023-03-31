@@ -1,7 +1,7 @@
 package com.dzikoysk.sqiffy.processor.generators
 
-import com.dzikoysk.sqiffy.DefinitionEntry
-import com.dzikoysk.sqiffy.PropertyData
+import com.dzikoysk.sqiffy.definition.DefinitionEntry
+import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.google.devtools.ksp.processing.Dependencies
 import com.squareup.kotlinpoet.FileSpec

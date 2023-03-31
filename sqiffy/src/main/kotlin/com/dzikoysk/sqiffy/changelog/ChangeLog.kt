@@ -1,6 +1,6 @@
 package com.dzikoysk.sqiffy.changelog
 
-import com.dzikoysk.sqiffy.DefinitionEntry
+import com.dzikoysk.sqiffy.definition.DefinitionEntry
 
 typealias TableName = String
 typealias Version = String

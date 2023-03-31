@@ -1,22 +1,10 @@
-package com.dzikoysk.sqiffy.sql
+package com.dzikoysk.sqiffy.changelog
 
-import com.dzikoysk.sqiffy.DataType.BINARY
-import com.dzikoysk.sqiffy.DataType.BLOB
-import com.dzikoysk.sqiffy.DataType.BOOLEAN
-import com.dzikoysk.sqiffy.DataType.CHAR
-import com.dzikoysk.sqiffy.DataType.DATE
-import com.dzikoysk.sqiffy.DataType.DATETIME
-import com.dzikoysk.sqiffy.DataType.DOUBLE
-import com.dzikoysk.sqiffy.DataType.FLOAT
-import com.dzikoysk.sqiffy.DataType.INT
-import com.dzikoysk.sqiffy.DataType.SERIAL
-import com.dzikoysk.sqiffy.DataType.TEXT
-import com.dzikoysk.sqiffy.DataType.TIMESTAMP
-import com.dzikoysk.sqiffy.DataType.UUID_TYPE
-import com.dzikoysk.sqiffy.DataType.VARCHAR
-import com.dzikoysk.sqiffy.PropertyData
+import com.dzikoysk.sqiffy.definition.DataType
+import com.dzikoysk.sqiffy.definition.PropertyData
+import com.dzikoysk.sqiffy.shared.multiline
 
-interface SqlGenerator {
+interface SqlSchemeGenerator {
 
     /* Table */
 
@@ -52,28 +40,20 @@ interface SqlGenerator {
 
     fun removeIndex(tableName: String, name: String): String
 
-    /* Queries */
-
-    fun createSelectQuery(tableName: String, columns: List<String>, where: String? = null): String
-
-    fun createInsertQuery(tableName: String, columns: List<String>): String
-
-    fun createUpdateQuery(tableName: String, columns: List<String>, where: String? = null): String
-
 }
 
-object MySqlGenerator : GenericSqlGenerator() {
+object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
 
     override fun createDataType(property: PropertyData): String =
         when (property.type) {
-            SERIAL -> "INT AUTO_INCREMENT"
-            UUID_TYPE -> "VARCHAR(36)"
+            DataType.SERIAL -> "INT AUTO_INCREMENT"
+            DataType.UUID_TYPE -> "VARCHAR(36)"
             else -> createRegularDataType(property)
         }
 
 }
 
-object PostgreSqlGenerator : GenericSqlGenerator() {
+object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
 
     override fun retypeColumn(tableName: String, property: PropertyData): String =
         multiline("""
@@ -91,14 +71,14 @@ object PostgreSqlGenerator : GenericSqlGenerator() {
 
     override fun createDataType(property: PropertyData): String =
         when (property.type) {
-            SERIAL -> "SERIAL"
-            UUID_TYPE -> "UUID"
+            DataType.SERIAL -> "SERIAL"
+            DataType.UUID_TYPE -> "UUID"
             else -> createRegularDataType(property)
         }
 
 }
 
-abstract class GenericSqlGenerator : SqlGenerator {
+abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
 
     /* Table */
 
@@ -147,28 +127,6 @@ abstract class GenericSqlGenerator : SqlGenerator {
     override fun removeIndex(tableName: String, name: String): String =
         """DROP INDEX "$name" ON "$tableName""""
 
-    /* Queries */
-
-    override fun createSelectQuery(tableName: String, columns: List<String>, where: String?): String =
-        multiline("""
-            SELECT ${columns.joinToString(separator = ", ") { it.toQuoted() }}
-            FROM "$tableName"
-            ${where?.let { "WHERE $it" } ?: ""}
-        """)
-
-    override fun createInsertQuery(tableName: String, columns: List<String>): String =
-        multiline("""
-            INSERT INTO "$tableName" (${columns.joinToString(separator = ", ") { it.toQuoted() }})
-            VALUES (${columns.joinToString(separator = ", ") { ":$it" }})
-        """)
-
-    override fun createUpdateQuery(tableName: String, columns: List<String>, where: String?): String =
-        multiline("""
-            UPDATE "$tableName"
-            SET ${columns.joinToString(separator = ", ") { it.toQuoted() + " = :$it" }}
-            ${where?.let { "WHERE $it" } ?: ""}
-        """)
-
     /* Utilities */
 
     abstract fun createDataType(property: PropertyData): String
@@ -176,18 +134,18 @@ abstract class GenericSqlGenerator : SqlGenerator {
     protected fun createRegularDataType(property: PropertyData): String =
         with (property) {
             when (type) {
-                CHAR -> "CHAR($details)"
-                VARCHAR -> "VARCHAR($details)"
-                BINARY -> "BINARY($details)"
-                TEXT -> "TEXT"
-                BLOB -> "BLOB"
-                BOOLEAN -> "BOOLEAN"
-                INT -> "INT"
-                FLOAT -> "FLOAT"
-                DOUBLE -> "DOUBLE"
-                DATE -> "DATE"
-                DATETIME -> "DATETIME"
-                TIMESTAMP -> "TIMESTAMP"
+            DataType.CHAR -> "CHAR($details)"
+                DataType.VARCHAR -> "VARCHAR($details)"
+                DataType.BINARY -> "BINARY($details)"
+                DataType.TEXT -> "TEXT"
+                DataType.BOOLEAN -> "BOOLEAN"
+                DataType.INT -> "INT"
+                DataType.LONG -> "BIGINT"
+                DataType.FLOAT -> "FLOAT"
+                DataType.DOUBLE -> "DOUBLE"
+                DataType.DATE -> "DATE"
+                DataType.DATETIME -> "DATETIME"
+                DataType.TIMESTAMP -> "TIMESTAMP"
                 else -> throw UnsupportedOperationException("Cannot create data type based on $property")
             }
         }
@@ -200,7 +158,6 @@ abstract class GenericSqlGenerator : SqlGenerator {
                 dataType += " NOT NULL"
             }
 
-
             dataType
         }
 
@@ -209,8 +166,4 @@ abstract class GenericSqlGenerator : SqlGenerator {
 
 }
 
-private fun String.toQuoted(): String =
-    "\"$this\""
 
-private fun multiline(text: String): String =
-    text.trimIndent().replace("\n", " ")

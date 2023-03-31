@@ -1,4 +1,6 @@
-package com.dzikoysk.sqiffy
+package com.dzikoysk.sqiffy.definition
+
+import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.ADD_INDEX
 
 enum class IndexDefinitionOperation {
     ADD_INDEX,
@@ -12,7 +14,7 @@ enum class IndexType {
 
 @Target()
 annotation class Index(
-    val operation: IndexDefinitionOperation = IndexDefinitionOperation.ADD_INDEX,
+    val operation: IndexDefinitionOperation = ADD_INDEX,
     val type: IndexType,
     val name: String,
     val columns: Array<String> = []

@@ -1,13 +1,13 @@
 package com.dzikoysk.sqiffy.changelog
 
-import com.dzikoysk.sqiffy.DataType.NULL_TYPE
-import com.dzikoysk.sqiffy.NULL_STRING
-import com.dzikoysk.sqiffy.PropertyDefinitionOperation.ADD
-import com.dzikoysk.sqiffy.PropertyDefinitionOperation.REMOVE
-import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RENAME
-import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RETYPE
+import com.dzikoysk.sqiffy.definition.DataType.NULL_TYPE
+import com.dzikoysk.sqiffy.definition.NULL_STRING
+import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
+import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.REMOVE
+import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RENAME
+import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RETYPE
 import com.dzikoysk.sqiffy.shared.replaceFirst
-import com.dzikoysk.sqiffy.toPropertyData
+import com.dzikoysk.sqiffy.definition.toPropertyData
 
 class ChangeLogPropertiesGenerator {
 

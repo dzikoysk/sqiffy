@@ -1,4 +1,4 @@
-package com.dzikoysk.sqiffy
+package com.dzikoysk.sqiffy.definition
 
 import kotlin.reflect.KClass
 

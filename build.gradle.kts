@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.8.0"
+    kotlin("jvm") version "1.8.10"
     `java-library`
     application
     signing
@@ -20,7 +20,7 @@ allprojects {
     apply(plugin = "signing")
 
     group = "com.dzikoysk.sqiffy"
-    version = "1.0.0-alpha.7"
+    version = "1.0.0-alpha.9"
 
     java {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -94,12 +94,6 @@ allprojects {
 
 subprojects {
     dependencies {
-//        val exposed = "0.41.1"
-//        api("org.jetbrains.exposed:exposed-core:$exposed")
-//        api("org.jetbrains.exposed:exposed-dao:$exposed")
-//        api("org.jetbrains.exposed:exposed-jdbc:$exposed")
-//        api("org.jetbrains.exposed:exposed-java-time:$exposed")
-//        api("net.dzikoysk:exposed-upsert:1.1.0")
         api("com.zaxxer:HikariCP:5.0.1")
 
         val junit = "5.8.2"

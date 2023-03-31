@@ -1,10 +1,10 @@
 package com.dzikoysk.sqiffy.changelog
 
-import com.dzikoysk.sqiffy.IndexData
-import com.dzikoysk.sqiffy.IndexDefinitionOperation.ADD_INDEX
-import com.dzikoysk.sqiffy.IndexDefinitionOperation.REMOVE_INDEX
-import com.dzikoysk.sqiffy.IndexType.INDEX
-import com.dzikoysk.sqiffy.IndexType.UNIQUE_INDEX
+import com.dzikoysk.sqiffy.definition.IndexData
+import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.ADD_INDEX
+import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.REMOVE_INDEX
+import com.dzikoysk.sqiffy.definition.IndexType.INDEX
+import com.dzikoysk.sqiffy.definition.IndexType.UNIQUE_INDEX
 
 internal class ChangeLogIndicesGenerator {
 

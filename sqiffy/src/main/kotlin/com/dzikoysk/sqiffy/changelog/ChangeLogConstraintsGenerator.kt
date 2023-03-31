@@ -1,14 +1,14 @@
 package com.dzikoysk.sqiffy.changelog
 
-import com.dzikoysk.sqiffy.Constraint
-import com.dzikoysk.sqiffy.ConstraintDefinitionType.ADD_CONSTRAINT
-import com.dzikoysk.sqiffy.ConstraintDefinitionType.REMOVE_CONSTRAINT
-import com.dzikoysk.sqiffy.ConstraintType.FOREIGN_KEY
-import com.dzikoysk.sqiffy.ConstraintType.PRIMARY_KEY
-import com.dzikoysk.sqiffy.ForeignKey
-import com.dzikoysk.sqiffy.NULL_CLASS
-import com.dzikoysk.sqiffy.NULL_STRING
-import com.dzikoysk.sqiffy.PrimaryKey
+import com.dzikoysk.sqiffy.definition.Constraint
+import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.ADD_CONSTRAINT
+import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.REMOVE_CONSTRAINT
+import com.dzikoysk.sqiffy.definition.ConstraintType.FOREIGN_KEY
+import com.dzikoysk.sqiffy.definition.ConstraintType.PRIMARY_KEY
+import com.dzikoysk.sqiffy.definition.ForeignKey
+import com.dzikoysk.sqiffy.definition.NULL_CLASS
+import com.dzikoysk.sqiffy.definition.NULL_STRING
+import com.dzikoysk.sqiffy.definition.PrimaryKey
 
 internal class ChangeLogConstraintsGenerator {
 

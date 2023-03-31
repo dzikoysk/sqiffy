@@ -1,20 +1,25 @@
 package com.dzikoysk.sqiffy
 
-import com.dzikoysk.sqiffy.ConstraintDefinitionType.REMOVE_CONSTRAINT
-import com.dzikoysk.sqiffy.ConstraintType.FOREIGN_KEY
-import com.dzikoysk.sqiffy.ConstraintType.PRIMARY_KEY
-import com.dzikoysk.sqiffy.DataType.INT
-import com.dzikoysk.sqiffy.DataType.SERIAL
-import com.dzikoysk.sqiffy.DataType.UUID_TYPE
-import com.dzikoysk.sqiffy.DataType.VARCHAR
-import com.dzikoysk.sqiffy.IndexDefinitionOperation.REMOVE_INDEX
-import com.dzikoysk.sqiffy.IndexType.INDEX
-import com.dzikoysk.sqiffy.IndexType.UNIQUE_INDEX
-import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RENAME
-import com.dzikoysk.sqiffy.PropertyDefinitionOperation.RETYPE
 import com.dzikoysk.sqiffy.UserAndGuildScenarioVersions.V_1_0_0
 import com.dzikoysk.sqiffy.UserAndGuildScenarioVersions.V_1_0_1
 import com.dzikoysk.sqiffy.UserAndGuildScenarioVersions.V_1_0_2
+import com.dzikoysk.sqiffy.definition.Constraint
+import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.REMOVE_CONSTRAINT
+import com.dzikoysk.sqiffy.definition.ConstraintType.FOREIGN_KEY
+import com.dzikoysk.sqiffy.definition.ConstraintType.PRIMARY_KEY
+import com.dzikoysk.sqiffy.definition.DataType.INT
+import com.dzikoysk.sqiffy.definition.DataType.SERIAL
+import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
+import com.dzikoysk.sqiffy.definition.DataType.VARCHAR
+import com.dzikoysk.sqiffy.definition.Definition
+import com.dzikoysk.sqiffy.definition.DefinitionVersion
+import com.dzikoysk.sqiffy.definition.Index
+import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.REMOVE_INDEX
+import com.dzikoysk.sqiffy.definition.IndexType.INDEX
+import com.dzikoysk.sqiffy.definition.IndexType.UNIQUE_INDEX
+import com.dzikoysk.sqiffy.definition.Property
+import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RENAME
+import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RETYPE
 
 object UserAndGuildScenarioVersions {
     const val V_1_0_0 = "1.0.0"
