@@ -1,22 +1,24 @@
-package com.dzikoysk.sqiffy.dsl
+package com.dzikoysk.sqiffy.dsl.statements
 
 import com.dzikoysk.sqiffy.SqiffyDatabase
-import com.dzikoysk.sqiffy.shared.get
-import org.jdbi.v3.core.kotlin.mapTo
+import com.dzikoysk.sqiffy.dsl.Column
+import com.dzikoysk.sqiffy.dsl.Expression
+import com.dzikoysk.sqiffy.dsl.ParameterAllocator
+import com.dzikoysk.sqiffy.dsl.Statement
+import com.dzikoysk.sqiffy.dsl.Table
 import org.jdbi.v3.core.result.ResultIterable
-import org.jdbi.v3.core.result.RowView
 import org.jdbi.v3.core.statement.Query
 import org.slf4j.event.Level
 
-class SelectBuilder(
+class SelectStatementBuilder(
     val database: SqiffyDatabase,
     val from: Table,
     val where: Expression<Boolean>? = null
-) {
+) : Statement<Query> {
 
     private var slice: List<Column<*>> = from.getColumns()
 
-    fun <R> execute(mapper: (Query) -> ResultIterable<R>): Sequence<R> =
+    override fun <R> execute(mapper: (Query) -> ResultIterable<R>): Sequence<R> =
         database.getJdbi().withHandle<Sequence<R>, Exception> { handle ->
             val allocator = ParameterAllocator()
 
@@ -28,7 +30,6 @@ class SelectBuilder(
             }
 
             val query = database.sqlQueryGenerator.createSelectQuery(
-                allocator = allocator,
                 tableName = from.getTableName(),
                 selected = slice.map { it.name },
                 where = expression?.first
@@ -49,24 +50,5 @@ class SelectBuilder(
                 .asSequence()
         }
 
-    fun <R> map(mapper: (Row) -> R): Sequence<R> =
-        execute { query ->
-            query.map { view ->
-                mapper(
-                    Row(view = view)
-                )
-            }
-        }
 
-    inline fun <reified R : Any> mapTo(): Sequence<R> =
-        execute { query ->
-            query.mapTo()
-        }
-
-}
-
-class Row(val view: RowView) {
-    operator fun <T> get(column: Column<T>): T {
-        return view[column]
-    }
 }

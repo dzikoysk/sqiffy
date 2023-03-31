@@ -1,6 +1,5 @@
 package com.dzikoysk.sqiffy.dsl
 
-import com.dzikoysk.sqiffy.SqiffyDatabase
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -35,8 +34,6 @@ abstract class Table(name: String) {
     protected fun date(name: String): Column<LocalDate> = column(name, LocalDate::class)
     protected fun datetime(name: String): Column<LocalDateTime> = column(name, LocalDateTime::class)
     protected fun timestamp(name: String): Column<Instant> = column(name, Instant::class)
-
-    fun select(database: SqiffyDatabase, where: () -> Expression<Boolean>): SelectBuilder = SelectBuilder(database, this, where.invoke())
 
 }
 

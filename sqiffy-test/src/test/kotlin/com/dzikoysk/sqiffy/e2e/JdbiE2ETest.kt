@@ -6,7 +6,7 @@ import com.dzikoysk.sqiffy.UnidentifiedUser
 import com.dzikoysk.sqiffy.User
 import com.dzikoysk.sqiffy.UserTable
 import com.dzikoysk.sqiffy.UserTableNames
-import com.dzikoysk.sqiffy.dsl.eq
+import com.dzikoysk.sqiffy.dsl.ParameterAllocator
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.shared.H2Mode.MYSQL
 import com.dzikoysk.sqiffy.shared.H2Mode.POSTGRESQL
@@ -14,19 +14,20 @@ import com.dzikoysk.sqiffy.shared.createH2DataSource
 import com.dzikoysk.sqiffy.shared.get
 import com.dzikoysk.sqiffy.shared.toQuoted
 import com.zaxxer.hikari.HikariDataSource
+import org.assertj.core.api.Assertions.assertThat
 import org.jdbi.v3.core.kotlin.mapTo
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
-class H2MySQLModeE2ETest : E2ETest() {
+class H2MySQLModeJdbiE2ETest : JdbiE2ETest() {
     override fun createDataSource(): HikariDataSource = createH2DataSource(MYSQL)
 }
 
-class H2PostgreSQLModeE2ETest : E2ETest() {
+class H2PostgreSQLModeJdbiE2ETest : JdbiE2ETest() {
     override fun createDataSource(): HikariDataSource = createH2DataSource(POSTGRESQL)
 }
 
-abstract class E2ETest : SqiffyE2ETestSpecification() {
+abstract class JdbiE2ETest : SqiffyE2ETestSpecification() {
 
     @Test
     fun `should insert and select entity`() {
@@ -34,19 +35,20 @@ abstract class E2ETest : SqiffyE2ETestSpecification() {
             val userToInsert = UnidentifiedUser(
                 name = "Panda",
                 uuid = UUID.randomUUID(),
-                displayName = "Sadge"
+                displayName = "Only Panda"
             )
 
             handle
                 .createUpdate(
                     database.sqlQueryGenerator.createInsertQuery(
+                        allocator = ParameterAllocator(),
                         tableName = UserTableNames.TABLE,
                         columns = listOf(UserTableNames.UUID, UserTableNames.NAME, UserTableNames.DISPLAYNAME)
                     ).first
                 )
-                .bind(UserTableNames.UUID, userToInsert.uuid)
-                .bind(UserTableNames.NAME, userToInsert.name)
-                .bind(UserTableNames.DISPLAYNAME, userToInsert.displayName)
+                .bind("0", userToInsert.uuid)
+                .bind("1", userToInsert.name)
+                .bind("2", userToInsert.displayName)
                 .executeAndReturnGeneratedKeys()
                 .map { row -> row[UserTable.id] }
                 .first()
@@ -69,18 +71,10 @@ abstract class E2ETest : SqiffyE2ETestSpecification() {
                 .firstOrNull()
         }
 
-        val userFromDatabaseUsingDsl = database.select(UserTable) { UserTable.uuid eq insertedUser.uuid }
-            .map {
-                User(
-                    id = it[UserTable.id],
-                    name = it[UserTable.name],
-                    uuid = it[UserTable.uuid],
-                    displayName = it[UserTable.displayName]
-                )
-            }
-            .firstOrNull()
-
-        println("Loaded user: $userFromDatabaseUsingRawJdbi / $userFromDatabaseUsingDsl")
+        println("Loaded user: $userFromDatabaseUsingRawJdbi")
+        assertThat(insertedUser).isNotNull
+        assertThat(userFromDatabaseUsingRawJdbi).isNotNull
+        assertThat(userFromDatabaseUsingRawJdbi).isEqualTo(insertedUser)
     }
 
 }

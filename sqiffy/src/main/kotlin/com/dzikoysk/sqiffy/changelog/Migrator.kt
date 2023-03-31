@@ -32,7 +32,6 @@ class Migrator(private val database: SqiffyDatabase) {
             val currentVersion = transaction
                 .select(
                     database.sqlQueryGenerator.createSelectQuery(
-                        allocator = ParameterAllocator(),
                         tableName = tableName,
                         selected = listOf(propertyColumn).map { it.name },
                         where = """"${propertyColumn.name}" = :version"""
@@ -82,11 +81,12 @@ class Migrator(private val database: SqiffyDatabase) {
                     transaction
                         .createUpdate(
                             database.sqlQueryGenerator.createInsertQuery(
+                                allocator = ParameterAllocator(),
                                 tableName = tableName,
                                 columns = listOf(propertyColumn).map { it.name },
                             ).first
                         )
-                        .bind(propertyColumn.name, latestVersion)
+                        .bind("0", latestVersion)
                         .execute()
                 else ->
                     transaction
@@ -95,7 +95,8 @@ class Migrator(private val database: SqiffyDatabase) {
                                 tableName = tableName,
                                 columns = listOf(propertyColumn).map { it.name },
                             ).first
-                        ).bind(propertyColumn.name, latestVersion)
+                        )
+                        .bind(propertyColumn.name, latestVersion)
                         .execute()
             }
         }
