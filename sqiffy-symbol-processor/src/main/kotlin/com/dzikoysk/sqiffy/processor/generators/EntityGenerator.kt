@@ -5,6 +5,7 @@ import com.dzikoysk.sqiffy.DefinitionEntry
 import com.dzikoysk.sqiffy.PropertyData
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.google.devtools.ksp.processing.Dependencies
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier.DATA
@@ -16,16 +17,44 @@ import com.squareup.kotlinpoet.ksp.writeTo
 class EntityGenerator(private val context: KspContext) {
 
     internal fun generateEntityClass(definitionEntry: DefinitionEntry, properties: List<PropertyData>) {
-        generateEntityClass(definitionEntry.packageName, definitionEntry.name, properties)
+        val entityClass = generateEntityClass(definitionEntry.packageName, definitionEntry.name, properties).build()
+        val entityClassName = ClassName(entityClass.packageName, entityClass.name)
+        entityClass.writeTo(context.codeGenerator, Dependencies(true))
 
         if (properties.any { it.type == DataType.SERIAL }) { // TODO: Replace with check for PK+Serial
+            val serialProperties = properties.filter { it.type == DataType.SERIAL }
             val requiredProperties = properties.filter { it.type != DataType.SERIAL }
-            generateEntityClass(definitionEntry.packageName, "Unidentified" + definitionEntry.name, requiredProperties)
+
+            val unidentifiedEntityBuilder = generateEntityClass(
+                packageName = definitionEntry.packageName,
+                name = "Unidentified" + definitionEntry.name,
+                properties = requiredProperties,
+                extra = { typeSpec ->
+                    typeSpec.addFunction(
+                        FunSpec.builder("withId")
+                            .also { functionBuilder ->
+                                serialProperties.forEach {
+                                    functionBuilder.addParameter(it.name, it.type!!.javaType)
+                                }
+                            }
+                            .returns(entityClassName)
+                            .addStatement(
+                                "return %T(%L, %L)",
+                                entityClassName,
+                                serialProperties.joinToString(", ") { it.name + " = " + it.name },
+                                requiredProperties.joinToString(", ") { it.name + " = " + it.name }
+                            )
+                            .build()
+                    )
+                }
+            )
+
+            return unidentifiedEntityBuilder.build().writeTo(context.codeGenerator, Dependencies(true))
         }
     }
 
-    private fun generateEntityClass(packageName: String, name: String, properties: List<PropertyData>) {
-        val entityClass = FileSpec.builder(packageName, name)
+    private fun generateEntityClass(packageName: String, name: String, properties: List<PropertyData>, extra: (TypeSpec.Builder) -> Unit = {}): FileSpec.Builder =
+        FileSpec.builder(packageName, name)
             .addType(
                 TypeSpec.classBuilder(name)
                     .addModifiers(DATA)
@@ -47,11 +76,8 @@ class EntityGenerator(private val context: KspContext) {
                             )
                         }
                     }
+                    .also { extra(it) }
                     .build()
             )
-            .build()
-
-        entityClass.writeTo(context.codeGenerator, Dependencies(true))
-    }
 
 }

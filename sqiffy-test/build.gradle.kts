@@ -5,8 +5,6 @@ plugins {
 }
 
 dependencies {
-
-
     testImplementation(project(":sqiffy"))
     kspTest(project(":sqiffy-symbol-processor"))
     testImplementation(project(":sqiffy-symbol-processor"))
@@ -18,8 +16,8 @@ sourceSets.configureEach {
     kotlin.srcDir("$buildDir/generated/ksp/$name/kotlin/")
 }
 
-tasks.withType<KspTask>() {
+tasks.withType<KspTask> {
     dependsOn("clean")
 }
 
-tasks.getByName("sourcesJar").dependsOn("kspKotlin")
+ //tasks.getByName("sourcesJar").dependsOn(":kspKotlin")

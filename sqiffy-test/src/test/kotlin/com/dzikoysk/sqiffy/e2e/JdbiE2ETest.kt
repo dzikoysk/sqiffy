@@ -43,14 +43,7 @@ abstract class E2ETest : SqiffyE2ETestSpecification() {
                 .bind(UserTableNames.NAME, userToInsert.name)
                 .bind(UserTableNames.DISPLAYNAME, userToInsert.displayName)
                 .execute()
-                .let {
-                    User(
-                        id = it,
-                        uuid = userToInsert.uuid,
-                        name = userToInsert.name,
-                        displayName = userToInsert.displayName
-                    )
-                }
+                .let { userToInsert.withId(it) }
         }
 
         println("Inserted user: $insertedUser")
