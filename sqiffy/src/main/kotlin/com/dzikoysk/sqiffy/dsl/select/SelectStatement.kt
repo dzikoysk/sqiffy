@@ -1,4 +1,4 @@
-package com.dzikoysk.sqiffy.dsl.statements
+package com.dzikoysk.sqiffy.dsl.select
 
 import com.dzikoysk.sqiffy.SqiffyDatabase
 import com.dzikoysk.sqiffy.dsl.Column
@@ -13,10 +13,24 @@ import org.slf4j.event.Level
 class SelectStatementBuilder(
     val database: SqiffyDatabase,
     val from: Table,
-    val where: Expression<Boolean>? = null
 ) : Statement<Query> {
 
-    private var slice: List<Column<*>> = from.getColumns()
+    private var slice: MutableList<Column<*>> = from.getColumns().toMutableList()
+    private val joins: MutableList<Join> = mutableListOf()
+    private var where: Expression<Boolean>? = null
+
+    fun where(where: () -> Expression<Boolean>): SelectStatementBuilder = also {
+        this.where = where()
+    }
+
+    fun <T> slice(vararg column: Column<T>): SelectStatementBuilder = also {
+        this.slice = column.toMutableList()
+    }
+
+    fun <T> join(type: JoinType, on: Column<T>, to: Column<T>): SelectStatementBuilder = also {
+        joins.add(Join(type, on, to))
+        slice.addAll(to.table.getColumns())
+    }
 
     override fun <R> execute(mapper: (Query) -> ResultIterable<R>): Sequence<R> =
         database.getJdbi().withHandle<Sequence<R>, Exception> { handle ->
@@ -25,13 +39,14 @@ class SelectStatementBuilder(
             val expression = where?.let {
                 database.sqlQueryGenerator.createExpression(
                     allocator = allocator,
-                    expression = where
+                    expression = where!!
                 )
             }
 
             val query = database.sqlQueryGenerator.createSelectQuery(
                 tableName = from.getTableName(),
-                selected = slice.map { it.name },
+                selected = slice.map { it.toQuotedIdentifier() },
+                joins = joins,
                 where = expression?.first
             )
 

@@ -2,11 +2,14 @@
 
 package com.dzikoysk.sqiffy.e2e
 
+import com.dzikoysk.sqiffy.GuildTable
+import com.dzikoysk.sqiffy.UnidentifiedGuild
 import com.dzikoysk.sqiffy.UnidentifiedUser
 import com.dzikoysk.sqiffy.User
 import com.dzikoysk.sqiffy.UserTable
 import com.dzikoysk.sqiffy.dsl.eq
 import com.dzikoysk.sqiffy.dsl.mapTo
+import com.dzikoysk.sqiffy.dsl.select.JoinType.INNER
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.shared.H2Mode.MYSQL
 import com.dzikoysk.sqiffy.shared.H2Mode.POSTGRESQL
@@ -44,9 +47,23 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
             .map { userToInsert.withId(id = it[UserTable.id]) }
             .first()
 
+        val guildToInsert = UnidentifiedGuild(
+            name = "MONKE",
+            owner = insertedUserWithDsl.id
+        )
+
+        val insertedGuild = database
+            .insert(GuildTable) {
+                it[GuildTable.name] = guildToInsert.name
+                it[GuildTable.owner] = guildToInsert.owner
+            }
+            .map { guildToInsert.withId(id = it[GuildTable.id]) }
+            .first()
+
         println("Inserted user: $insertedUserWithDsl")
 
-        val userFromDatabaseUsingDsl = database.select(UserTable) { UserTable.uuid eq insertedUserWithDsl.uuid }
+        val userFromDatabaseUsingDsl = database.select(UserTable)
+            .where { UserTable.uuid eq insertedUserWithDsl.uuid }
             .map {
                 User(
                     id = it[UserTable.id],
@@ -57,15 +74,26 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
             }
             .firstOrNull()
 
-        val userFromDatabaseUsingDslAndDtoMapper = database.select(UserTable) { UserTable.uuid eq insertedUserWithDsl.uuid }
+        val userFromDatabaseUsingDslAndDtoMapper = database.select(UserTable)
+            .where { UserTable.uuid eq insertedUserWithDsl.uuid }
             .mapTo<User>()
             .firstOrNull()
 
         println("Loaded user: $userFromDatabaseUsingDsl / $userFromDatabaseUsingDslAndDtoMapper")
+
+        val joinedData = database.select(UserTable)
+            .join(INNER, UserTable.id, GuildTable.owner)
+            .where { GuildTable.owner eq insertedGuild.owner }
+            .map { it[UserTable.name] to it[GuildTable.name] }
+            .first()
+
+        println(joinedData)
+
         assertThat(insertedUserWithDsl).isNotNull
         assertThat(userFromDatabaseUsingDsl).isNotNull
         assertThat(userFromDatabaseUsingDslAndDtoMapper).isNotNull
         assertThat(insertedUserWithDsl).isEqualTo(userFromDatabaseUsingDsl).isEqualTo(userFromDatabaseUsingDslAndDtoMapper)
+        assertThat(joinedData).isEqualTo("Panda" to "MONKE")
     }
 
 }

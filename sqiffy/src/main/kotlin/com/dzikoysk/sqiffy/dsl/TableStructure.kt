@@ -1,5 +1,6 @@
 package com.dzikoysk.sqiffy.dsl
 
+import com.dzikoysk.sqiffy.shared.toQuoted
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -15,7 +16,7 @@ abstract class Table(name: String) {
     fun getColumns(): List<Column<*>> = columns
 
     protected fun <T : Any> column(name: String, type: KClass<T>): Column<T> =
-        Column.of(name, type)
+        Column.of(this, name, type)
             .also { columns.add(it) }
 
     protected fun char(name: String): Column<Char> = column(name, Char::class)
@@ -38,16 +39,19 @@ abstract class Table(name: String) {
 }
 
 data class Column<T>(
+    val table: Table,
     val name: String,
     val type: Class<T>,
     val nullable: Boolean = false
 ) : Expression<T> {
 
     companion object {
-        fun <T : Any> of(name: String, type: KClass<T>): Column<T> = Column(name, type.javaObjectType)
+        fun <T : Any> of(table: Table, name: String, type: KClass<T>): Column<T> = Column(table, name, type.javaObjectType)
     }
 
     @Suppress("UNCHECKED_CAST")
     fun nullable(): Column<T?> = copy(nullable = true) as Column<T?>
+
+    fun toQuotedIdentifier(): String = "${table.getTableName().toQuoted()}.${name.toQuoted()}"
 
 }

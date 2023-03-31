@@ -70,6 +70,7 @@ object UserDefinition
         name = "guilds_table",
         properties = [
             Property(name = "id", type = SERIAL),
+            Property(name = "name", type = VARCHAR, details = "24"),
             Property(name = "owner", type = INT)
         ],
         constraints = [

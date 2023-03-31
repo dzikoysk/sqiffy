@@ -9,13 +9,12 @@ import com.dzikoysk.sqiffy.changelog.PostgreSqlSchemeGenerator
 import com.dzikoysk.sqiffy.changelog.SqlSchemeGenerator
 import com.dzikoysk.sqiffy.definition.RuntimeTypeFactory
 import com.dzikoysk.sqiffy.dsl.Column
-import com.dzikoysk.sqiffy.dsl.Expression
 import com.dzikoysk.sqiffy.dsl.MySqlQueryGenerator
 import com.dzikoysk.sqiffy.dsl.PostgreSqlQueryGenerator
 import com.dzikoysk.sqiffy.dsl.SqlQueryGenerator
 import com.dzikoysk.sqiffy.dsl.Table
+import com.dzikoysk.sqiffy.dsl.select.SelectStatementBuilder
 import com.dzikoysk.sqiffy.dsl.statements.InsertStatement
-import com.dzikoysk.sqiffy.dsl.statements.SelectStatementBuilder
 import com.zaxxer.hikari.HikariDataSource
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.kotlin.KotlinPlugin
@@ -86,8 +85,8 @@ open class SqiffyDatabase(
     private val changeLogGenerator: ChangeLogGenerator,
 ) : Closeable {
 
-    fun select(table: Table, where: () -> Expression<Boolean>): SelectStatementBuilder =
-        SelectStatementBuilder(this, table, where.invoke())
+    fun select(table: Table): SelectStatementBuilder =
+        SelectStatementBuilder(this, table)
 
     fun insert(table: Table, values: (MutableMap<Column<*>, Any?>) -> Unit): InsertStatement =
         InsertStatement(this, table, mutableMapOf<Column<*>, Any?>().also { values.invoke(it) })

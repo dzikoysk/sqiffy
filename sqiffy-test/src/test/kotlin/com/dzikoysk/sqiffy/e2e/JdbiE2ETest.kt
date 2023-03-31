@@ -4,15 +4,12 @@ package com.dzikoysk.sqiffy.e2e
 
 import com.dzikoysk.sqiffy.UnidentifiedUser
 import com.dzikoysk.sqiffy.User
-import com.dzikoysk.sqiffy.UserTable
 import com.dzikoysk.sqiffy.UserTableNames
-import com.dzikoysk.sqiffy.dsl.ParameterAllocator
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.shared.H2Mode.MYSQL
 import com.dzikoysk.sqiffy.shared.H2Mode.POSTGRESQL
 import com.dzikoysk.sqiffy.shared.createH2DataSource
-import com.dzikoysk.sqiffy.shared.get
-import com.dzikoysk.sqiffy.shared.toQuoted
+import com.dzikoysk.sqiffy.shared.multiline
 import com.zaxxer.hikari.HikariDataSource
 import org.assertj.core.api.Assertions.assertThat
 import org.jdbi.v3.core.kotlin.mapTo
@@ -39,18 +36,16 @@ abstract class JdbiE2ETest : SqiffyE2ETestSpecification() {
             )
 
             handle
-                .createUpdate(
-                    database.sqlQueryGenerator.createInsertQuery(
-                        allocator = ParameterAllocator(),
-                        tableName = UserTableNames.TABLE,
-                        columns = listOf(UserTableNames.UUID, UserTableNames.NAME, UserTableNames.DISPLAYNAME)
-                    ).first
-                )
+                .createUpdate(multiline("""
+                    INSERT INTO "${UserTableNames.TABLE}" 
+                    ("${UserTableNames.UUID}", "${UserTableNames.NAME}", "${UserTableNames.DISPLAYNAME}")
+                     VALUES (:0, :1, :2)
+                """))
                 .bind("0", userToInsert.uuid)
                 .bind("1", userToInsert.name)
                 .bind("2", userToInsert.displayName)
                 .executeAndReturnGeneratedKeys()
-                .map { row -> row[UserTable.id] }
+                .map { row -> row.getColumn(UserTableNames.ID, Int::class.javaObjectType) }
                 .first()
                 .let { userToInsert.withId(it) }
         }
@@ -59,13 +54,11 @@ abstract class JdbiE2ETest : SqiffyE2ETestSpecification() {
 
         val userFromDatabaseUsingRawJdbi = database.getJdbi().withHandle<User, Exception> { handle ->
             handle
-                .select(
-                    database.sqlQueryGenerator.createSelectQuery(
-                        tableName = UserTableNames.TABLE,
-                        selected = listOf(UserTableNames.ID, UserTableNames.UUID, UserTableNames.NAME, UserTableNames.DISPLAYNAME),
-                        where = """${UserTableNames.NAME.toQuoted()} = :nameToMatch"""
-                    ).first
-                )
+                .select(multiline("""
+                    SELECT *
+                    FROM "${UserTableNames.TABLE}" 
+                    WHERE "${UserTableNames.NAME}" = :nameToMatch
+                """))
                 .bind("nameToMatch", "Panda")
                 .mapTo<User>()
                 .firstOrNull()
