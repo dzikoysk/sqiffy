@@ -10,7 +10,7 @@ fun String.toQuoted(): String =
     }
 
 fun multiline(text: String): String =
-    text.trimIndent().replace("\n", " ")
+    text.trimIndent().replace("\n", " ").trim()
 
 operator fun <T> RowView.get(column: Column<T>): T =
     this.getColumn(column.table.getTableName() + "." + column.name, column.type)

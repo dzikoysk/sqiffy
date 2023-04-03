@@ -1,5 +1,6 @@
-package com.dzikoysk.sqiffy.changelog
+package com.dzikoysk.sqiffy.changelog.generators
 
+import com.dzikoysk.sqiffy.changelog.ChangeLogGeneratorContext
 import com.dzikoysk.sqiffy.definition.Constraint
 import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.ADD_CONSTRAINT
 import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.REMOVE_CONSTRAINT
@@ -10,7 +11,7 @@ import com.dzikoysk.sqiffy.definition.NULL_CLASS
 import com.dzikoysk.sqiffy.definition.NULL_STRING
 import com.dzikoysk.sqiffy.definition.PrimaryKey
 
-internal class ChangeLogConstraintsGenerator {
+internal class ChangelogConstraintsGenerator {
 
     fun generateConstraints(context: ChangeLogGeneratorContext) {
         with(context) {

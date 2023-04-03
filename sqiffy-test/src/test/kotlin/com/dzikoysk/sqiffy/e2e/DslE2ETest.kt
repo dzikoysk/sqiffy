@@ -3,6 +3,7 @@
 package com.dzikoysk.sqiffy.e2e
 
 import com.dzikoysk.sqiffy.GuildTable
+import com.dzikoysk.sqiffy.Role
 import com.dzikoysk.sqiffy.UnidentifiedGuild
 import com.dzikoysk.sqiffy.UnidentifiedUser
 import com.dzikoysk.sqiffy.User
@@ -35,7 +36,8 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
         val userToInsert = UnidentifiedUser(
             name = "Panda",
             displayName = "Only Panda",
-            uuid = UUID.randomUUID()
+            uuid = UUID.randomUUID(),
+            role = Role.MODERATOR
         )
 
         val insertedUserWithDsl = database
@@ -43,6 +45,7 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
                 it[UserTable.uuid] = userToInsert.uuid
                 it[UserTable.name] = userToInsert.name
                 it[UserTable.displayName] = userToInsert.displayName
+                it[UserTable.role] = userToInsert.role
             }
             .map { userToInsert.withId(id = it[UserTable.id]) }
             .first()
@@ -69,7 +72,8 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
                     id = it[UserTable.id],
                     name = it[UserTable.name],
                     uuid = it[UserTable.uuid],
-                    displayName = it[UserTable.displayName]
+                    displayName = it[UserTable.displayName],
+                    role = it[UserTable.role]
                 )
             }
             .firstOrNull()

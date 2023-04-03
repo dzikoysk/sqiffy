@@ -23,7 +23,8 @@ class Migrator(private val database: SqiffyDatabase) {
             handle.execute(
                 database.sqlSchemeGenerator.createTable(
                     name = tableName,
-                    properties = listOf(propertyColumn)
+                    properties = listOf(propertyColumn),
+                    enums = Enums()
                 ).also { database.logger.log(Level.INFO, it) }
             )
         }
@@ -43,11 +44,13 @@ class Migrator(private val database: SqiffyDatabase) {
 
             database.logger.log(Level.INFO, "Current version of database scheme: $currentVersion")
 
+            val allChanges = changeLog.getAllChanges()
+
             val changesToApply = currentVersion
-                ?.let { changeLog.changes }
+                ?.let { allChanges }
                 ?.dropWhile { (version, _) -> version != currentVersion } // drop old versions
                 ?.drop(1) // drop current version
-                ?: changeLog.changes.toList()
+                ?: allChanges
 
             if (changesToApply.isEmpty()) {
                 database.logger.log(Level.INFO, "Database scheme is up to date")

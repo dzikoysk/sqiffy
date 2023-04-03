@@ -4,6 +4,7 @@ import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.DefinitionEntry
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
+import com.dzikoysk.sqiffy.processor.toClassName
 import com.google.devtools.ksp.processing.Dependencies
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
@@ -11,7 +12,6 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier.DATA
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
 
 class EntityGenerator(private val context: KspContext) {
@@ -34,7 +34,7 @@ class EntityGenerator(private val context: KspContext) {
                         FunSpec.builder("withId")
                             .also { functionBuilder ->
                                 serialProperties.forEach {
-                                    functionBuilder.addParameter(it.name, it.type!!.javaType)
+                                    functionBuilder.addParameter(it.name, it.type!!.contextualType(it).toClassName())
                                 }
                             }
                             .returns(entityClassName)
@@ -62,7 +62,8 @@ class EntityGenerator(private val context: KspContext) {
                         FunSpec.constructorBuilder()
                             .also { constructorBuilder ->
                                 properties.forEach {
-                                    constructorBuilder.addParameter(it.name, it.type!!.javaType.asTypeName().copy(nullable = it.nullable))
+                                    println(it)
+                                    constructorBuilder.addParameter(it.name, it.type!!.contextualType(it).toClassName().copy(nullable = it.nullable))
                                 }
                             }
                             .build()
@@ -70,7 +71,7 @@ class EntityGenerator(private val context: KspContext) {
                     .also { typeBuilder ->
                         properties.forEach {
                             typeBuilder.addProperty(
-                                PropertySpec.builder(it.name, it.type!!.javaType.asTypeName().copy(nullable = it.nullable))
+                                PropertySpec.builder(it.name, it.type!!.contextualType(it).toClassName().copy(nullable = it.nullable))
                                     .initializer(it.name)
                                     .build()
                             )

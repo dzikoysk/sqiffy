@@ -1,15 +1,17 @@
-package com.dzikoysk.sqiffy.changelog
+package com.dzikoysk.sqiffy.changelog.generators
 
+import com.dzikoysk.sqiffy.changelog.ChangeLogGeneratorContext
+import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.NULL_TYPE
 import com.dzikoysk.sqiffy.definition.NULL_STRING
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.REMOVE
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RENAME
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RETYPE
-import com.dzikoysk.sqiffy.shared.replaceFirst
 import com.dzikoysk.sqiffy.definition.toPropertyData
+import com.dzikoysk.sqiffy.shared.replaceFirst
 
-class ChangeLogPropertiesGenerator {
+class ChangelogPropertiesGenerator {
 
     internal fun generateProperties(context: ChangeLogGeneratorContext) {
         with(context) {
@@ -37,10 +39,20 @@ class ChangeLogPropertiesGenerator {
             }
 
             changeToApply.properties
-                .map { it.toPropertyData() }
+                .map { it.toPropertyData(context.typeFactory) }
+                .onEach {
+                    if (it.type == ENUM) {
+                        val enumDefinition = it.enumDefinition ?: throw IllegalStateException("Enum definition cannot be null for ${it.name} in ${state.tableName}")
+                        context.currentEnums.defineEnum(enumDefinition)
+                    }
+                }
                 .let { propertyDataList ->
                     registerChange {
-                        createTable(state.tableName, propertyDataList)
+                        createTable(
+                            name = state.tableName,
+                            properties = propertyDataList,
+                            enums = currentEnums
+                        )
                     }
                     state.properties.addAll(propertyDataList)
                 }
@@ -57,13 +69,22 @@ class ChangeLogPropertiesGenerator {
             for (propertyChange in changeToApply.properties) {
                 when (propertyChange.operation) {
                     ADD -> {
-                        val property = propertyChange.toPropertyData()
-
+                        val property = propertyChange.toPropertyData(context.typeFactory)
                         require(properties.none { it.name == property.name }) { "Cannot add property ${property.name} to ${state.tableName} because it already exists" }
+
+                        if (property.type == ENUM) {
+                            val enumDefinition = property.enumDefinition ?: throw IllegalStateException("Enum definition cannot be null for ${property.name} in ${state.tableName}")
+                            context.currentEnums.defineEnum(enumDefinition)
+                        }
+
                         properties.add(property)
 
                         registerChange {
-                            createColumn(state.tableName, property)
+                            createColumn(
+                                tableName = state.tableName,
+                                property = property,
+                                enums = currentEnums
+                            )
                         }
                     }
                     RENAME -> {
@@ -95,13 +116,17 @@ class ChangeLogPropertiesGenerator {
                             details = propertyChange.details.takeIf { it != NULL_STRING },
                         )
 
+                        if (newProperty.type == ENUM) {
+                            throw IllegalStateException("Cannot retype property ${propertyChange.name} in ${state.tableName} to enum. Migrate to a new typ using a temporary column.")
+                        }
+
                         properties.replaceFirst(
                             condition = { it.name == propertyChange.name },
                             newValue = { _ -> newProperty }
                         )
 
                         registerChange {
-                            retypeColumn(state.tableName, newProperty)
+                            retypeColumn(state.tableName, newProperty, currentEnums)
                         }
                     }
                     REMOVE -> {

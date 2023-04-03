@@ -1,12 +1,13 @@
-package com.dzikoysk.sqiffy.changelog
+package com.dzikoysk.sqiffy.changelog.generators
 
+import com.dzikoysk.sqiffy.changelog.ChangeLogGeneratorContext
 import com.dzikoysk.sqiffy.definition.IndexData
 import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.ADD_INDEX
 import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.REMOVE_INDEX
 import com.dzikoysk.sqiffy.definition.IndexType.INDEX
 import com.dzikoysk.sqiffy.definition.IndexType.UNIQUE_INDEX
 
-internal class ChangeLogIndicesGenerator {
+internal class ChangelogIndicesGenerator {
 
     fun generateIndices(context: ChangeLogGeneratorContext) {
         with(context) {

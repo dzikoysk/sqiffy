@@ -24,6 +24,8 @@ abstract class Table(name: String) {
     protected fun text(name: String): Column<String> = column(name, String::class)
 
     protected fun bool(name: String): Column<Boolean> = column(name, Boolean::class)
+    protected fun <E : Enum<E>> enumeration(name: String, type: KClass<E>): Column<E> = column(name, type)
+
     protected fun binary(name: String): Column<ByteArray> = column(name, ByteArray::class)
     protected fun uuid(name: String): Column<UUID> = column(name, UUID::class)
 

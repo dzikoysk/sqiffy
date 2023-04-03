@@ -1,10 +1,12 @@
 package com.dzikoysk.sqiffy.processor.generators
 
+import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.DefinitionEntry
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.Table
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
+import com.dzikoysk.sqiffy.processor.toClassName
 import com.google.devtools.ksp.processing.Dependencies
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
@@ -29,8 +31,8 @@ class DslTableGenerator(private val context: KspContext) {
                                 .asTypeName()
                                 .parameterizedBy(
                                     it.type!!
-                                        .javaType
-                                        .asTypeName()
+                                        .contextualType(it)
+                                        .toClassName()
                                         .copy(nullable = it.nullable)
                                 )
 
@@ -51,20 +53,21 @@ class DslTableGenerator(private val context: KspContext) {
     private fun generateColumnInitializer(property: PropertyData): String {
         var baseColumn = with(property) {
             when (property.type) {
-                com.dzikoysk.sqiffy.definition.DataType.SERIAL -> "integer(${q(name)})"
-                com.dzikoysk.sqiffy.definition.DataType.CHAR -> "char(${q(name)})"
-                com.dzikoysk.sqiffy.definition.DataType.VARCHAR -> "varchar(${q(name)}, ${property.details})"
-                com.dzikoysk.sqiffy.definition.DataType.BINARY -> "binary(${q(name)})"
-                com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE -> "uuid(${q(name)})"
-                com.dzikoysk.sqiffy.definition.DataType.TEXT -> "text(${q(name)})"
-                com.dzikoysk.sqiffy.definition.DataType.BOOLEAN -> "bool(${q(name)})"
-                com.dzikoysk.sqiffy.definition.DataType.INT -> "integer(${q(name)})"
-                com.dzikoysk.sqiffy.definition.DataType.LONG -> "long(${q(name)})"
-                com.dzikoysk.sqiffy.definition.DataType.FLOAT -> "float(${q(name)})"
-                com.dzikoysk.sqiffy.definition.DataType.DOUBLE -> "double(${q(name)})"
-                com.dzikoysk.sqiffy.definition.DataType.DATE -> "date(${q(name)})"
-                com.dzikoysk.sqiffy.definition.DataType.DATETIME -> "datetime(${q(name)})"
-                com.dzikoysk.sqiffy.definition.DataType.TIMESTAMP -> "timestamp(${q(name)})"
+                DataType.SERIAL -> "integer(${q(name)})"
+                DataType.CHAR -> "char(${q(name)})"
+                DataType.VARCHAR -> "varchar(${q(name)}, ${property.details})"
+                DataType.BINARY -> "binary(${q(name)})"
+                DataType.UUID_TYPE -> "uuid(${q(name)})"
+                DataType.TEXT -> "text(${q(name)})"
+                DataType.BOOLEAN -> "bool(${q(name)})"
+                DataType.INT -> "integer(${q(name)})"
+                DataType.LONG -> "long(${q(name)})"
+                DataType.FLOAT -> "float(${q(name)})"
+                DataType.DOUBLE -> "double(${q(name)})"
+                DataType.DATE -> "date(${q(name)})"
+                DataType.DATETIME -> "datetime(${q(name)})"
+                DataType.TIMESTAMP -> "timestamp(${q(name)})"
+                DataType.ENUM -> "enumeration(${q(name)}, ${property.enumDefinition?.enumData?.mappedTo}::class)"
                 else -> throw UnsupportedOperationException("Unsupported property type used as column ($property)")
             }
         }

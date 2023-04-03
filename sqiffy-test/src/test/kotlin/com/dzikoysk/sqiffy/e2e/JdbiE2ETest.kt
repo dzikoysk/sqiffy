@@ -2,6 +2,7 @@
 
 package com.dzikoysk.sqiffy.e2e
 
+import com.dzikoysk.sqiffy.Role
 import com.dzikoysk.sqiffy.UnidentifiedUser
 import com.dzikoysk.sqiffy.User
 import com.dzikoysk.sqiffy.UserTableNames
@@ -32,18 +33,20 @@ abstract class JdbiE2ETest : SqiffyE2ETestSpecification() {
             val userToInsert = UnidentifiedUser(
                 name = "Panda",
                 uuid = UUID.randomUUID(),
-                displayName = "Only Panda"
+                displayName = "Only Panda",
+                role = Role.MODERATOR
             )
 
             handle
                 .createUpdate(multiline("""
                     INSERT INTO "${UserTableNames.TABLE}" 
-                    ("${UserTableNames.UUID}", "${UserTableNames.NAME}", "${UserTableNames.DISPLAYNAME}")
-                     VALUES (:0, :1, :2)
+                    ("${UserTableNames.UUID}", "${UserTableNames.NAME}", "${UserTableNames.DISPLAYNAME}", "${UserTableNames.ROLE}")
+                     VALUES (:0, :1, :2, :3)
                 """))
                 .bind("0", userToInsert.uuid)
                 .bind("1", userToInsert.name)
                 .bind("2", userToInsert.displayName)
+                .bind("3", userToInsert.role.name)
                 .executeAndReturnGeneratedKeys()
                 .map { row -> row.getColumn(UserTableNames.ID, Int::class.javaObjectType) }
                 .first()

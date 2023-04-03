@@ -12,7 +12,7 @@ class ChangeLogGeneratorTest {
         val baseSchemeGenerator = ChangeLogGenerator(MySqlSchemeGenerator, RuntimeTypeFactory())
         val changeLog = baseSchemeGenerator.generateChangeLog(UserDefinition::class, GuildDefinition::class)
 
-        changeLog.changes.forEach { (version, changes) ->
+        changeLog.getAllChanges().forEach { (version, changes) ->
             println(version)
             changes.forEach { println("  $it") }
         }

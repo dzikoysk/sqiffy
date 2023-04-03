@@ -19,12 +19,15 @@ enum class Kind {
 
 enum class DataType(
     val kind: Kind,
-    val javaType: KClass<*>
+    val javaType: KClass<*>,
+    val contextualType: (PropertyData) -> TypeDefinition = { javaType.toTypeDefinition() }
 ) {
     /* Special types */
     NULL_TYPE(INDIRECT, NULL_CLASS::class),
     UUID_TYPE(INDIRECT, UUID::class),
     SERIAL(INDIRECT, Int::class),
+    ENUM(DIRECT, Enum::class, { it.enumDefinition?.getEnumClassQualifier() ?: throw IllegalStateException("Enum definition class is not defined for ${it}") }),
+
     /* Regular types */
     CHAR(DIRECT, Char::class),
     VARCHAR(DIRECT, String::class),
@@ -51,5 +54,5 @@ annotation class DefinitionVersion(
     val name: String = NULL_STRING,
     val properties: Array<Property> = [],
     val constraints: Array<Constraint> = [],
-    val indices: Array<Index> = []
+    val indices: Array<Index> = [],
 )
