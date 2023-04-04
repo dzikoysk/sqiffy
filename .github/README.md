@@ -32,11 +32,11 @@ Gradle _(kts)_:
 
 ```kotlin
 plugins {
-    id("com.google.devtools.ksp") version "1.8.0-1.0.8"
+    id("com.google.devtools.ksp") version "1.8.10-1.0.9"
 }
 
 dependencies {
-    val sqiffy = "1.0.0-alpha.9"
+    val sqiffy = "1.0.0-alpha.10"
     ksp("com.dzikoysk.sqiffy:sqiffy-symbol-processor:$sqiffy") // annotation processor
     implementation("com.dzikoysk.sqiffy:sqiffy:$sqiffy") // core library & implementation
 }
@@ -51,6 +51,20 @@ object UserAndGuildScenarioVersions {
     const val V_1_0_2 = "1.0.2"
 }
 
+@EnumDefinition(name = "role", mappedTo = "Role", [
+    EnumVersion(
+        version = V_1_0_0,
+        operation = ADD_VALUES,
+        values = ["ADMIN", "USER"]
+    ),
+    EnumVersion(
+        version = V_1_0_1,
+        operation = ADD_VALUES,
+        values = ["MODERATOR", "SPECTATOR"]
+    )
+])
+object RoleDefinition
+
 @Definition([
     DefinitionVersion(
         version = V_1_0_0,
@@ -59,6 +73,7 @@ object UserAndGuildScenarioVersions {
             Property(name = "id", type = SERIAL),
             Property(name = "uuid", type = UUID_TYPE),
             Property(name = "name", type = VARCHAR, details = "12"),
+            Property(name = "role", type = ENUM, enumDefinition = RoleDefinition::class)
         ],
         constraints = [
             Constraint(type = PRIMARY_KEY, name = "pk_id", on = "id"),
@@ -72,7 +87,7 @@ object UserAndGuildScenarioVersions {
         version = V_1_0_1,
         properties = [
             Property(operation = RETYPE, name = "name", type = VARCHAR, details = "24"),
-            Property(name = "display_name", type = VARCHAR, details = "48", nullable = true)
+            Property(operation = ADD, name = "display_name", type = VARCHAR, details = "48", nullable = true),
         ],
         indices = [
             Index(operation = REMOVE_INDEX, type = INDEX, name = "idx_id"),
@@ -94,6 +109,7 @@ object UserDefinition
         name = "guilds_table",
         properties = [
             Property(name = "id", type = SERIAL),
+            Property(name = "name", type = VARCHAR, details = "24"),
             Property(name = "owner", type = INT)
         ],
         constraints = [
@@ -125,7 +141,7 @@ In this case it'll generate:
 * `UserTable`, `GuildTable` implementation of `Table` object for built-in DSL
 * SQL migrations between each version
 
-Then, you can simply connect to the database, run migrations & use DSL:
+Then, you can simply connect to the database & run migrationsL:
 
 ```kotlin
 this.database = Sqiffy.createDatabase(
@@ -136,58 +152,86 @@ this.database = Sqiffy.createDatabase(
 val changeLog = database.generateChangeLog(UserDefinition::class, GuildDefinition::class)
 database.runMigrations(changeLog = changeLog)
 
-val insertedUser = database.getJdbi().withHandle<User, Exception> { handle ->
-    val userToInsert = UnidentifiedUser(
-        name = "Panda",
-        uuid = UUID.randomUUID(),
-        displayName = "Sadge"
-    )
+// [..] use database
 
-    handle
-        .createUpdate(
-            database.sqlQueryGenerator.createInsertQuery(
-                tableName = UserTableNames.TABLE,
-                columns = listOf(UserTableNames.UUID, UserTableNames.NAME, UserTableNames.DISPLAYNAME)
-            ).first
-        )
-        .bind(UserTableNames.UUID, userToInsert.uuid)
-        .bind(UserTableNames.NAME, userToInsert.name)
-        .bind(UserTableNames.DISPLAYNAME, userToInsert.displayName)
-        .executeAndReturnGeneratedKeys()
-        .map { row -> row[UserTable.id] }
-        .first()
-        .let { userToInsert.withId(it) }
-}
+database.close()
+```
 
-println("Inserted user: $insertedUser")
+You can also execute queries using generated DSL:
 
-val userFromDatabaseUsingRawJdbi = database.getJdbi().withHandle<User, Exception> { handle ->
-    handle
-        .select(
-            database.sqlQueryGenerator.createSelectQuery(
-                tableName = UserTableNames.TABLE,
-                selected = listOf(UserTableNames.ID, UserTableNames.UUID, UserTableNames.NAME, UserTableNames.DISPLAYNAME),
-                where = """${UserTableNames.NAME.toQuoted()} = :nameToMatch"""
-            ).first
-        )
-        .bind("nameToMatch", "Panda")
-        .mapTo<User>()
-        .firstOrNull()
-}
+```
+ val userToInsert = UnidentifiedUser(
+    name = "Panda",
+    displayName = "Only Panda",
+    uuid = UUID.randomUUID(),
+    role = Role.MODERATOR
+)
 
-val userFromDatabaseUsingDsl = database.select(UserTable) { UserTable.uuid eq insertedUser.uuid }
+val insertedUserWithDsl = database
+    .insert(UserTable) {
+        it[UserTable.uuid] = userToInsert.uuid
+        it[UserTable.name] = userToInsert.name
+        it[UserTable.displayName] = userToInsert.displayName
+        it[UserTable.role] = userToInsert.role
+    }
+    .map { userToInsert.withId(id = it[UserTable.id]) }
+    .first()
+
+val guildToInsert = UnidentifiedGuild(
+    name = "MONKE",
+    owner = insertedUserWithDsl.id
+)
+
+val insertedGuild = database
+    .insert(GuildTable) {
+        it[GuildTable.name] = guildToInsert.name
+        it[GuildTable.owner] = guildToInsert.owner
+    }
+    .map { guildToInsert.withId(id = it[GuildTable.id]) }
+    .first()
+
+println("Inserted user: $insertedUserWithDsl")
+
+val userFromDatabaseUsingDsl = database.select(UserTable)
+    .where { UserTable.uuid eq insertedUserWithDsl.uuid }
     .map {
         User(
             id = it[UserTable.id],
             name = it[UserTable.name],
             uuid = it[UserTable.uuid],
-            displayName = it[UserTable.displayName]
+            displayName = it[UserTable.displayName],
+            role = it[UserTable.role]
         )
     }
     .firstOrNull()
 
-println("Loaded user: $userFromDatabaseUsingRawJdbi / $userFromDatabaseUsingDsl")
-database.close()
+println("Loaded user: $userFromDatabaseUsingDsl")
+
+val joinedData = database.select(UserTable)
+    .join(INNER, UserTable.id, GuildTable.owner)
+    .where { GuildTable.owner eq insertedGuild.owner }
+    .map { it[UserTable.name] to it[GuildTable.name] }
+    .first()
+
+println(joinedData)
+```
+
+Or you can use generated names to execute manually, using e.g. JDBI:
+
+```kotlin
+val userFromDatabaseUsingRawJdbi = database.getJdbi().withHandle<User, Exception> { handle ->
+    handle
+        .select(multiline("""
+            SELECT *
+            FROM "${UserTableNames.TABLE}" 
+            WHERE "${UserTableNames.NAME}" = :nameToMatch
+        """))
+        .bind("nameToMatch", "Panda")
+        .mapTo<User>()
+        .firstOrNull()
+}
+
+println("Loaded user: $userFromDatabaseUsingRawJdbi")
 ```
 
 ### Comparison with alternatives
