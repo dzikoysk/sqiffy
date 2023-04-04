@@ -52,22 +52,24 @@ class DslTableGenerator(private val context: KspContext) {
 
     private fun generateColumnInitializer(property: PropertyData): String {
         var baseColumn = with(property) {
+            val defaultDbType = q(type!!.name)
+
             when (property.type) {
-                DataType.SERIAL -> "integer(${q(name)})"
-                DataType.CHAR -> "char(${q(name)})"
-                DataType.VARCHAR -> "varchar(${q(name)}, ${property.details})"
-                DataType.BINARY -> "binary(${q(name)})"
-                DataType.UUID_TYPE -> "uuid(${q(name)})"
-                DataType.TEXT -> "text(${q(name)})"
-                DataType.BOOLEAN -> "bool(${q(name)})"
-                DataType.INT -> "integer(${q(name)})"
-                DataType.LONG -> "long(${q(name)})"
-                DataType.FLOAT -> "float(${q(name)})"
-                DataType.DOUBLE -> "double(${q(name)})"
-                DataType.DATE -> "date(${q(name)})"
-                DataType.DATETIME -> "datetime(${q(name)})"
-                DataType.TIMESTAMP -> "timestamp(${q(name)})"
-                DataType.ENUM -> "enumeration(${q(name)}, ${property.enumDefinition?.enumData?.mappedTo}::class)"
+                DataType.SERIAL -> "integer(${q(name)}, $defaultDbType)"
+                DataType.CHAR -> "char(${q(name)}, $defaultDbType)"
+                DataType.VARCHAR -> "varchar(${q(name)}, $defaultDbType, $details)"
+                DataType.BINARY -> "binary(${q(name)}, $defaultDbType)"
+                DataType.UUID_TYPE -> "uuid(${q(name)}, $defaultDbType)"
+                DataType.TEXT -> "text(${q(name)}, $defaultDbType)"
+                DataType.BOOLEAN -> "bool(${q(name)}, $defaultDbType)"
+                DataType.INT -> "integer(${q(name)}, $defaultDbType)"
+                DataType.LONG -> "long(${q(name)}, $defaultDbType)"
+                DataType.FLOAT -> "float(${q(name)}, $defaultDbType)"
+                DataType.DOUBLE -> "double(${q(name)}, $defaultDbType)"
+                DataType.DATE -> "date(${q(name)}, $defaultDbType)"
+                DataType.DATETIME -> "datetime(${q(name)}, $defaultDbType)"
+                DataType.TIMESTAMP -> "timestamp(${q(name)}, $defaultDbType)"
+                DataType.ENUM -> "enumeration(${q(name)}, ${q(property.enumDefinition!!.enumData.name)}, ${property.enumDefinition?.enumData?.mappedTo}::class)"
                 else -> throw UnsupportedOperationException("Unsupported property type used as column ($property)")
             }
         }

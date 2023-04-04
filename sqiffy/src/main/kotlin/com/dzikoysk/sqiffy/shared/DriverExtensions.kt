@@ -29,8 +29,7 @@ fun createTestDatabaseFile(name: String): Path =
         .toPath()
 
 enum class H2Mode {
-    MYSQL,
-    POSTGRESQL
+    MYSQL
 }
 
 fun createH2DataSource(mode: H2Mode): HikariDataSource =

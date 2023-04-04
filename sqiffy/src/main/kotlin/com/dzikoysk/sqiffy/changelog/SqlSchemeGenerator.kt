@@ -73,6 +73,9 @@ object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
             else -> createRegularDataType(property)
         }
 
+    override fun removeIndex(tableName: String, name: String): String =
+        """DROP INDEX "$name" ON "$tableName""""
+
 }
 
 object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
@@ -102,6 +105,9 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
 
     override fun removeForeignKey(tableName: String, name: String): String =
         """ALTER TABLE "$tableName" DROP CONSTRAINT "$name""""
+
+    override fun removeIndex(tableName: String, name: String): String =
+        """DROP INDEX "$name""""
 
     override fun createDataType(property: PropertyData, enums: Enums): String =
         when (property.type) {
@@ -162,9 +168,6 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
 
     override fun createUniqueIndex(tableName: String, name: String, on: List<String>): String =
         """CREATE UNIQUE INDEX "$name" ON "$tableName" (${createIndexColumns(on)})"""
-
-    override fun removeIndex(tableName: String, name: String): String =
-        """DROP INDEX "$name" ON "$tableName""""
 
     /* Utilities */
 

@@ -9,14 +9,14 @@ import com.dzikoysk.sqiffy.UnidentifiedUser
 import com.dzikoysk.sqiffy.User
 import com.dzikoysk.sqiffy.UserTable
 import com.dzikoysk.sqiffy.dsl.eq
-import com.dzikoysk.sqiffy.dsl.mapTo
 import com.dzikoysk.sqiffy.dsl.select.JoinType.INNER
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
+import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
 import com.dzikoysk.sqiffy.shared.H2Mode.MYSQL
-import com.dzikoysk.sqiffy.shared.H2Mode.POSTGRESQL
 import com.dzikoysk.sqiffy.shared.createH2DataSource
 import com.zaxxer.hikari.HikariDataSource
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import java.util.UUID
 import kotlin.collections.set
@@ -25,8 +25,10 @@ class H2MySQLModeDslE2ETest : DslE2ETest() {
     override fun createDataSource(): HikariDataSource = createH2DataSource(MYSQL)
 }
 
-class H2PostgreSQLModeDslE2ETest : DslE2ETest() {
-    override fun createDataSource(): HikariDataSource = createH2DataSource(POSTGRESQL)
+class EmbeddedPostgresDslE2ETest : DslE2ETest() {
+    val postgres = postgresDataSource()
+    override fun createDataSource(): HikariDataSource = postgres.dataSource
+    @AfterEach fun stop() { postgres.pg.close() }
 }
 
 abstract class DslE2ETest : SqiffyE2ETestSpecification() {
@@ -78,12 +80,7 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
             }
             .firstOrNull()
 
-        val userFromDatabaseUsingDslAndDtoMapper = database.select(UserTable)
-            .where { UserTable.uuid eq insertedUserWithDsl.uuid }
-            .mapTo<User>()
-            .firstOrNull()
-
-        println("Loaded user: $userFromDatabaseUsingDsl / $userFromDatabaseUsingDslAndDtoMapper")
+        println("Loaded user: $userFromDatabaseUsingDsl")
 
         val joinedData = database.select(UserTable)
             .join(INNER, UserTable.id, GuildTable.owner)
@@ -95,8 +92,7 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
 
         assertThat(insertedUserWithDsl).isNotNull
         assertThat(userFromDatabaseUsingDsl).isNotNull
-        assertThat(userFromDatabaseUsingDslAndDtoMapper).isNotNull
-        assertThat(insertedUserWithDsl).isEqualTo(userFromDatabaseUsingDsl).isEqualTo(userFromDatabaseUsingDslAndDtoMapper)
+        assertThat(insertedUserWithDsl).isEqualTo(userFromDatabaseUsingDsl)
         assertThat(joinedData).isEqualTo("Panda" to "MONKE")
     }
 

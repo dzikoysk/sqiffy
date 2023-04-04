@@ -4,6 +4,7 @@ import com.dzikoysk.sqiffy.SqiffyDatabase
 import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.Expression
 import com.dzikoysk.sqiffy.dsl.ParameterAllocator
+import com.dzikoysk.sqiffy.dsl.SqlQueryGenerator.QueryColumn
 import com.dzikoysk.sqiffy.dsl.Statement
 import com.dzikoysk.sqiffy.dsl.Table
 import org.jdbi.v3.core.result.ResultIterable
@@ -45,7 +46,14 @@ class SelectStatementBuilder(
 
             val query = database.sqlQueryGenerator.createSelectQuery(
                 tableName = from.getTableName(),
-                selected = slice.map { it.toQuotedIdentifier() },
+                selected = slice.map {
+                    QueryColumn(
+                        table = it.table.getTableName(),
+                        name = it.name,
+                        dbType = it.dbType,
+                        type = it.type
+                    )
+                },
                 joins = joins,
                 where = expression?.first
             )

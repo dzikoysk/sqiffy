@@ -4,6 +4,7 @@ import com.dzikoysk.sqiffy.SqiffyDatabase
 import com.dzikoysk.sqiffy.definition.DataType.TEXT
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.dsl.ParameterAllocator
+import com.dzikoysk.sqiffy.dsl.SqlQueryGenerator.QueryColumn
 import org.slf4j.event.Level
 
 class Migrator(private val database: SqiffyDatabase) {
@@ -14,16 +15,23 @@ class Migrator(private val database: SqiffyDatabase) {
     fun runMigrations(metadataTable: SqiffyMetadataTable = SqiffyMetadataTable(), changeLog: ChangeLog) {
         val tableName = metadataTable.name
 
-        val propertyColumn = PropertyData(
+        val columnProperty = PropertyData(
             name = "property",
             type = TEXT
+        )
+
+        val queryColumn = QueryColumn(
+            table = tableName,
+            name = columnProperty.name,
+            dbType = "text",
+            type = String::class.java
         )
 
         database.getJdbi().useHandle<Exception> { handle ->
             handle.execute(
                 database.sqlSchemeGenerator.createTable(
                     name = tableName,
-                    properties = listOf(propertyColumn),
+                    properties = listOf(columnProperty),
                     enums = Enums()
                 ).also { database.logger.log(Level.INFO, it) }
             )
@@ -34,8 +42,8 @@ class Migrator(private val database: SqiffyDatabase) {
                 .select(
                     database.sqlQueryGenerator.createSelectQuery(
                         tableName = tableName,
-                        selected = listOf(propertyColumn).map { it.name },
-                        where = """"${propertyColumn.name}" = :version"""
+                        selected = listOf(queryColumn),
+                        where = """"${columnProperty.name}" = :version"""
                     ).first,
                 )
                 .bind("version", "version")
@@ -86,7 +94,7 @@ class Migrator(private val database: SqiffyDatabase) {
                             database.sqlQueryGenerator.createInsertQuery(
                                 allocator = ParameterAllocator(),
                                 tableName = tableName,
-                                columns = listOf(propertyColumn).map { it.name },
+                                columns = listOf(queryColumn)
                             ).first
                         )
                         .bind("0", latestVersion)
@@ -96,10 +104,10 @@ class Migrator(private val database: SqiffyDatabase) {
                         .createUpdate(
                             database.sqlQueryGenerator.createUpdateQuery(
                                 tableName = tableName,
-                                columns = listOf(propertyColumn).map { it.name },
+                                columns = listOf(columnProperty).map { it.name },
                             ).first
                         )
-                        .bind(propertyColumn.name, latestVersion)
+                        .bind(columnProperty.name, latestVersion)
                         .execute()
             }
         }

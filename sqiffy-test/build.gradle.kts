@@ -10,6 +10,8 @@ dependencies {
     testImplementation(project(":sqiffy-symbol-processor"))
     testImplementation("com.h2database:h2:2.1.214")
     testImplementation("ch.qos.logback:logback-classic:1.4.6")
+    testImplementation("io.zonky.test:embedded-postgres:2.0.3")
+    testImplementation("org.postgresql:postgresql:42.6.0")
 }
 
 sourceSets.configureEach {

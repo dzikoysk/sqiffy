@@ -1,5 +1,6 @@
 package com.dzikoysk.sqiffy.dsl
 
+import com.dzikoysk.sqiffy.dsl.SqlQueryGenerator.QueryColumn
 import com.dzikoysk.sqiffy.dsl.select.Join
 import com.dzikoysk.sqiffy.dsl.select.JoinType
 import com.dzikoysk.sqiffy.shared.multiline
@@ -17,16 +18,18 @@ class ParameterAllocator {
 
 interface SqlQueryGenerator {
 
+    class QueryColumn(
+        val table: String,
+        val name: String,
+        val dbType: String,
+        val type: Class<*>
+    )
+
     /* Queries */
 
-    fun createSelectQuery(
-        tableName: String,
-        selected: List<String>,
-        where: String? = null,
-        joins: List<Join> = emptyList()
-    ): Pair<QueryString, Arguments>
+    fun createSelectQuery(tableName: String,selected: List<QueryColumn>, where: String? = null, joins: List<Join> = emptyList()): Pair<QueryString, Arguments>
 
-    fun createInsertQuery(allocator: ParameterAllocator, tableName: String, columns: List<String>): Pair<QueryString, Arguments>
+    fun createInsertQuery(allocator: ParameterAllocator, tableName: String, columns: List<QueryColumn>): Pair<QueryString, Arguments>
 
     fun createUpdateQuery(tableName: String, columns: List<String>, where: String? = null): Pair<QueryString, Arguments>
 
@@ -45,9 +48,55 @@ interface SqlQueryGenerator {
 
 }
 
-object MySqlQueryGenerator : GenericQueryGenerator()
+object MySqlQueryGenerator : GenericQueryGenerator() {
 
-object PostgreSqlQueryGenerator : GenericQueryGenerator()
+    override fun createInsertQuery(allocator: ParameterAllocator, tableName: String, columns: List<QueryColumn>): Pair<QueryString, Arguments> {
+        val arguments = mutableMapOf<String, String>()
+
+        val values = columns.joinToString(
+            separator = ", ",
+            transform = {
+                val argument = allocator.allocate()
+                arguments[argument] = it.name
+                ":$argument"
+            }
+        )
+
+        return multiline("""
+            INSERT INTO "$tableName" 
+            (${columns.joinToString(separator = ", ") { it.name.toQuoted() }})
+             VALUES ($values)
+        """) to arguments
+    }
+
+}
+
+object PostgreSqlQueryGenerator : GenericQueryGenerator() {
+
+    override fun createInsertQuery(allocator: ParameterAllocator, tableName: String, columns: List<QueryColumn>): Pair<QueryString, Arguments> {
+        val arguments = mutableMapOf<String, String>()
+
+        val values = columns.joinToString(
+            separator = ", ",
+            transform = {
+                val argument = allocator.allocate()
+                arguments[argument] = it.name
+
+                when {
+                    it.type.isEnum -> "CAST(:$argument AS ${it.dbType})"
+                    else -> ":$argument"
+                }
+            }
+        )
+
+        return multiline("""
+            INSERT INTO "$tableName" 
+            (${columns.joinToString(separator = ", ") { it.name.toQuoted() }}) 
+            VALUES ($values)
+        """) to arguments
+    }
+
+}
 
 abstract class GenericQueryGenerator : SqlQueryGenerator {
 
@@ -55,12 +104,12 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
 
     override fun createSelectQuery(
         tableName: String,
-        selected: List<String>,
+        selected: List<QueryColumn>,
         where: String?,
         joins: List<Join>
     ): Pair<QueryString, Arguments> =
         multiline("""
-            SELECT ${selected.joinToString(separator = ", ") { it.toQuoted() }}
+            SELECT ${selected.joinToString(separator = ", ") { "${it.table.toQuoted()}.${it.name.toQuoted()} AS " + (it.table + "." + it.name).toQuoted() }}
             FROM ${tableName.toQuoted()}
             ${joins.joinToString(separator = " ") { join ->
                 val joinType = when (join.type) {
@@ -74,20 +123,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
             ${where?.let { "WHERE $it" } ?: ""}
         """) to emptyMap()
 
-    override fun createInsertQuery(allocator: ParameterAllocator, tableName: String, columns: List<String>): Pair<QueryString, Arguments> {
-        val arguments = mutableMapOf<String, String>()
 
-        val values = columns.joinToString(
-            separator = ", ",
-            transform = {
-                val argument = allocator.allocate()
-                arguments[argument] = it
-                ":$argument"
-            }
-        )
-
-        return """INSERT INTO "$tableName" (${columns.joinToString(separator = ", ") { it.toQuoted() }}) VALUES ($values)""" to arguments
-    }
 
     override fun createUpdateQuery(tableName: String, columns: List<String>, where: String?): Pair<QueryString, Arguments> =
         multiline("""

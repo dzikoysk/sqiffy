@@ -5,6 +5,7 @@ import com.dzikoysk.sqiffy.definition.EnumReference
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.google.devtools.ksp.processing.Dependencies
 import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.writeTo
 
@@ -17,6 +18,16 @@ class EnumGenerator(private val context: KspContext) {
             .addType(
                 TypeSpec.enumBuilder(enumReference.enumData.mappedTo)
                     .also { typeBuilder ->
+                        typeBuilder.addType(
+                            TypeSpec.companionObjectBuilder()
+                                .addProperty(
+                                    PropertySpec.builder("TYPE_NAME", String::class)
+                                        .initializer("%S", enumReference.enumData.name)
+                                        .build()
+                                )
+                                .build()
+                        )
+
                         enumState.values.forEach {
                             typeBuilder.addEnumConstant(it, TypeSpec.anonymousClassBuilder().build())
                         }

@@ -2,18 +2,20 @@
 
 package com.dzikoysk.sqiffy.e2e
 
+import com.dzikoysk.sqiffy.Dialect.POSTGRESQL
 import com.dzikoysk.sqiffy.Role
 import com.dzikoysk.sqiffy.UnidentifiedUser
 import com.dzikoysk.sqiffy.User
 import com.dzikoysk.sqiffy.UserTableNames
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
+import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
 import com.dzikoysk.sqiffy.shared.H2Mode.MYSQL
-import com.dzikoysk.sqiffy.shared.H2Mode.POSTGRESQL
 import com.dzikoysk.sqiffy.shared.createH2DataSource
 import com.dzikoysk.sqiffy.shared.multiline
 import com.zaxxer.hikari.HikariDataSource
 import org.assertj.core.api.Assertions.assertThat
 import org.jdbi.v3.core.kotlin.mapTo
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
@@ -21,8 +23,10 @@ class H2MySQLModeJdbiE2ETest : JdbiE2ETest() {
     override fun createDataSource(): HikariDataSource = createH2DataSource(MYSQL)
 }
 
-class H2PostgreSQLModeJdbiE2ETest : JdbiE2ETest() {
-    override fun createDataSource(): HikariDataSource = createH2DataSource(POSTGRESQL)
+class PostgresJdbiE2ETest : JdbiE2ETest() {
+    val postgres = postgresDataSource()
+    override fun createDataSource(): HikariDataSource = postgres.dataSource
+    @AfterEach fun stop() { postgres.pg.close() }
 }
 
 abstract class JdbiE2ETest : SqiffyE2ETestSpecification() {
@@ -41,12 +45,15 @@ abstract class JdbiE2ETest : SqiffyE2ETestSpecification() {
                 .createUpdate(multiline("""
                     INSERT INTO "${UserTableNames.TABLE}" 
                     ("${UserTableNames.UUID}", "${UserTableNames.NAME}", "${UserTableNames.DISPLAYNAME}", "${UserTableNames.ROLE}")
-                     VALUES (:0, :1, :2, :3)
+                    VALUES (:0, :1, :2, :3${when (database.dialect) {
+                        POSTGRESQL -> "::${Role.TYPE_NAME}" // jdbc requires explicit casts for enums in postgres
+                        else -> ""
+                    }})
                 """))
                 .bind("0", userToInsert.uuid)
                 .bind("1", userToInsert.name)
                 .bind("2", userToInsert.displayName)
-                .bind("3", userToInsert.role.name)
+                .bind("3", userToInsert.role)
                 .executeAndReturnGeneratedKeys()
                 .map { row -> row.getColumn(UserTableNames.ID, Int::class.javaObjectType) }
                 .first()

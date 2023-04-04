@@ -3,6 +3,7 @@ package com.dzikoysk.sqiffy.dsl.statements
 import com.dzikoysk.sqiffy.SqiffyDatabase
 import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.ParameterAllocator
+import com.dzikoysk.sqiffy.dsl.SqlQueryGenerator.QueryColumn
 import com.dzikoysk.sqiffy.dsl.Statement
 import com.dzikoysk.sqiffy.dsl.Table
 import org.jdbi.v3.core.result.ResultBearing
@@ -23,7 +24,14 @@ class InsertStatement(
             val (query, args) = database.sqlQueryGenerator.createInsertQuery(
                 allocator = allocator,
                 tableName = table.getTableName(),
-                columns = columns.keys.toList(),
+                columns = values.keys.map {
+                    QueryColumn(
+                        table = it.table.getTableName(),
+                        name = it.name,
+                        dbType = it.dbType,
+                        type = it.type
+                    )
+                }
             )
 
             database.logger.log(Level.DEBUG, "Executing query: $query with arguments: $args")
