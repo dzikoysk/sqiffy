@@ -1,4 +1,4 @@
-# Sqiffy [![CI](https://github.com/dzikoysk/sqiffy/actions/workflows/gradle.yml/badge.svg)](https://github.com/dzikoysk/sqiffy/actions/workflows/gradle.yml) ![Maven Central](https://img.shields.io/maven-central/v/com.dzikoysk.sqiffy/sqiffy-specification)
+# Sqiffy [![CI](https://github.com/dzikoysk/sqiffy/actions/workflows/gradle.yml/badge.svg)](https://github.com/dzikoysk/sqiffy/actions/workflows/gradle.yml) ![Maven Central](https://img.shields.io/maven-central/v/com.dzikoysk.sqiffy/sqiffy)
 
 **sqiffy** _(or just squiffy 🍹)_ - Experimental compound **SQ**L framework with type-safe DSL API generated at compile-time from scheme d**iff**.
 It is dedicated for applications, plugins & libraries responsible for internal database management.
@@ -21,9 +21,8 @@ Table of contents:
 
 ### Supported
 
-* [x] MySQL/MariaDB
-* [x] H2 (MySQL Mode)
-* [x] PostgreSQL
+* [x] MySQL / MariaDB / H2 (MySQL mode)
+* [x] PostgreSQL / Embedded PostgreSQL
 * [ ] SQLite
 
 ### How to use

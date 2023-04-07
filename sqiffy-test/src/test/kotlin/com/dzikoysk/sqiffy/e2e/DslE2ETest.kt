@@ -9,7 +9,7 @@ import com.dzikoysk.sqiffy.UnidentifiedUser
 import com.dzikoysk.sqiffy.User
 import com.dzikoysk.sqiffy.UserTable
 import com.dzikoysk.sqiffy.dsl.eq
-import com.dzikoysk.sqiffy.dsl.select.JoinType.INNER
+import com.dzikoysk.sqiffy.dsl.statements.JoinType.INNER
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
 import com.dzikoysk.sqiffy.shared.H2Mode.MYSQL
@@ -94,6 +94,12 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
         assertThat(userFromDatabaseUsingDsl).isNotNull
         assertThat(insertedUserWithDsl).isEqualTo(userFromDatabaseUsingDsl)
         assertThat(joinedData).isEqualTo("Panda" to "MONKE")
+
+        val deletedCount = database.delete(GuildTable)
+            .where { GuildTable.id eq insertedGuild.id }
+            .execute()
+
+        assertThat(deletedCount).isEqualTo(1)
     }
 
 }

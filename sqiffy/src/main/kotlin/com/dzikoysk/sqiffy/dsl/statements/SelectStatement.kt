@@ -1,39 +1,51 @@
-package com.dzikoysk.sqiffy.dsl.select
+package com.dzikoysk.sqiffy.dsl.statements
 
 import com.dzikoysk.sqiffy.SqiffyDatabase
 import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.Expression
-import com.dzikoysk.sqiffy.dsl.ParameterAllocator
-import com.dzikoysk.sqiffy.dsl.SqlQueryGenerator.QueryColumn
+import com.dzikoysk.sqiffy.dsl.Row
 import com.dzikoysk.sqiffy.dsl.Statement
 import com.dzikoysk.sqiffy.dsl.Table
-import org.jdbi.v3.core.result.ResultIterable
-import org.jdbi.v3.core.statement.Query
+import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
+import com.dzikoysk.sqiffy.dsl.generator.QueryColumn
 import org.slf4j.event.Level
 
-class SelectStatementBuilder(
-    val database: SqiffyDatabase,
-    val from: Table,
-) : Statement<Query> {
+enum class JoinType {
+    INNER,
+    LEFT,
+    RIGHT,
+    FULL
+}
 
-    private var slice: MutableList<Column<*>> = from.getColumns().toMutableList()
-    private val joins: MutableList<Join> = mutableListOf()
-    private var where: Expression<Boolean>? = null
+data class Join(
+    val type: JoinType,
+    val on: Column<*>,
+    val onTo: Column<*>
+)
 
-    fun where(where: () -> Expression<Boolean>): SelectStatementBuilder = also {
+open class SelectStatement(
+    protected val database: SqiffyDatabase,
+    protected val from: Table,
+) : Statement {
+
+    protected var slice: MutableList<Column<*>> = from.getColumns().toMutableList()
+    protected val joins: MutableList<Join> = mutableListOf()
+    protected var where: Expression<Boolean>? = null
+
+    fun where(where: () -> Expression<Boolean>): SelectStatement = also {
         this.where = where()
     }
 
-    fun <T> slice(vararg column: Column<T>): SelectStatementBuilder = also {
+    fun <T> slice(vararg column: Column<T>): SelectStatement = also {
         this.slice = column.toMutableList()
     }
 
-    fun <T> join(type: JoinType, on: Column<T>, to: Column<T>): SelectStatementBuilder = also {
+    fun <T> join(type: JoinType, on: Column<T>, to: Column<T>): SelectStatement = also {
         joins.add(Join(type, on, to))
         slice.addAll(to.table.getColumns())
     }
 
-    override fun <R> execute(mapper: (Query) -> ResultIterable<R>): Sequence<R> =
+    fun <R> map(mapper: (Row) -> R): Sequence<R> =
         database.getJdbi().withHandle<Sequence<R>, Exception> { handle ->
             val allocator = ParameterAllocator()
 
@@ -55,20 +67,20 @@ class SelectStatementBuilder(
                     )
                 },
                 joins = joins,
-                where = expression?.first
+                where = expression?.query
             )
 
-            val arguments = query.second + (expression?.second ?: emptyMap())
-            database.logger.log(Level.DEBUG, "Executing query: ${query.first} with arguments: $arguments")
+            val arguments = query.arguments + (expression?.arguments ?: emptyMap())
+            database.logger.log(Level.DEBUG, "Executing query: ${query.query} with arguments: $arguments")
 
             handle
-                .select(query.first)
+                .select(query.query)
                 .also {
                     arguments.forEach { (key, value) ->
                         it.bindByType(key, value, value::class.javaObjectType)
                     }
                 }
-                .let { mapper(it) }
+                .map { view -> mapper(Row(view)) }
                 .list()
                 .asSequence()
         }

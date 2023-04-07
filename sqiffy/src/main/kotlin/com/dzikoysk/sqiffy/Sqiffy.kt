@@ -9,11 +9,12 @@ import com.dzikoysk.sqiffy.changelog.PostgreSqlSchemeGenerator
 import com.dzikoysk.sqiffy.changelog.SqlSchemeGenerator
 import com.dzikoysk.sqiffy.definition.RuntimeTypeFactory
 import com.dzikoysk.sqiffy.dsl.Column
-import com.dzikoysk.sqiffy.dsl.MySqlQueryGenerator
-import com.dzikoysk.sqiffy.dsl.PostgreSqlQueryGenerator
-import com.dzikoysk.sqiffy.dsl.SqlQueryGenerator
+import com.dzikoysk.sqiffy.dsl.generator.MySqlQueryGenerator
+import com.dzikoysk.sqiffy.dsl.generator.PostgreSqlQueryGenerator
+import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator
 import com.dzikoysk.sqiffy.dsl.Table
-import com.dzikoysk.sqiffy.dsl.select.SelectStatementBuilder
+import com.dzikoysk.sqiffy.dsl.statements.DeleteStatement
+import com.dzikoysk.sqiffy.dsl.statements.SelectStatement
 import com.dzikoysk.sqiffy.dsl.statements.InsertStatement
 import com.zaxxer.hikari.HikariDataSource
 import org.jdbi.v3.core.Jdbi
@@ -85,17 +86,20 @@ open class SqiffyDatabase(
     private val changeLogGenerator: ChangeLogGenerator,
 ) : Closeable {
 
-    fun select(table: Table): SelectStatementBuilder =
-        SelectStatementBuilder(this, table)
-
-    fun insert(table: Table, values: (MutableMap<Column<*>, Any?>) -> Unit): InsertStatement =
-        InsertStatement(this, table, mutableMapOf<Column<*>, Any?>().also { values.invoke(it) })
-
     fun generateChangeLog(vararg classes: KClass<*>): ChangeLog =
         changeLogGenerator.generateChangeLog(*classes)
 
     fun runMigrations(metadataTable: SqiffyMetadataTable = SqiffyMetadataTable(), changeLog: ChangeLog) =
         Migrator(this).runMigrations(metadataTable, changeLog)
+
+    fun select(table: Table): SelectStatement =
+        SelectStatement(this, table)
+
+    fun insert(table: Table, values: (MutableMap<Column<*>, Any?>) -> Unit): InsertStatement =
+        InsertStatement(this, table, mutableMapOf<Column<*>, Any?>().also { values.invoke(it) })
+
+    fun delete(table: Table): DeleteStatement =
+        DeleteStatement(this, table)
 
     fun getJdbi(): Jdbi =
         localJdbi

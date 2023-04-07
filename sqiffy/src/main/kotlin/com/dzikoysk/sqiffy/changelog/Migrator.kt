@@ -3,8 +3,8 @@ package com.dzikoysk.sqiffy.changelog
 import com.dzikoysk.sqiffy.SqiffyDatabase
 import com.dzikoysk.sqiffy.definition.DataType.TEXT
 import com.dzikoysk.sqiffy.definition.PropertyData
-import com.dzikoysk.sqiffy.dsl.ParameterAllocator
-import com.dzikoysk.sqiffy.dsl.SqlQueryGenerator.QueryColumn
+import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
+import com.dzikoysk.sqiffy.dsl.generator.QueryColumn
 import org.slf4j.event.Level
 
 class Migrator(private val database: SqiffyDatabase) {
@@ -44,7 +44,7 @@ class Migrator(private val database: SqiffyDatabase) {
                         tableName = tableName,
                         selected = listOf(queryColumn),
                         where = """"${columnProperty.name}" = :version"""
-                    ).first,
+                    ).query,
                 )
                 .bind("version", "version")
                 .mapTo(String::class.java)
@@ -95,7 +95,7 @@ class Migrator(private val database: SqiffyDatabase) {
                                 allocator = ParameterAllocator(),
                                 tableName = tableName,
                                 columns = listOf(queryColumn)
-                            ).first
+                            ).query
                         )
                         .bind("0", latestVersion)
                         .execute()
@@ -104,8 +104,8 @@ class Migrator(private val database: SqiffyDatabase) {
                         .createUpdate(
                             database.sqlQueryGenerator.createUpdateQuery(
                                 tableName = tableName,
-                                columns = listOf(columnProperty).map { it.name },
-                            ).first
+                                columns = listOf(queryColumn),
+                            ).query
                         )
                         .bind(columnProperty.name, latestVersion)
                         .execute()

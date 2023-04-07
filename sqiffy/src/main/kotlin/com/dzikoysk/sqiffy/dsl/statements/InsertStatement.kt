@@ -2,22 +2,21 @@ package com.dzikoysk.sqiffy.dsl.statements
 
 import com.dzikoysk.sqiffy.SqiffyDatabase
 import com.dzikoysk.sqiffy.dsl.Column
-import com.dzikoysk.sqiffy.dsl.ParameterAllocator
-import com.dzikoysk.sqiffy.dsl.SqlQueryGenerator.QueryColumn
+import com.dzikoysk.sqiffy.dsl.Row
 import com.dzikoysk.sqiffy.dsl.Statement
 import com.dzikoysk.sqiffy.dsl.Table
-import org.jdbi.v3.core.result.ResultBearing
-import org.jdbi.v3.core.result.ResultIterable
+import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
+import com.dzikoysk.sqiffy.dsl.generator.QueryColumn
 import org.slf4j.event.Level
 
-class InsertStatement(
-    val database: SqiffyDatabase,
-    val table: Table,
-    val values: Map<Column<*>, Any?>
-) : Statement<ResultBearing> {
+open class InsertStatement(
+    protected val database: SqiffyDatabase,
+    protected val table: Table,
+    protected val values: Map<Column<*>, Any?>
+) : Statement {
 
-    override fun <R> execute(mapper: (ResultBearing) -> ResultIterable<R>): Sequence<R> {
-        return database.getJdbi().withHandle<Sequence<R>, Exception> { handle ->
+    fun <T> map(mapper: (Row) -> T): Sequence<T> {
+        return database.getJdbi().withHandle<Sequence<T>, Exception> { handle ->
             val allocator = ParameterAllocator()
             val columns = values.mapKeys { it.key.name }
 
@@ -45,7 +44,9 @@ class InsertStatement(
                     }
                 }
                 .executeAndReturnGeneratedKeys()
-                .let { mapper(it) }
+                .map { view ->
+                    mapper(Row(view))
+                }
                 .list()
                 .asSequence()
         }
