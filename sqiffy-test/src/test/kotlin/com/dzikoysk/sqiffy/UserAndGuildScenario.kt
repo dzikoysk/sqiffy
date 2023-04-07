@@ -7,6 +7,7 @@ import com.dzikoysk.sqiffy.definition.Constraint
 import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.REMOVE_CONSTRAINT
 import com.dzikoysk.sqiffy.definition.ConstraintType.FOREIGN_KEY
 import com.dzikoysk.sqiffy.definition.ConstraintType.PRIMARY_KEY
+import com.dzikoysk.sqiffy.definition.DataType.DATETIME
 import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.INT
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
@@ -91,7 +92,8 @@ object UserDefinition
         properties = [
             Property(name = "id", type = SERIAL),
             Property(name = "name", type = VARCHAR, details = "24"),
-            Property(name = "owner", type = INT)
+            Property(name = "owner", type = INT),
+            Property(name = "createdAt", type = DATETIME)
         ],
         constraints = [
             Constraint(type = FOREIGN_KEY, on = "id", name = "fk_id", referenced = UserDefinition::class, references = "id")

@@ -1,11 +1,12 @@
 package com.dzikoysk.sqiffy.dsl.generator
 
+import com.dzikoysk.sqiffy.dsl.BetweenCondition
 import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.ComparisonCondition
 import com.dzikoysk.sqiffy.dsl.ConstExpression
 import com.dzikoysk.sqiffy.dsl.Expression
 import com.dzikoysk.sqiffy.dsl.LogicalCondition
-import com.dzikoysk.sqiffy.dsl.NotExpression
+import com.dzikoysk.sqiffy.dsl.NotCondition
 import com.dzikoysk.sqiffy.dsl.generator.ArgumentType.COLUMN
 import com.dzikoysk.sqiffy.dsl.generator.ArgumentType.VALUE
 import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator.GeneratorResult
@@ -228,10 +229,10 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                         arguments = it
                     )
                 }
-            is NotExpression -> {
+            is NotCondition -> {
                 createExpression(allocator, expression.condition).let {
                     GeneratorResult(
-                        query = "NOT (${it.query})",
+                        query = "NOT ${it.query}",
                         arguments = it.arguments
                     )
                 }
@@ -251,6 +252,16 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                 GeneratorResult(
                     query = results.joinToString(separator = " ${expression.operator.symbol} ") { "(${it.query})" },
                     arguments = results.fold(Arguments(allocator)) { arguments, result -> arguments + result.arguments }
+                )
+            }
+            is BetweenCondition<*> -> {
+                val valueResult = createExpression(allocator, expression.value)
+                val leftResult = createExpression(allocator, expression.between.from)
+                val rightResult = createExpression(allocator, expression.between.to)
+
+                GeneratorResult(
+                    query = "${valueResult.query} BETWEEN ${leftResult.query} AND ${rightResult.query}",
+                    arguments = (valueResult.arguments + leftResult.arguments + rightResult.arguments)
                 )
             }
         }

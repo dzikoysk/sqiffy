@@ -70,6 +70,7 @@ object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
                     ?.joinToString { "'$it'" }
                     ?.let { "ENUM($it)" }
                     ?: throw IllegalStateException("Missing enum data for property ${property.name}")
+            DataType.DATETIME -> "DATETIME"
             else -> createRegularDataType(property)
         }
 
@@ -118,6 +119,7 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
                 ?.name
                 ?.toQuoted()
                 ?: throw IllegalStateException("Missing enum data for property ${property.name}")
+            DataType.DATETIME -> "TIMESTAMPTZ"
             else -> createRegularDataType(property)
         }
 
@@ -186,7 +188,6 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
                 DataType.FLOAT -> "FLOAT"
                 DataType.DOUBLE -> "DOUBLE"
                 DataType.DATE -> "DATE"
-                DataType.DATETIME -> "DATETIME"
                 DataType.TIMESTAMP -> "TIMESTAMP"
                 else -> throw UnsupportedOperationException("Cannot create data type based on $property")
             }

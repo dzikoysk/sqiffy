@@ -9,12 +9,14 @@ import com.dzikoysk.sqiffy.UnidentifiedUser
 import com.dzikoysk.sqiffy.User
 import com.dzikoysk.sqiffy.UserTable
 import com.dzikoysk.sqiffy.dsl.and
+import com.dzikoysk.sqiffy.dsl.between
 import com.dzikoysk.sqiffy.dsl.eq
 import com.dzikoysk.sqiffy.dsl.greaterThan
 import com.dzikoysk.sqiffy.dsl.greaterThanOrEq
 import com.dzikoysk.sqiffy.dsl.lessThan
 import com.dzikoysk.sqiffy.dsl.lessThanOrEq
 import com.dzikoysk.sqiffy.dsl.like
+import com.dzikoysk.sqiffy.dsl.notBetween
 import com.dzikoysk.sqiffy.dsl.notEq
 import com.dzikoysk.sqiffy.dsl.notLike
 import com.dzikoysk.sqiffy.dsl.or
@@ -101,6 +103,7 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
             .insert(GuildTable) {
                 it[GuildTable.name] = guildToInsert.name
                 it[GuildTable.owner] = guildToInsert.owner
+                it[GuildTable.createdAt] = guildToInsert.createdAt
             }
             .map { guildToInsert.withId(id = it[GuildTable.id]) }
             .first()
@@ -124,14 +127,18 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
                     and(
                         GuildTable.id eq insertedGuild.id,
                         GuildTable.name notEq insertedGuild.name,
-                        GuildTable.name greaterThan  insertedGuild.name,
+                        GuildTable.name greaterThan insertedGuild.name,
                         GuildTable.name greaterThanOrEq insertedGuild.name,
                         GuildTable.name lessThan insertedGuild.name,
                         GuildTable.name lessThanOrEq insertedGuild.name,
                         GuildTable.name like insertedGuild.name,
                         GuildTable.name notLike insertedGuild.name,
+                        GuildTable.createdAt notBetween (insertedGuild.createdAt and insertedGuild.createdAt)
                     ),
-                    GuildTable.name like "G%O%N%E",
+                    and(
+                        GuildTable.name like "G%O%N%E",
+                        GuildTable.createdAt between (insertedGuild.createdAt.minusMinutes(1) and insertedGuild.createdAt.plusMinutes(1))
+                    )
                 )
             }
             .map { it[GuildTable.name] }

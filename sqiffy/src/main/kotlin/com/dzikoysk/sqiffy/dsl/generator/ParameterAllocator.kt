@@ -40,6 +40,9 @@ class Arguments(private val allocator: ParameterAllocator) {
             it.arguments.putAll(arguments?.arguments ?: emptyMap())
         }
 
+    override fun toString(): String =
+        arguments.toString()
+
 }
 
 fun <S : SqlStatement<*>> S.bindArguments(arguments: Arguments, values: Values? = null): S = also {

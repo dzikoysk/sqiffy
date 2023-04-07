@@ -17,8 +17,8 @@ class LogicalCondition(val operator: LogicalOperator, val conditions: List<Condi
 fun and(vararg conditions: Condition): LogicalCondition = LogicalCondition(LogicalOperator.AND, conditions.toList())
 fun or(vararg conditions: Condition): LogicalCondition = LogicalCondition(LogicalOperator.OR, conditions.toList())
 
-data class NotExpression(val condition: Condition) : Condition
-fun not(condition: Condition): Condition = NotExpression(condition)
+data class NotCondition(val condition: Condition) : Condition
+fun not(condition: Condition): NotCondition = NotCondition(condition)
 
 /* Basic comparison operators */
 
@@ -50,9 +50,12 @@ infix fun Expression<String>.notLike(to: String): ComparisonCondition<String> = 
 
 /* Complex operators */
 
-//data class BetweenExpression<T>(val value: Expression<T>, val from: Expression<T>, val to: Expression<T>) : Condition
-//fun <T> Expression<T>.between(from: T, to: T): Condition = BetweenExpression(this, ConstExpression(from), ConstExpression(to))
-//
-//data class NotBetweenExpression<T>(val value: Expression<T>, val from: Expression<T>, val to: Expression<T>) : Condition
-//fun <T> Expression<T>.notBetween(from: T, to: T): Condition = NotBetweenExpression(this, ConstExpression(from), ConstExpression(to))
+data class Between<T>(val from: Expression<T>, val to: Expression<T>)
+infix fun <T> T.and(to: T): Between<T> = Between(ConstExpression(this), ConstExpression(to))
 
+class BetweenCondition<T>(val value: Expression<T>, val between: Between<T>) : Condition
+fun <T> Expression<T>.between(from: T, to: T): BetweenCondition<T> = this between (from and to)
+fun <T> Expression<T>.notBetween(from: T, to: T): NotCondition = this notBetween (from and to)
+
+infix fun <T> Expression<T>.between(between: Between<T>): BetweenCondition<T> = BetweenCondition(this, between)
+infix fun <T> Expression<T>.notBetween(between: Between<T>): NotCondition = NotCondition(BetweenCondition(this, between))
