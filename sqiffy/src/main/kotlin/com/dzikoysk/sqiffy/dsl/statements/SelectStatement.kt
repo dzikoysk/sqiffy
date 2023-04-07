@@ -8,6 +8,7 @@ import com.dzikoysk.sqiffy.dsl.Statement
 import com.dzikoysk.sqiffy.dsl.Table
 import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
 import com.dzikoysk.sqiffy.dsl.generator.QueryColumn
+import com.dzikoysk.sqiffy.dsl.generator.bindArguments
 import org.slf4j.event.Level
 
 enum class JoinType {
@@ -70,16 +71,12 @@ open class SelectStatement(
                 where = expression?.query
             )
 
-            val arguments = query.arguments + (expression?.arguments ?: emptyMap())
+            val arguments = query.arguments + expression?.arguments
             database.logger.log(Level.DEBUG, "Executing query: ${query.query} with arguments: $arguments")
 
             handle
                 .select(query.query)
-                .also {
-                    arguments.forEach { (key, value) ->
-                        it.bindByType(key, value, value::class.javaObjectType)
-                    }
-                }
+                .bindArguments(arguments)
                 .map { view -> mapper(Row(view)) }
                 .list()
                 .asSequence()

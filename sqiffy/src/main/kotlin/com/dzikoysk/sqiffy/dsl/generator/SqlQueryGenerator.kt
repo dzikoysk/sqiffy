@@ -4,14 +4,13 @@ import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.ConstExpression
 import com.dzikoysk.sqiffy.dsl.EqualsExpression
 import com.dzikoysk.sqiffy.dsl.Expression
+import com.dzikoysk.sqiffy.dsl.generator.ArgumentType.COLUMN
+import com.dzikoysk.sqiffy.dsl.generator.ArgumentType.VALUE
 import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator.GeneratorResult
 import com.dzikoysk.sqiffy.dsl.statements.Join
 import com.dzikoysk.sqiffy.dsl.statements.JoinType
 import com.dzikoysk.sqiffy.shared.multiline
 import com.dzikoysk.sqiffy.shared.toQuoted
-
-typealias Argument = String
-typealias Value = Any
 
 class QueryColumn(
     val table: String,
@@ -20,11 +19,19 @@ class QueryColumn(
     val type: Class<*>
 )
 
+fun Column<*>.toQueryColumn(): QueryColumn =
+    QueryColumn(
+        table = table.getTableName(),
+        name = name,
+        dbType = dbType,
+        type = type
+    )
+
 interface SqlQueryGenerator {
 
     data class GeneratorResult(
         val query: String,
-        val arguments: Map<Argument, Value> = emptyMap()
+        val arguments: Arguments = Arguments(ParameterAllocator())
     )
 
     fun createSelectQuery(
@@ -41,6 +48,7 @@ interface SqlQueryGenerator {
     ): GeneratorResult
 
     fun createUpdateQuery(
+        allocator: ParameterAllocator,
         tableName: String,
         columns: List<QueryColumn>,
         where: String? = null
@@ -67,15 +75,11 @@ object MySqlQueryGenerator : GenericQueryGenerator() {
         tableName: String,
         columns: List<QueryColumn>
     ): GeneratorResult {
-        val arguments = mutableMapOf<String, String>()
+        val arguments = Arguments(allocator)
 
         val values = columns.joinToString(
             separator = ", ",
-            transform = {
-                val argument = allocator.allocate()
-                arguments[argument] = it.name
-                ":$argument"
-            }
+            transform = { ":${arguments.createArgument(COLUMN, it.name)}" }
         )
 
         return GeneratorResult(
@@ -84,6 +88,30 @@ object MySqlQueryGenerator : GenericQueryGenerator() {
                     INSERT INTO "$tableName" 
                     (${columns.joinToString(separator = ", ") { it.name.toQuoted() }})
                      VALUES ($values)
+                """),
+            arguments = arguments
+        )
+    }
+
+    override fun createUpdateQuery(
+        allocator: ParameterAllocator,
+        tableName: String,
+        columns: List<QueryColumn>,
+        where: String?
+    ): GeneratorResult {
+        val arguments = Arguments(allocator)
+
+        val values = columns.joinToString(
+            separator = ", ",
+            transform = { "${it.name.toQuoted()} = :${arguments.createArgument(COLUMN, it.name)}" }
+        )
+
+        return GeneratorResult(
+            query =
+                multiline("""
+                    UPDATE "$tableName" 
+                    SET $values
+                    ${where?.let { "WHERE $it" } ?: ""}
                 """),
             arguments = arguments
         )
@@ -98,17 +126,14 @@ object PostgreSqlQueryGenerator : GenericQueryGenerator() {
         tableName: String,
         columns: List<QueryColumn>
     ): GeneratorResult {
-        val arguments = mutableMapOf<String, String>()
+        val arguments = Arguments(allocator)
 
         val values = columns.joinToString(
             separator = ", ",
             transform = {
-                val argument = allocator.allocate()
-                arguments[argument] = it.name
-
                 when {
-                    it.type.isEnum -> "CAST(:$argument AS ${it.dbType})"
-                    else -> ":$argument"
+                    it.type.isEnum -> "CAST(:${arguments.createArgument(COLUMN, it.name)} AS ${it.dbType})"
+                    else -> ":${arguments.createArgument(COLUMN, it.name)}"
                 }
             }
         )
@@ -119,6 +144,35 @@ object PostgreSqlQueryGenerator : GenericQueryGenerator() {
                     INSERT INTO "$tableName" 
                     (${columns.joinToString(separator = ", ") { it.name.toQuoted() }}) 
                     VALUES ($values)
+                """),
+            arguments = arguments
+        )
+    }
+
+    override fun createUpdateQuery(
+        allocator: ParameterAllocator,
+        tableName: String,
+        columns: List<QueryColumn>,
+        where: String?
+    ): GeneratorResult {
+        val arguments = Arguments(allocator)
+
+        val values = columns.joinToString(
+            separator = ", ",
+            transform = {
+                it.name.toQuoted() + " = " + when {
+                    it.type.isEnum -> "CAST(:${arguments.createArgument(COLUMN, it.name)} AS ${it.dbType})"
+                    else -> ":${arguments.createArgument(COLUMN, it.name)}"
+                }
+            }
+        )
+
+        return GeneratorResult(
+            query =
+            multiline("""
+                    UPDATE "$tableName" 
+                    SET $values
+                    ${where?.let { "WHERE $it" } ?: ""}
                 """),
             arguments = arguments
         )
@@ -151,19 +205,6 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
             """)
         )
 
-    override fun createUpdateQuery(
-        tableName: String,
-        columns: List<QueryColumn>,
-        where: String?
-    ): GeneratorResult =
-        GeneratorResult(
-            query = multiline("""
-                UPDATE "$tableName"
-                SET ${columns.joinToString(separator = ", ") { "${it.name.toQuoted()} = :$it" }}
-                ${where?.let { "WHERE $it" } ?: ""}
-            """)
-        )
-
     override fun createDeleteQuery(tableName: String, where: String?): GeneratorResult =
         GeneratorResult(
             query = multiline("""
@@ -178,12 +219,13 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                 GeneratorResult(
                     query = expression.toQuotedIdentifier()
                 )
-            is ConstExpression -> allocator.allocate().let { argument ->
-                GeneratorResult(
-                    query = ":$argument",
-                    arguments = mapOf(argument to expression.value!!)
-                )
-            }
+            is ConstExpression ->
+                Arguments(allocator).let {
+                    GeneratorResult(
+                        query = ":${it.createArgument(VALUE, expression.value!!)}",
+                        arguments = it
+                    )
+                }
             is EqualsExpression<*> -> {
                 val leftResult = createExpression(allocator, expression.left)
                 val rightResult = createExpression(allocator, expression.right)

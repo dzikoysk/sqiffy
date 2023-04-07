@@ -8,14 +8,15 @@ import com.dzikoysk.sqiffy.changelog.MySqlSchemeGenerator
 import com.dzikoysk.sqiffy.changelog.PostgreSqlSchemeGenerator
 import com.dzikoysk.sqiffy.changelog.SqlSchemeGenerator
 import com.dzikoysk.sqiffy.definition.RuntimeTypeFactory
-import com.dzikoysk.sqiffy.dsl.Column
+import com.dzikoysk.sqiffy.dsl.Table
+import com.dzikoysk.sqiffy.dsl.Values
 import com.dzikoysk.sqiffy.dsl.generator.MySqlQueryGenerator
 import com.dzikoysk.sqiffy.dsl.generator.PostgreSqlQueryGenerator
 import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator
-import com.dzikoysk.sqiffy.dsl.Table
 import com.dzikoysk.sqiffy.dsl.statements.DeleteStatement
-import com.dzikoysk.sqiffy.dsl.statements.SelectStatement
 import com.dzikoysk.sqiffy.dsl.statements.InsertStatement
+import com.dzikoysk.sqiffy.dsl.statements.SelectStatement
+import com.dzikoysk.sqiffy.dsl.statements.UpdateStatement
 import com.zaxxer.hikari.HikariDataSource
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.kotlin.KotlinPlugin
@@ -95,8 +96,11 @@ open class SqiffyDatabase(
     fun select(table: Table): SelectStatement =
         SelectStatement(this, table)
 
-    fun insert(table: Table, values: (MutableMap<Column<*>, Any?>) -> Unit): InsertStatement =
-        InsertStatement(this, table, mutableMapOf<Column<*>, Any?>().also { values.invoke(it) })
+    fun insert(table: Table, values: (Values) -> Unit): InsertStatement =
+        InsertStatement(this, table, Values().also { values.invoke(it) })
+
+    fun update(table: Table, values: (Values) -> Unit): UpdateStatement =
+        UpdateStatement(this, table, Values().also { values.invoke(it) })
 
     fun delete(table: Table): DeleteStatement =
         DeleteStatement(this, table)

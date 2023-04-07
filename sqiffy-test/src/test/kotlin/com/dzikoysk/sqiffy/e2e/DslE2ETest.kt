@@ -19,7 +19,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import java.util.UUID
-import kotlin.collections.set
 
 class H2MySQLModeDslE2ETest : DslE2ETest() {
     override fun createDataSource(): HikariDataSource = createH2DataSource(MYSQL)
@@ -42,7 +41,7 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
             role = Role.MODERATOR
         )
 
-        val insertedUserWithDsl = database
+        val insertedUser = database
             .insert(UserTable) {
                 it[UserTable.uuid] = userToInsert.uuid
                 it[UserTable.name] = userToInsert.name
@@ -52,9 +51,39 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
             .map { userToInsert.withId(id = it[UserTable.id]) }
             .first()
 
+        val updatedRecords = database
+            .update(UserTable) {
+                it[UserTable.name] = "Giant Panda"
+                it[UserTable.role] = Role.ADMIN
+            }
+            .where { UserTable.id eq insertedUser.id }
+            .execute()
+
+        assertThat(insertedUser).isNotNull
+        assertThat(updatedRecords).isEqualTo(1)
+        println("Inserted user: $insertedUser")
+
+        val userFromDatabase = database.select(UserTable)
+            .where { UserTable.uuid eq insertedUser.uuid }
+            .map {
+                User(
+                    id = it[UserTable.id],
+                    name = it[UserTable.name],
+                    uuid = it[UserTable.uuid],
+                    displayName = it[UserTable.displayName],
+                    role = it[UserTable.role]
+                )
+            }
+            .first()
+
+        assertThat(userFromDatabase).isNotNull
+        assertThat(userFromDatabase.name).isEqualTo("Giant Panda")
+        assertThat(userFromDatabase.role).isEqualTo(Role.ADMIN)
+        println("Loaded user: $userFromDatabase")
+
         val guildToInsert = UnidentifiedGuild(
             name = "MONKE",
-            owner = insertedUserWithDsl.id
+            owner = userFromDatabase.id
         )
 
         val insertedGuild = database
@@ -65,22 +94,8 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
             .map { guildToInsert.withId(id = it[GuildTable.id]) }
             .first()
 
-        println("Inserted user: $insertedUserWithDsl")
-
-        val userFromDatabaseUsingDsl = database.select(UserTable)
-            .where { UserTable.uuid eq insertedUserWithDsl.uuid }
-            .map {
-                User(
-                    id = it[UserTable.id],
-                    name = it[UserTable.name],
-                    uuid = it[UserTable.uuid],
-                    displayName = it[UserTable.displayName],
-                    role = it[UserTable.role]
-                )
-            }
-            .firstOrNull()
-
-        println("Loaded user: $userFromDatabaseUsingDsl")
+        assertThat(insertedGuild).isNotNull
+        println("Inserted guild: $insertedGuild")
 
         val joinedData = database.select(UserTable)
             .join(INNER, UserTable.id, GuildTable.owner)
@@ -89,11 +104,7 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
             .first()
 
         println(joinedData)
-
-        assertThat(insertedUserWithDsl).isNotNull
-        assertThat(userFromDatabaseUsingDsl).isNotNull
-        assertThat(insertedUserWithDsl).isEqualTo(userFromDatabaseUsingDsl)
-        assertThat(joinedData).isEqualTo("Panda" to "MONKE")
+        assertThat(joinedData).isEqualTo("Giant Panda" to "MONKE")
 
         val deletedCount = database.delete(GuildTable)
             .where { GuildTable.id eq insertedGuild.id }

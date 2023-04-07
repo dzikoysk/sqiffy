@@ -3,29 +3,30 @@ package com.dzikoysk.sqiffy.changelog
 import com.dzikoysk.sqiffy.SqiffyDatabase
 import com.dzikoysk.sqiffy.definition.DataType.TEXT
 import com.dzikoysk.sqiffy.definition.PropertyData
+import com.dzikoysk.sqiffy.dsl.Column
+import com.dzikoysk.sqiffy.dsl.Table
+import com.dzikoysk.sqiffy.dsl.Values
 import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
-import com.dzikoysk.sqiffy.dsl.generator.QueryColumn
+import com.dzikoysk.sqiffy.dsl.generator.bindArguments
+import com.dzikoysk.sqiffy.dsl.generator.toQueryColumn
 import org.slf4j.event.Level
 
 class Migrator(private val database: SqiffyDatabase) {
 
-    data class SqiffyMetadataTable(val name: String = "sqiffy_metadata")
+    class SqiffyMetadataTable(name: String = "sqiffy_metadata") : Table(name) {
+        val property: Column<String> = text("property", "text")
+    }
 
     @Suppress("RemoveRedundantQualifierName")
     fun runMigrations(metadataTable: SqiffyMetadataTable = SqiffyMetadataTable(), changeLog: ChangeLog) {
-        val tableName = metadataTable.name
+        val tableName = metadataTable.getTableName()
 
         val columnProperty = PropertyData(
             name = "property",
             type = TEXT
         )
 
-        val queryColumn = QueryColumn(
-            table = tableName,
-            name = columnProperty.name,
-            dbType = "text",
-            type = String::class.java
-        )
+        val queryColumn = metadataTable.property.toQueryColumn()
 
         database.getJdbi().useHandle<Exception> { handle ->
             handle.execute(
@@ -87,29 +88,28 @@ class Migrator(private val database: SqiffyDatabase) {
                 }
             }
 
-            when (currentVersion) {
-                null ->
-                    transaction
-                        .createUpdate(
-                            database.sqlQueryGenerator.createInsertQuery(
-                                allocator = ParameterAllocator(),
-                                tableName = tableName,
-                                columns = listOf(queryColumn)
-                            ).query
-                        )
-                        .bind("0", latestVersion)
-                        .execute()
-                else ->
-                    transaction
-                        .createUpdate(
-                            database.sqlQueryGenerator.createUpdateQuery(
-                                tableName = tableName,
-                                columns = listOf(queryColumn),
-                            ).query
-                        )
-                        .bind(columnProperty.name, latestVersion)
-                        .execute()
+            val allocator = ParameterAllocator()
+
+            val (query, arguments) = when (currentVersion) {
+                null -> database.sqlQueryGenerator.createInsertQuery(
+                    allocator = allocator,
+                    tableName = tableName,
+                    columns = listOf(queryColumn)
+                )
+                else -> database.sqlQueryGenerator.createUpdateQuery(
+                    allocator = allocator,
+                    tableName = tableName,
+                    columns = listOf(queryColumn),
+                )
             }
+
+            val values = Values()
+            values[metadataTable.property] = latestVersion
+
+            transaction
+                .createUpdate(query)
+                .bindArguments(arguments, values)
+                .execute()
         }
     }
 
