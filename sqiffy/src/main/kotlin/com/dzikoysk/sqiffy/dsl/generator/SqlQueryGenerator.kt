@@ -1,5 +1,6 @@
 package com.dzikoysk.sqiffy.dsl.generator
 
+import com.dzikoysk.sqiffy.dsl.Aggregation
 import com.dzikoysk.sqiffy.dsl.BetweenCondition
 import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.ComparisonCondition
@@ -7,6 +8,7 @@ import com.dzikoysk.sqiffy.dsl.ConstExpression
 import com.dzikoysk.sqiffy.dsl.Expression
 import com.dzikoysk.sqiffy.dsl.LogicalCondition
 import com.dzikoysk.sqiffy.dsl.NotCondition
+import com.dzikoysk.sqiffy.dsl.Selectable
 import com.dzikoysk.sqiffy.dsl.generator.ArgumentType.COLUMN
 import com.dzikoysk.sqiffy.dsl.generator.ArgumentType.VALUE
 import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator.GeneratorResult
@@ -39,7 +41,7 @@ interface SqlQueryGenerator {
 
     fun createSelectQuery(
         tableName: String,
-        selected: List<QueryColumn>,
+        selected: List<Selectable>,
         where: String? = null,
         joins: List<Join> = emptyList()
     ): GeneratorResult
@@ -187,13 +189,19 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
 
     override fun createSelectQuery(
         tableName: String,
-        selected: List<QueryColumn>,
+        selected: List<Selectable>,
         where: String?,
         joins: List<Join>
     ): GeneratorResult =
         GeneratorResult(
             query = multiline("""
-                SELECT ${selected.joinToString(separator = ", ") { "${it.table.toQuoted()}.${it.name.toQuoted()} AS " + (it.table + "." + it.name).toQuoted() }}
+                SELECT ${selected.joinToString(separator = ", ") {
+                    when (it) {
+                        is Column<*> -> """"${it.table.getTableName()}"."${it.name}" AS "${it.table.getTableName()}.${it.name}""""
+                        is Aggregation<*> -> """${it.getAggregationFunction()}("${it.getTableName()}"."${it.getColumnName()}") AS "${it.getAggregationFunction()}(${it.getTableName()}.${it.getColumnName()})""""
+                        else -> throw IllegalArgumentException("Unknown selectable type: ${it.javaClass}")
+                    }
+                }}
                 FROM ${tableName.toQuoted()}
                 ${joins.joinToString(separator = " ") { join ->
                     val joinType = when (join.type) {

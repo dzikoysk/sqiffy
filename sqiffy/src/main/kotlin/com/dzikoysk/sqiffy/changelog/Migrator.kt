@@ -43,7 +43,7 @@ class Migrator(private val database: SqiffyDatabase) {
                 .select(
                     database.sqlQueryGenerator.createSelectQuery(
                         tableName = tableName,
-                        selected = listOf(queryColumn),
+                        selected = listOf(metadataTable.property),
                         where = """"${columnProperty.name}" = :version"""
                     ).query,
                 )

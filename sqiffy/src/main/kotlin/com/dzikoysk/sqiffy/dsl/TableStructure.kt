@@ -46,11 +46,13 @@ data class Column<T>(
     val dbType: String,
     val type: Class<T>,
     val nullable: Boolean = false
-) : Expression<T> {
+) : Expression<T>, Selectable {
 
     companion object {
         fun <T : Any> of(table: Table, name: String, dbType: String, type: KClass<T>): Column<T> = Column(table, name, dbType, type.javaObjectType)
     }
+
+    override val selectableType: SelectableType = SelectableType.COLUMN
 
     @Suppress("UNCHECKED_CAST")
     fun nullable(): Column<T?> = copy(nullable = true) as Column<T?>

@@ -20,11 +20,13 @@ import com.dzikoysk.sqiffy.dsl.statements.UpdateStatement
 import com.zaxxer.hikari.HikariDataSource
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.kotlin.KotlinPlugin
+import org.jdbi.v3.core.statement.SqlStatements
 import org.jdbi.v3.jackson2.Jackson2Plugin
 import org.jdbi.v3.sqlobject.SqlObjectPlugin
 import org.jdbi.v3.sqlobject.kotlin.KotlinSqlObjectPlugin
 import java.io.Closeable
 import kotlin.reflect.KClass
+
 
 enum class Dialect  {
     MYSQL,
@@ -42,6 +44,9 @@ object Sqiffy {
             .installPlugin(Jackson2Plugin())
             .installPlugin(KotlinPlugin())
             .installPlugin(KotlinSqlObjectPlugin())
+            .also {
+                it.configure(SqlStatements::class.java) { statements -> statements.isUnusedBindingAllowed = false }
+            }
 
         val dialect = when {
             dataSource.jdbcUrl.contains("mysql", ignoreCase = true) -> Dialect.MYSQL

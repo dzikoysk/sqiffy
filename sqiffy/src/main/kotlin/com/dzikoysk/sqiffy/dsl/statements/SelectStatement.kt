@@ -4,10 +4,10 @@ import com.dzikoysk.sqiffy.SqiffyDatabase
 import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.Expression
 import com.dzikoysk.sqiffy.dsl.Row
+import com.dzikoysk.sqiffy.dsl.Selectable
 import com.dzikoysk.sqiffy.dsl.Statement
 import com.dzikoysk.sqiffy.dsl.Table
 import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
-import com.dzikoysk.sqiffy.dsl.generator.QueryColumn
 import com.dzikoysk.sqiffy.dsl.generator.bindArguments
 import org.slf4j.event.Level
 
@@ -29,7 +29,7 @@ open class SelectStatement(
     protected val from: Table,
 ) : Statement {
 
-    protected var slice: MutableList<Column<*>> = from.getColumns().toMutableList()
+    protected var slice: MutableList<Selectable> = from.getColumns().toMutableList()
     protected val joins: MutableList<Join> = mutableListOf()
     protected var where: Expression<Boolean>? = null
 
@@ -37,7 +37,7 @@ open class SelectStatement(
         this.where = where()
     }
 
-    fun <T> slice(vararg column: Column<T>): SelectStatement = also {
+    fun slice(vararg column: Selectable): SelectStatement = also {
         this.slice = column.toMutableList()
     }
 
@@ -59,14 +59,7 @@ open class SelectStatement(
 
             val query = database.sqlQueryGenerator.createSelectQuery(
                 tableName = from.getTableName(),
-                selected = slice.map {
-                    QueryColumn(
-                        table = it.table.getTableName(),
-                        name = it.name,
-                        dbType = it.dbType,
-                        type = it.type
-                    )
-                },
+                selected = slice,
                 joins = joins,
                 where = expression?.query
             )

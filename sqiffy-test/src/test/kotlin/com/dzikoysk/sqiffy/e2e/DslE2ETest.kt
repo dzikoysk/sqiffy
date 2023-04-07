@@ -9,18 +9,23 @@ import com.dzikoysk.sqiffy.UnidentifiedUser
 import com.dzikoysk.sqiffy.User
 import com.dzikoysk.sqiffy.UserTable
 import com.dzikoysk.sqiffy.dsl.and
+import com.dzikoysk.sqiffy.dsl.avg
 import com.dzikoysk.sqiffy.dsl.between
+import com.dzikoysk.sqiffy.dsl.count
 import com.dzikoysk.sqiffy.dsl.eq
 import com.dzikoysk.sqiffy.dsl.greaterThan
 import com.dzikoysk.sqiffy.dsl.greaterThanOrEq
 import com.dzikoysk.sqiffy.dsl.lessThan
 import com.dzikoysk.sqiffy.dsl.lessThanOrEq
 import com.dzikoysk.sqiffy.dsl.like
+import com.dzikoysk.sqiffy.dsl.max
+import com.dzikoysk.sqiffy.dsl.min
 import com.dzikoysk.sqiffy.dsl.notBetween
 import com.dzikoysk.sqiffy.dsl.notEq
 import com.dzikoysk.sqiffy.dsl.notLike
 import com.dzikoysk.sqiffy.dsl.or
 import com.dzikoysk.sqiffy.dsl.statements.JoinType.INNER
+import com.dzikoysk.sqiffy.dsl.sum
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
 import com.dzikoysk.sqiffy.shared.H2Mode.MYSQL
@@ -146,6 +151,28 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
 
         assertThat(matchedGuild).isNotNull
         println(matchedGuild)
+
+        val aggregatedData = database.select(UserTable)
+            .slice(
+                UserTable.name.count(),
+                UserTable.id.sum(),
+                UserTable.id.avg(),
+                UserTable.id.min(),
+                UserTable.id.max()
+            )
+            .map {
+                mutableMapOf(
+                    "count" to it[UserTable.name.count()],
+                    "sum" to it[UserTable.id.sum()],
+                    "avg" to it[UserTable.id.avg()],
+                    "min" to it[UserTable.id.min()],
+                    "max" to it[UserTable.id.max()]
+                )
+            }
+            .first()
+
+        assertThat(aggregatedData).isNotNull
+        println(aggregatedData)
 
         val deletedCount = database.delete(GuildTable)
             .where { GuildTable.id eq insertedGuild.id }

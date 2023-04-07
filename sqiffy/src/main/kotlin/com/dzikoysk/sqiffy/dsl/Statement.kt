@@ -7,6 +7,7 @@ interface Statement
 
 class Row(val view: RowView) {
     operator fun <T> get(column: Column<T>): T = view[column]
+    operator fun <T> get(column: Aggregation<T>): T = view[column]
 }
 
 class Values {
