@@ -1,9 +1,11 @@
 package com.dzikoysk.sqiffy.dsl.generator
 
 import com.dzikoysk.sqiffy.dsl.Column
+import com.dzikoysk.sqiffy.dsl.ComparisonCondition
 import com.dzikoysk.sqiffy.dsl.ConstExpression
-import com.dzikoysk.sqiffy.dsl.EqualsExpression
 import com.dzikoysk.sqiffy.dsl.Expression
+import com.dzikoysk.sqiffy.dsl.LogicalCondition
+import com.dzikoysk.sqiffy.dsl.NotExpression
 import com.dzikoysk.sqiffy.dsl.generator.ArgumentType.COLUMN
 import com.dzikoysk.sqiffy.dsl.generator.ArgumentType.VALUE
 import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator.GeneratorResult
@@ -226,13 +228,29 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                         arguments = it
                     )
                 }
-            is EqualsExpression<*> -> {
+            is NotExpression -> {
+                createExpression(allocator, expression.condition).let {
+                    GeneratorResult(
+                        query = "NOT (${it.query})",
+                        arguments = it.arguments
+                    )
+                }
+            }
+            is ComparisonCondition<*> -> {
                 val leftResult = createExpression(allocator, expression.left)
                 val rightResult = createExpression(allocator, expression.right)
 
                 GeneratorResult(
-                    query = "${leftResult.query} = ${rightResult.query}",
+                    query = "${leftResult.query} ${expression.operator.symbol} ${rightResult.query}",
                     arguments = (leftResult.arguments + rightResult.arguments)
+                )
+            }
+            is LogicalCondition -> {
+                val results = expression.conditions.map { createExpression(allocator, it) }
+
+                GeneratorResult(
+                    query = results.joinToString(separator = " ${expression.operator.symbol} ") { "(${it.query})" },
+                    arguments = results.fold(Arguments(allocator)) { arguments, result -> arguments + result.arguments }
                 )
             }
         }

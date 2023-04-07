@@ -8,7 +8,16 @@ import com.dzikoysk.sqiffy.UnidentifiedGuild
 import com.dzikoysk.sqiffy.UnidentifiedUser
 import com.dzikoysk.sqiffy.User
 import com.dzikoysk.sqiffy.UserTable
+import com.dzikoysk.sqiffy.dsl.and
 import com.dzikoysk.sqiffy.dsl.eq
+import com.dzikoysk.sqiffy.dsl.greaterThan
+import com.dzikoysk.sqiffy.dsl.greaterThanOrEq
+import com.dzikoysk.sqiffy.dsl.lessThan
+import com.dzikoysk.sqiffy.dsl.lessThanOrEq
+import com.dzikoysk.sqiffy.dsl.like
+import com.dzikoysk.sqiffy.dsl.notEq
+import com.dzikoysk.sqiffy.dsl.notLike
+import com.dzikoysk.sqiffy.dsl.or
 import com.dzikoysk.sqiffy.dsl.statements.JoinType.INNER
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
@@ -18,6 +27,7 @@ import com.zaxxer.hikari.HikariDataSource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import java.time.LocalDateTime
 import java.util.UUID
 
 class H2MySQLModeDslE2ETest : DslE2ETest() {
@@ -82,8 +92,9 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
         println("Loaded user: $userFromDatabase")
 
         val guildToInsert = UnidentifiedGuild(
-            name = "MONKE",
-            owner = userFromDatabase.id
+            name = "GLORIOUS MONKE",
+            owner = userFromDatabase.id,
+            createdAt = LocalDateTime.now()
         )
 
         val insertedGuild = database
@@ -104,7 +115,30 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
             .first()
 
         println(joinedData)
-        assertThat(joinedData).isEqualTo("Giant Panda" to "MONKE")
+        assertThat(joinedData).isEqualTo("Giant Panda" to "GLORIOUS MONKE")
+
+        val matchedGuild = database.select(GuildTable)
+            .slice(GuildTable.name)
+            .where {
+                or(
+                    and(
+                        GuildTable.id eq insertedGuild.id,
+                        GuildTable.name notEq insertedGuild.name,
+                        GuildTable.name greaterThan  insertedGuild.name,
+                        GuildTable.name greaterThanOrEq insertedGuild.name,
+                        GuildTable.name lessThan insertedGuild.name,
+                        GuildTable.name lessThanOrEq insertedGuild.name,
+                        GuildTable.name like insertedGuild.name,
+                        GuildTable.name notLike insertedGuild.name,
+                    ),
+                    GuildTable.name like "G%O%N%E",
+                )
+            }
+            .map { it[GuildTable.name] }
+            .firstOrNull()
+
+        assertThat(matchedGuild).isNotNull
+        println(matchedGuild)
 
         val deletedCount = database.delete(GuildTable)
             .where { GuildTable.id eq insertedGuild.id }
