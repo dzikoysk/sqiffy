@@ -20,7 +20,7 @@ annotation class Constraint(
     val definitionType: ConstraintDefinitionType = ADD_CONSTRAINT,
     val type: ConstraintType,
     val name: String,
-    val on: String = NULL_STRING,
+    val on: Array<String> = [],
     val referenced: KClass<*> = NULL_CLASS::class,
     val references: String = NULL_STRING
 )
@@ -28,19 +28,18 @@ annotation class Constraint(
 sealed interface ConstraintData {
     val type: ConstraintType
     val name: String
-    val on: String
 }
 
 data class PrimaryKey(
     override val name: String,
-    override val on: String
+    val on: List<String>
 ) : ConstraintData {
     override val type: ConstraintType = PRIMARY_KEY
 }
 
 data class ForeignKey(
     override val name: String,
-    override val on: String,
+    val on: String,
     val referenced: TypeDefinition,
     val references: String
 ) : ConstraintData {

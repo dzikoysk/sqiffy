@@ -20,7 +20,7 @@ abstract class Table(name: String) {
             .also { columns.add(it) }
 
     protected fun char(name: String, dbType: String): Column<Char> = column(name, dbType, Char::class)
-    protected fun varchar(name: String,  dbType: String, length: Int): Column<String> = column(name,  dbType, String::class)
+    protected fun varchar(name: String,  dbType: String): Column<String> = column(name,  dbType, String::class)
     protected fun text(name: String, dbType: String): Column<String> = column(name,  dbType, String::class)
 
     protected fun bool(name: String, dbType: String): Column<Boolean> = column(name,  dbType, Boolean::class)

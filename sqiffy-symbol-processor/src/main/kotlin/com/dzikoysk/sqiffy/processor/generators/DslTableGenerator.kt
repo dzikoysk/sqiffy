@@ -57,7 +57,7 @@ class DslTableGenerator(private val context: KspContext) {
             when (property.type) {
                 DataType.SERIAL -> "integer(${q(name)}, $defaultDbType)"
                 DataType.CHAR -> "char(${q(name)}, $defaultDbType)"
-                DataType.VARCHAR -> "varchar(${q(name)}, $defaultDbType, $details)"
+                DataType.VARCHAR -> "varchar(${q(name)}, $defaultDbType)"
                 DataType.BINARY -> "binary(${q(name)}, $defaultDbType)"
                 DataType.UUID_TYPE -> "uuid(${q(name)}, $defaultDbType)"
                 DataType.TEXT -> "text(${q(name)}, $defaultDbType)"

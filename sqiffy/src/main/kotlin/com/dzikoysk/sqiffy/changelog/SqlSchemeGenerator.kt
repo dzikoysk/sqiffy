@@ -31,7 +31,7 @@ interface SqlSchemeGenerator {
 
     /* Constraints */
 
-    fun createPrimaryKey(tableName: String, name: String, on: String): String
+    fun createPrimaryKey(tableName: String, name: String, on: List<String>): String
 
     fun removePrimaryKey(tableName: String, name: String): String
 
@@ -151,8 +151,8 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
 
     /* Constraints */
 
-    override fun createPrimaryKey(tableName: String, name: String, on: String): String =
-        """ALTER TABLE "$tableName" ADD CONSTRAINT "$name" PRIMARY KEY ("$on")"""
+    override fun createPrimaryKey(tableName: String, name: String, on: List<String>): String =
+        """ALTER TABLE "$tableName" ADD CONSTRAINT "$name" PRIMARY KEY (${on.joinToString(separator = ", ") { it.toQuoted() }})"""
 
     override fun removePrimaryKey(tableName: String, name: String): String =
         """ALTER TABLE "$tableName" DROP PRIMARY KEY"""

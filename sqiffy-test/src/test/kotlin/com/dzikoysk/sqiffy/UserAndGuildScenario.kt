@@ -58,7 +58,7 @@ object RoleDefinition
             Property(name = "role", type = ENUM, enumDefinition = RoleDefinition::class)
         ],
         constraints = [
-            Constraint(type = PRIMARY_KEY, name = "pk_id", on = "id"),
+            Constraint(type = PRIMARY_KEY, name = "pk_id", on =["id"]),
         ],
         indices = [
             Index(type = INDEX, name = "idx_id", columns = ["id"]),
@@ -96,19 +96,20 @@ object UserDefinition
             Property(name = "createdAt", type = DATETIME)
         ],
         constraints = [
-            Constraint(type = FOREIGN_KEY, on = "id", name = "fk_id", referenced = UserDefinition::class, references = "id")
+            Constraint(type = PRIMARY_KEY, name = "pk_guild_id", on = ["id"]),
+            Constraint(type = FOREIGN_KEY, name = "fk_guild_owner", on = ["owner"], referenced = UserDefinition::class, references = "id")
         ]
     ),
     DefinitionVersion(
         version = V_1_0_1,
         constraints = [
-            Constraint(REMOVE_CONSTRAINT, type = FOREIGN_KEY, name = "fk_id")
+            Constraint(REMOVE_CONSTRAINT, type = FOREIGN_KEY, name = "fk_guild_owner")
         ]
     ),
     DefinitionVersion(
         version = V_1_0_2,
         constraints = [
-            Constraint(type = FOREIGN_KEY, on = "id", name = "fk_id", referenced = UserDefinition::class, references = "id")
+            Constraint(type = FOREIGN_KEY, name = "fk_guild_owner", on = ["owner"], referenced = UserDefinition::class, references = "id")
         ]
     )
 ])

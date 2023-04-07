@@ -1,6 +1,6 @@
 package com.dzikoysk.sqiffy.changelog.generators
 
-import com.dzikoysk.sqiffy.changelog.ChangeLogGeneratorContext
+import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator.ChangeLogGeneratorContext
 import com.dzikoysk.sqiffy.definition.Constraint
 import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.ADD_CONSTRAINT
 import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.REMOVE_CONSTRAINT
@@ -31,11 +31,20 @@ internal class ChangelogConstraintsGenerator {
                     val primaryKey = PrimaryKey(
                         name = constraint.name,
                         on = constraint.on
+                            .takeIf { it.isNotEmpty() }
+                            ?.toList()
+                            ?: throw IllegalStateException("Primary key declaration misses `on` property")
                     )
 
-                    val property = state.properties.first { it.name == primaryKey.on }
-                    require(!property.nullable) { "Column marked as primary key is nullable" }
+                    val properties = primaryKey.on.map {
+                        state.properties
+                            .firstOrNull { property -> property.name == it }
+                            ?: throw IllegalStateException("Primary key column $it not found")
+                    }
+
+                    require(properties.none { it.nullable }) { "Column marked as primary key is nullable (${constraint.name} = ${constraint.on.contentToString()})" }
                     require(state.constraints.none { it.type == PRIMARY_KEY }) { "Table ${state.tableName} already has primary key" }
+                    checkIfConstraintOrIndexNameAlreadyUsed(primaryKey.name)
 
                     registerChange {
                         createPrimaryKey(
@@ -65,8 +74,9 @@ internal class ChangelogConstraintsGenerator {
                     val foreignKey = ForeignKey(
                         name = constraint.name,
                         on = constraint.on
-                            .takeIf { it != NULL_STRING }
-                            ?: throw IllegalStateException("Foreign key declaration misses `on` property"),
+                            .takeIf { it.size == 1 }
+                            ?.first()
+                            ?: throw IllegalStateException("Foreign key declaration misses `on` property or contains more than one column"),
                         referenced = typeFactory.getTypeDefinition(constraint) { referenced }
                             .takeIf { it.qualifiedName != NULL_CLASS::class.qualifiedName }
                             ?: throw IllegalStateException("Foreign key declaration misses `referenced` class"),
@@ -74,6 +84,8 @@ internal class ChangelogConstraintsGenerator {
                             .takeUnless { it == NULL_STRING }
                             ?: throw IllegalStateException("Foreign key declaration misses `references` property")
                     )
+
+                    checkIfConstraintOrIndexNameAlreadyUsed(foreignKey.name)
 
                     val foreignTable = currentScheme
                         .firstOrNull { it.source == foreignKey.referenced.qualifiedName }

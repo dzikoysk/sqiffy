@@ -4,52 +4,13 @@ import com.dzikoysk.sqiffy.changelog.generators.ChangelogConstraintsGenerator
 import com.dzikoysk.sqiffy.changelog.generators.ChangelogEnumGenerator
 import com.dzikoysk.sqiffy.changelog.generators.ChangelogIndicesGenerator
 import com.dzikoysk.sqiffy.changelog.generators.ChangelogPropertiesGenerator
-import com.dzikoysk.sqiffy.definition.ConstraintData
 import com.dzikoysk.sqiffy.definition.DefinitionEntry
 import com.dzikoysk.sqiffy.definition.DefinitionVersion
-import com.dzikoysk.sqiffy.definition.EnumReference
-import com.dzikoysk.sqiffy.definition.IndexData
 import com.dzikoysk.sqiffy.definition.PropertyData
-import com.dzikoysk.sqiffy.definition.TypeDefinition
 import com.dzikoysk.sqiffy.definition.TypeFactory
 import java.util.ArrayDeque
-import java.util.Deque
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
-
-internal data class ChangeLogGeneratorContext(
-    val typeFactory: TypeFactory,
-    val sqlSchemeGenerator: SqlSchemeGenerator,
-    val currentEnums: Enums,
-    val currentScheme: MutableList<TableAnalysisState>,
-    val changeToApply: DefinitionVersion,
-    val changes: MutableList<String> = mutableListOf(),
-    val state: TableAnalysisState
-) {
-    fun registerChange(change: String) = changes.add(change)
-    fun registerChange(supplier: SqlSchemeGenerator.() -> String) = registerChange(supplier.invoke(sqlSchemeGenerator))
-}
-
-class Enums(
-    private val availableEnums: () -> Map<TypeDefinition, EnumState> = { emptyMap() },
-    val defineEnum: (EnumReference) -> Unit = {}
-) {
-    fun getEnum(enumType: TypeDefinition): EnumState? = availableEnums()[enumType]
-}
-
-data class EnumState(
-    val name: String,
-    val values: List<String>
-)
-
-internal data class TableAnalysisState(
-    val changesToApply: Deque<DefinitionVersion>,
-    val source: String,
-    var tableName: String,
-    val properties: MutableList<PropertyData> = mutableListOf(),
-    val constraints: MutableList<ConstraintData> = mutableListOf(),
-    val indices: MutableList<IndexData> = mutableListOf()
-)
 
 class ChangeLogGenerator(
     private val sqlSchemeGenerator: SqlSchemeGenerator,
@@ -59,6 +20,35 @@ class ChangeLogGenerator(
     private val changeLogPropertiesGenerator = ChangelogPropertiesGenerator()
     private val changeLogConstraintsGenerator = ChangelogConstraintsGenerator()
     private val changeLogIndicesGenerator = ChangelogIndicesGenerator()
+
+    internal data class ChangeLogGeneratorContext(
+        val typeFactory: TypeFactory,
+        val sqlSchemeGenerator: SqlSchemeGenerator,
+        val currentEnums: Enums,
+        val currentScheme: MutableList<TableAnalysisState>,
+        val changeToApply: DefinitionVersion,
+        val changes: MutableList<String> = mutableListOf(),
+        val state: TableAnalysisState
+    ) {
+
+        fun registerChange(change: String) =
+            changes.add(change)
+
+        fun registerChange(supplier: SqlSchemeGenerator.() -> String) =
+            registerChange(supplier.invoke(sqlSchemeGenerator))
+
+        fun checkIfConstraintOrIndexNameAlreadyUsed(name: String) =
+            currentScheme
+                .flatMap { table ->
+                    val constraints = table.constraints.map { table.tableName to it }
+                    val indices = table.indices.map { table.tableName to it.name }
+                    constraints + indices
+                }
+                .firstOrNull { (_, constraint) -> constraint == name }
+                ?.also { (table, constraint) ->
+                    throw IllegalStateException("Constraint (or Index) with name '${constraint}' defined in table '${this.state.tableName}' already exists in table '$table'")
+                }
+    }
 
     fun generateChangeLog(vararg classes: KClass<*>): ChangeLog =
         generateChangeLog(

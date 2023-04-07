@@ -1,6 +1,6 @@
 package com.dzikoysk.sqiffy.changelog.generators
 
-import com.dzikoysk.sqiffy.changelog.ChangeLogGeneratorContext
+import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator.ChangeLogGeneratorContext
 import com.dzikoysk.sqiffy.definition.IndexData
 import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.ADD_INDEX
 import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.REMOVE_INDEX
@@ -23,10 +23,7 @@ internal class ChangelogIndicesGenerator {
                                 ?: throw IllegalArgumentException("Index ${index.name} doesn't have any columns")
                         )
 
-                        require(
-                            value = state.indices.none { it.name == indexData.name },
-                            lazyMessage = { "Table ${state.tableName} already has index with name ${indexData.name}" }
-                        )
+                        checkIfConstraintOrIndexNameAlreadyUsed(index.name)
 
                         require(
                             value = state.indices.none { it.columns == indexData.columns },
