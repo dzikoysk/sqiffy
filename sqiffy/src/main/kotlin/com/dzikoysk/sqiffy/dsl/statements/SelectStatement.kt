@@ -24,6 +24,16 @@ data class Join(
     val onTo: Column<*>
 )
 
+enum class Order {
+    ASC,
+    DESC
+}
+
+data class OrderBy(
+    val column: Column<*>,
+    val order: Order
+)
+
 open class SelectStatement(
     protected val database: SqiffyDatabase,
     protected val from: Table,
@@ -34,6 +44,7 @@ open class SelectStatement(
     protected var where: Expression<Boolean>? = null
     protected var limit: Int? = null
     protected var offset: Int? = null
+    protected var orderBy: List<OrderBy>? = null
 
     fun where(where: () -> Expression<Boolean>): SelectStatement = also {
         this.where = where()
@@ -53,6 +64,12 @@ open class SelectStatement(
         this.offset = offset
     }
 
+    fun orderBy(vararg columns: Pair<Column<*>, Order>): SelectStatement = also {
+        this.orderBy = columns
+            .map { OrderBy(it.first, it.second) }
+            .toList()
+    }
+
     fun <R> map(mapper: (Row) -> R): Sequence<R> =
         database.getJdbi().withHandle<Sequence<R>, Exception> { handle ->
             val allocator = ParameterAllocator()
@@ -70,7 +87,8 @@ open class SelectStatement(
                 joins = joins,
                 where = expression?.query,
                 limit = limit,
-                offset = offset
+                offset = offset,
+                orderBy = orderBy
             )
 
             val arguments = query.arguments + expression?.arguments

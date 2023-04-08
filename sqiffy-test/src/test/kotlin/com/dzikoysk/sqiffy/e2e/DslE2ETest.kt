@@ -25,6 +25,7 @@ import com.dzikoysk.sqiffy.dsl.notEq
 import com.dzikoysk.sqiffy.dsl.notLike
 import com.dzikoysk.sqiffy.dsl.or
 import com.dzikoysk.sqiffy.dsl.statements.JoinType.INNER
+import com.dzikoysk.sqiffy.dsl.statements.Order.ASC
 import com.dzikoysk.sqiffy.dsl.sum
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
@@ -119,6 +120,10 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
         val joinedData = database.select(UserTable)
             .join(INNER, UserTable.id, GuildTable.owner)
             .where { GuildTable.owner eq insertedGuild.owner }
+            .limit(1, offset = 0)
+            .orderBy(
+                UserTable.name to ASC,
+            )
             .map { it[UserTable.name] to it[GuildTable.name] }
             .first()
 
@@ -146,7 +151,6 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
                     )
                 )
             }
-            .limit(1, offset = 0)
             .map { it[GuildTable.name] }
             .firstOrNull()
 
