@@ -146,6 +146,7 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
                     )
                 )
             }
+            .limit(1, offset = 0)
             .map { it[GuildTable.name] }
             .firstOrNull()
 

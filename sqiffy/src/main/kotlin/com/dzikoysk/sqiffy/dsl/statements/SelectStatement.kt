@@ -32,6 +32,8 @@ open class SelectStatement(
     protected var slice: MutableList<Selectable> = from.getColumns().toMutableList()
     protected val joins: MutableList<Join> = mutableListOf()
     protected var where: Expression<Boolean>? = null
+    protected var limit: Int? = null
+    protected var offset: Int? = null
 
     fun where(where: () -> Expression<Boolean>): SelectStatement = also {
         this.where = where()
@@ -44,6 +46,11 @@ open class SelectStatement(
     fun <T> join(type: JoinType, on: Column<T>, to: Column<T>): SelectStatement = also {
         joins.add(Join(type, on, to))
         slice.addAll(to.table.getColumns())
+    }
+
+    fun limit(limit: Int, offset: Int? = null): SelectStatement = also {
+        this.limit = limit
+        this.offset = offset
     }
 
     fun <R> map(mapper: (Row) -> R): Sequence<R> =
@@ -61,7 +68,9 @@ open class SelectStatement(
                 tableName = from.getTableName(),
                 selected = slice,
                 joins = joins,
-                where = expression?.query
+                where = expression?.query,
+                limit = limit,
+                offset = offset
             )
 
             val arguments = query.arguments + expression?.arguments

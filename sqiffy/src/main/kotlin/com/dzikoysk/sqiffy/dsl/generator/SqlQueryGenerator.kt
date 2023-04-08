@@ -43,7 +43,9 @@ interface SqlQueryGenerator {
         tableName: String,
         selected: List<Selectable>,
         where: String? = null,
-        joins: List<Join> = emptyList()
+        joins: List<Join> = emptyList(),
+        limit: Int? = null,
+        offset: Int? = null
     ): GeneratorResult
 
     fun createInsertQuery(
@@ -191,7 +193,9 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
         tableName: String,
         selected: List<Selectable>,
         where: String?,
-        joins: List<Join>
+        joins: List<Join>,
+        limit: Int?,
+        offset: Int?
     ): GeneratorResult =
         GeneratorResult(
             query = multiline("""
@@ -213,6 +217,8 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                     "$joinType ${join.onTo.table.getTableName().toQuoted()} ON ${join.on.toQuotedIdentifier()} = ${join.onTo.toQuotedIdentifier()}"
                 }}
                 ${where?.let { "WHERE $it" } ?: ""}
+                ${limit?.let { "LIMIT $it" } ?: ""}
+                ${offset?.let { "OFFSET $it" } ?: ""}
             """)
         )
 
