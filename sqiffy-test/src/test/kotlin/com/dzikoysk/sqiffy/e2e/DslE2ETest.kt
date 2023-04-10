@@ -119,11 +119,10 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
 
         val joinedData = database.select(UserTable)
             .join(INNER, UserTable.id, GuildTable.owner)
+            .slice(UserTable.name, GuildTable.name)
             .where { GuildTable.owner eq insertedGuild.owner }
             .limit(1, offset = 0)
-            .orderBy(
-                UserTable.name to ASC,
-            )
+            .orderBy(UserTable.name to ASC)
             .map { it[UserTable.name] to it[GuildTable.name] }
             .first()
 
@@ -147,7 +146,7 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
                     ),
                     and(
                         GuildTable.name like "G%O%N%E",
-                        GuildTable.createdAt between (insertedGuild.createdAt.minusMinutes(1) and insertedGuild.createdAt.plusMinutes(1))
+                        GuildTable.createdAt between (insertedGuild.createdAt.minusMinutes(1) and insertedGuild.createdAt.plusMinutes(1)),
                     )
                 )
             }
@@ -159,12 +158,15 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
 
         val aggregatedData = database.select(UserTable)
             .slice(
+                UserTable.displayName,
                 UserTable.name.count(),
                 UserTable.id.sum(),
                 UserTable.id.avg(),
                 UserTable.id.min(),
                 UserTable.id.max()
             )
+            .groupBy(UserTable.name)
+            .having { UserTable.id.count() greaterThan 0 }
             .map {
                 mutableMapOf(
                     "count" to it[UserTable.name.count()],

@@ -1,10 +1,14 @@
+//@file:Suppress("internal", "INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+
 package com.dzikoysk.sqiffy.dsl
 
-sealed interface Expression<R>
+//import kotlin.internal.LowPriorityInOverloadResolution
 
-sealed interface Condition : Expression<Boolean>
+sealed interface Expression<SOURCE, RESULT>
 
-class ConstExpression<T>(val value: T) : Expression<T>
+sealed interface Condition<SOURCE> : Expression<SOURCE, Boolean>
+
+class ConstExpression<T>(val value: T) : Expression<T, T>
 
 /* Logical operators */
 
@@ -13,12 +17,12 @@ enum class LogicalOperator(val symbol: String) {
     OR("OR")
 }
 
-class LogicalCondition(val operator: LogicalOperator, val conditions: List<Condition>) : Condition
-fun and(vararg conditions: Condition): LogicalCondition = LogicalCondition(LogicalOperator.AND, conditions.toList())
-fun or(vararg conditions: Condition): LogicalCondition = LogicalCondition(LogicalOperator.OR, conditions.toList())
+class LogicalCondition<SOURCE>(val operator: LogicalOperator, val conditions: List<Condition<out SOURCE>>) : Condition<SOURCE>
+fun <SOURCE> and(vararg conditions: Condition<out SOURCE>): LogicalCondition<SOURCE> = LogicalCondition(LogicalOperator.AND, conditions.toList())
+fun <SOURCE> or(vararg conditions: Condition<out SOURCE>): LogicalCondition<SOURCE> = LogicalCondition(LogicalOperator.OR, conditions.toList())
 
-data class NotCondition(val condition: Condition) : Condition
-fun not(condition: Condition): NotCondition = NotCondition(condition)
+data class NotCondition<SOURCE>(val condition: Condition<SOURCE>) : Condition<SOURCE>
+fun <SOURCE> not(condition: Condition<SOURCE>): NotCondition<SOURCE> = NotCondition(condition)
 
 /* Basic comparison operators */
 
@@ -33,29 +37,31 @@ enum class ComparisonOperator(val symbol: String) {
     NOT_LIKE("NOT LIKE")
 }
 
-class ComparisonCondition<T>(val operator: ComparisonOperator, val left: Expression<T>, val right: Expression<T>) : Condition
+class ComparisonCondition<SOURCE, RESULT>(
+    val operator: ComparisonOperator,
+    val left: Expression<*, RESULT>,
+    val right: Expression<*, RESULT>
+) : Condition<SOURCE>
 
-// Infix operators may need this annotation in the future:
-// @LowPriorityInOverloadResolution
-// ~ https://github.com/JetBrains/kotlin/blob/master/libraries/stdlib/src/kotlin/internal/Annotations.kt#L22-L27
+infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.eq(to: Expression<SOURCE, RESULT>): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.EQUALS, this, to)
+infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.eq(to: RESULT): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.EQUALS, this, ConstExpression(to))
 
-infix fun <T> Expression<T>.eq(to: T): ComparisonCondition<T> = ComparisonCondition(ComparisonOperator.EQUALS, this, ConstExpression(to))
-infix fun <T> Expression<T>.notEq(to: T): ComparisonCondition<T> = ComparisonCondition(ComparisonOperator.NOT_EQUALS, this, ConstExpression(to))
-infix fun <T> Expression<T>.greaterThan(to: T): ComparisonCondition<T> = ComparisonCondition(ComparisonOperator.GREATER_THAN, this, ConstExpression(to))
-infix fun <T> Expression<T>.greaterThanOrEq(to: T): ComparisonCondition<T> = ComparisonCondition(ComparisonOperator.GREATER_THAN_OR_EQUALS, this, ConstExpression(to))
-infix fun <T> Expression<T>.lessThan(to: T): ComparisonCondition<T> = ComparisonCondition(ComparisonOperator.LESS_THAN, this, ConstExpression(to))
-infix fun <T> Expression<T>.lessThanOrEq(to: T): ComparisonCondition<T> = ComparisonCondition(ComparisonOperator.LESS_THAN_OR_EQUALS, this, ConstExpression(to))
-infix fun Expression<String>.like(to: String): ComparisonCondition<String> = ComparisonCondition(ComparisonOperator.LIKE, this, ConstExpression(to))
-infix fun Expression<String>.notLike(to: String): ComparisonCondition<String> = ComparisonCondition(ComparisonOperator.NOT_LIKE, this, ConstExpression(to))
+infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.notEq(to: RESULT): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.NOT_EQUALS, this, ConstExpression(to))
+infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.greaterThan(to: RESULT): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.GREATER_THAN, this, ConstExpression(to))
+infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.greaterThanOrEq(to: RESULT): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.GREATER_THAN_OR_EQUALS, this, ConstExpression(to))
+infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.lessThan(to: RESULT): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.LESS_THAN, this, ConstExpression(to))
+infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.lessThanOrEq(to: RESULT): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.LESS_THAN_OR_EQUALS, this, ConstExpression(to))
+infix fun <SOURCE> Expression<SOURCE, String>.like(to: String): ComparisonCondition<SOURCE, String> = ComparisonCondition(ComparisonOperator.LIKE, this, ConstExpression(to))
+infix fun <SOURCE> Expression<SOURCE, String>.notLike(to: String): ComparisonCondition<SOURCE, String> = ComparisonCondition(ComparisonOperator.NOT_LIKE, this, ConstExpression(to))
 
 /* Complex operators */
 
-data class Between<T>(val from: Expression<T>, val to: Expression<T>)
+data class Between<RESULT>(val from: Expression<*, RESULT>, val to: Expression<*, RESULT>)
 infix fun <T> T.and(to: T): Between<T> = Between(ConstExpression(this), ConstExpression(to))
 
-class BetweenCondition<T>(val value: Expression<T>, val between: Between<T>) : Condition
-fun <T> Expression<T>.between(from: T, to: T): BetweenCondition<T> = this between (from and to)
-fun <T> Expression<T>.notBetween(from: T, to: T): NotCondition = this notBetween (from and to)
+class BetweenCondition<SOURCE, T>(val value: Expression<SOURCE, T>, val between: Between<T>) : Condition<SOURCE>
+fun <SOURCE, T> Expression<SOURCE, T>.between(from: T, to: T): BetweenCondition<SOURCE, T> = this between (from and to)
+fun <SOURCE, T> Expression<SOURCE, T>.notBetween(from: T, to: T): NotCondition<SOURCE> = this notBetween (from and to)
 
-infix fun <T> Expression<T>.between(between: Between<T>): BetweenCondition<T> = BetweenCondition(this, between)
-infix fun <T> Expression<T>.notBetween(between: Between<T>): NotCondition = NotCondition(BetweenCondition(this, between))
+infix fun <SOURCE, T> Expression<SOURCE, T>.between(between: Between<T>): BetweenCondition<SOURCE, T> = BetweenCondition(this, between)
+infix fun <SOURCE, T> Expression<SOURCE, T>.notBetween(between: Between<T>): NotCondition<SOURCE> = NotCondition(BetweenCondition(this, between))

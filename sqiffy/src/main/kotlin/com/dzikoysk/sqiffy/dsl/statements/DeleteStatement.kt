@@ -1,6 +1,7 @@
 package com.dzikoysk.sqiffy.dsl.statements
 
 import com.dzikoysk.sqiffy.SqiffyDatabase
+import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.Expression
 import com.dzikoysk.sqiffy.dsl.Statement
 import com.dzikoysk.sqiffy.dsl.Table
@@ -12,9 +13,9 @@ open class DeleteStatement(
     protected val table: Table,
 ) : Statement {
 
-    protected var where: Expression<Boolean>? = null
+    protected var where: Expression<*, Boolean>? = null
 
-    fun where(where: () -> Expression<Boolean>): DeleteStatement = also {
+    fun where(where: () -> Expression<out Column<*>, Boolean>): DeleteStatement = also {
         this.where = where()
     }
 

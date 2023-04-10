@@ -1,6 +1,7 @@
 package com.dzikoysk.sqiffy.dsl.statements
 
 import com.dzikoysk.sqiffy.SqiffyDatabase
+import com.dzikoysk.sqiffy.dsl.Aggregation
 import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.Expression
 import com.dzikoysk.sqiffy.dsl.Row
@@ -30,7 +31,7 @@ enum class Order {
 }
 
 data class OrderBy(
-    val column: Column<*>,
+    val selectable: Selectable,
     val order: Order
 )
 
@@ -41,22 +42,32 @@ open class SelectStatement(
 
     protected var slice: MutableList<Selectable> = from.getColumns().toMutableList()
     protected val joins: MutableList<Join> = mutableListOf()
-    protected var where: Expression<Boolean>? = null
+    protected var where: Expression<*, Boolean>? = null
+    protected var groupBy: List<Column<*>>? = null
+    protected var having: Expression<*, Boolean>? = null
     protected var limit: Int? = null
     protected var offset: Int? = null
     protected var orderBy: List<OrderBy>? = null
 
-    fun where(where: () -> Expression<Boolean>): SelectStatement = also {
-        this.where = where()
+    fun <T> join(type: JoinType, on: Column<T>, to: Column<T>): SelectStatement = also {
+        joins.add(Join(type, on, to))
+        slice.addAll(to.table.getColumns())
     }
 
     fun slice(vararg column: Selectable): SelectStatement = also {
         this.slice = column.toMutableList()
     }
 
-    fun <T> join(type: JoinType, on: Column<T>, to: Column<T>): SelectStatement = also {
-        joins.add(Join(type, on, to))
-        slice.addAll(to.table.getColumns())
+    fun where(where: () -> Expression<out Column<*>, Boolean>): SelectStatement = also {
+        this.where = where()
+    }
+
+    fun groupBy(vararg columns: Column<*>): SelectStatement = also {
+        this.groupBy = columns.toList()
+    }
+
+    fun having(having: () -> Expression<out Aggregation<*>, Boolean>): SelectStatement = also {
+        this.having = having()
     }
 
     fun limit(limit: Int, offset: Int? = null): SelectStatement = also {
@@ -70,14 +81,31 @@ open class SelectStatement(
             .toList()
     }
 
-    fun <R> map(mapper: (Row) -> R): Sequence<R> =
-        database.getJdbi().withHandle<Sequence<R>, Exception> { handle ->
+    fun <R> map(mapper: (Row) -> R): Sequence<R> {
+        groupBy?.also { groupByColumns ->
+            slice
+                .filterIsInstance<Column<*>>()
+                .filter { !groupByColumns.contains(it) }
+                .takeIf { it.isNotEmpty() }
+                ?.let { nonAggregatedColumns ->
+                    database.logger.log(Level.WARN, "Non-aggregated columns: $nonAggregatedColumns used with group by clause")
+                }
+        }
+
+        return database.getJdbi().withHandle<Sequence<R>, Exception> { handle ->
             val allocator = ParameterAllocator()
 
-            val expression = where?.let {
+            val whereResult = where?.let {
                 database.sqlQueryGenerator.createExpression(
                     allocator = allocator,
-                    expression = where!!
+                    expression = it
+                )
+            }
+
+            val havingResult = having?.let {
+                database.sqlQueryGenerator.createExpression(
+                    allocator = allocator,
+                    expression = it
                 )
             }
 
@@ -85,13 +113,15 @@ open class SelectStatement(
                 tableName = from.getTableName(),
                 selected = slice,
                 joins = joins,
-                where = expression?.query,
+                where = whereResult?.query,
+                groupBy = groupBy,
+                having = havingResult?.query,
+                orderBy = orderBy,
                 limit = limit,
                 offset = offset,
-                orderBy = orderBy
             )
 
-            val arguments = query.arguments + expression?.arguments
+            val arguments = query.arguments + whereResult?.arguments + havingResult?.arguments
             database.logger.log(Level.DEBUG, "Executing query: ${query.query} with arguments: $arguments")
 
             handle
@@ -101,6 +131,6 @@ open class SelectStatement(
                 .list()
                 .asSequence()
         }
-
+    }
 
 }

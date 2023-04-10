@@ -38,6 +38,8 @@ abstract class Table(name: String) {
     protected fun datetime(name: String, dbType: String): Column<LocalDateTime> = column(name,  dbType, LocalDateTime::class)
     protected fun timestamp(name: String, dbType: String): Column<Instant> = column(name,  dbType, Instant::class)
 
+    override fun toString(): String = "table ${getTableName()}"
+
 }
 
 data class Column<T>(
@@ -46,7 +48,7 @@ data class Column<T>(
     val dbType: String,
     val type: Class<T>,
     val nullable: Boolean = false
-) : Expression<T>, Selectable {
+) : Expression<Column<T>, T>, Selectable {
 
     companion object {
         fun <T : Any> of(table: Table, name: String, dbType: String, type: KClass<T>): Column<T> = Column(table, name, dbType, type.javaObjectType)

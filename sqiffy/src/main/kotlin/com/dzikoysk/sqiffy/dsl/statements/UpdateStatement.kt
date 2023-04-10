@@ -1,6 +1,7 @@
 package com.dzikoysk.sqiffy.dsl.statements
 
 import com.dzikoysk.sqiffy.SqiffyDatabase
+import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.Expression
 import com.dzikoysk.sqiffy.dsl.Statement
 import com.dzikoysk.sqiffy.dsl.Table
@@ -16,9 +17,9 @@ open class UpdateStatement(
     protected val values: Values
 ) : Statement {
 
-    protected var where: Expression<Boolean>? = null
+    protected var where: Expression<*, Boolean>? = null
 
-    fun where(where: () -> Expression<Boolean>): UpdateStatement = also {
+    fun where(where: () -> Expression<out Column<*>, Boolean>): UpdateStatement = also {
         this.where = where()
     }
 

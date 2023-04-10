@@ -12,7 +12,7 @@ data class Aggregation<T>(
     val type: AggregationType,
     val resultType: Class<T>,
     val column: Column<*>,
-) : Selectable {
+) : Selectable, Expression<Aggregation<T>, T> {
 
     override val selectableType: SelectableType = SelectableType.AGGREGATION
 

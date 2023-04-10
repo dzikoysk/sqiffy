@@ -45,9 +45,11 @@ interface SqlQueryGenerator {
         selected: List<Selectable>,
         where: String? = null,
         joins: List<Join> = emptyList(),
+        groupBy: List<Column<*>>? = null,
+        having: String? = null,
+        orderBy: List<OrderBy>? = null,
         limit: Int? = null,
         offset: Int? = null,
-        orderBy: List<OrderBy>? = null
     ): GeneratorResult
 
     fun createInsertQuery(
@@ -72,7 +74,7 @@ interface SqlQueryGenerator {
 
     fun createExpression(
         allocator: ParameterAllocator,
-        expression: Expression<*>
+        expression: Expression<*, *>
     ): GeneratorResult
 
 }
@@ -191,22 +193,31 @@ object PostgreSqlQueryGenerator : GenericQueryGenerator() {
 
 abstract class GenericQueryGenerator : SqlQueryGenerator {
 
+    private fun Selectable.toIdentifier(): String =
+        when (this) {
+            is Column<*> -> toQuotedIdentifier()
+            is Aggregation<*> -> "${getAggregationFunction()}(${column.toQuotedIdentifier()})"
+            else -> throw IllegalArgumentException("Unknown selectable type: $javaClass")
+        }
+
     override fun createSelectQuery(
         tableName: String,
         selected: List<Selectable>,
         where: String?,
         joins: List<Join>,
+        groupBy: List<Column<*>>?,
+        having: String?,
+        orderBy: List<OrderBy>?,
         limit: Int?,
         offset: Int?,
-        orderBy: List<OrderBy>?
     ): GeneratorResult =
         GeneratorResult(
             query = multiline("""
-                SELECT ${selected.joinToString(separator = ", ") {
-                    when (it) {
-                        is Column<*> -> """"${it.table.getTableName()}"."${it.name}" AS "${it.table.getTableName()}.${it.name}""""
-                        is Aggregation<*> -> """${it.getAggregationFunction()}("${it.getTableName()}"."${it.getColumnName()}") AS "${it.getAggregationFunction()}(${it.getTableName()}.${it.getColumnName()})""""
-                        else -> throw IllegalArgumentException("Unknown selectable type: ${it.javaClass}")
+                SELECT ${selected.joinToString(separator = ", ") { 
+                    it.toIdentifier() + " AS " + when (it) {
+                        is Column<*> -> ("${it.table.getTableName()}.${it.name}").toQuoted()
+                        is Aggregation<*> -> ("${it.getAggregationFunction()}(${it.getTableName()}.${it.getColumnName()})").toQuoted()
+                        else -> throw IllegalArgumentException("Unknown selectable type: $javaClass")
                     }
                 }}
                 FROM ${tableName.toQuoted()}
@@ -219,8 +230,10 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                     }
                     "$joinType ${join.onTo.table.getTableName().toQuoted()} ON ${join.on.toQuotedIdentifier()} = ${join.onTo.toQuotedIdentifier()}"
                 }}
-                ${where?.let { "WHERE $it" } ?: ""} 
-                ${orderBy?.let { "ORDER BY ${it.joinToString(separator = ", ") { orderBy -> "${orderBy.column.toQuotedIdentifier()} ${orderBy.order}" }}" } ?: ""}
+                ${where?.let { "WHERE $it" } ?: ""}
+                ${groupBy?.let { "GROUP BY ${groupBy.joinToString(separator = ", ") { it.toQuotedIdentifier() }}" } ?: ""}
+                ${having?.let { "HAVING $it" } ?: ""}
+                ${orderBy?.let { "ORDER BY ${orderBy.joinToString(separator = ", ") { "${it.selectable.toIdentifier()} ${it.order}" }}" } ?: ""}
                 ${limit?.let { "LIMIT $it" } ?: ""}
                 ${offset?.let { "OFFSET $it" } ?: ""} 
             """)
@@ -234,11 +247,15 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
             """)
         )
 
-    override fun createExpression(allocator: ParameterAllocator, expression: Expression<*>): GeneratorResult =
+    override fun createExpression(allocator: ParameterAllocator, expression: Expression<*, *>): GeneratorResult =
         when (expression) {
-            is Column ->
+            is Column<*> ->
                 GeneratorResult(
                     query = expression.toQuotedIdentifier()
+                )
+            is Aggregation<*> ->
+                GeneratorResult(
+                    query = "${expression.getAggregationFunction()}(${expression.column.toQuotedIdentifier()})"
                 )
             is ConstExpression ->
                 Arguments(allocator).let {
@@ -255,7 +272,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                     )
                 }
             }
-            is ComparisonCondition<*> -> {
+            is ComparisonCondition<*, *> -> {
                 val leftResult = createExpression(allocator, expression.left)
                 val rightResult = createExpression(allocator, expression.right)
 
@@ -272,7 +289,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                     arguments = results.fold(Arguments(allocator)) { arguments, result -> arguments + result.arguments }
                 )
             }
-            is BetweenCondition<*> -> {
+            is BetweenCondition<*, *> -> {
                 val valueResult = createExpression(allocator, expression.value)
                 val leftResult = createExpression(allocator, expression.between.from)
                 val rightResult = createExpression(allocator, expression.between.to)
