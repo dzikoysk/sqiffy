@@ -46,12 +46,25 @@ class ComparisonCondition<SOURCE, RESULT>(
 infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.eq(to: Expression<SOURCE, RESULT>): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.EQUALS, this, to)
 infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.eq(to: RESULT): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.EQUALS, this, ConstExpression(to))
 
+infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.notEq(to: Expression<SOURCE, RESULT>): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.NOT_EQUALS, this, to)
 infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.notEq(to: RESULT): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.NOT_EQUALS, this, ConstExpression(to))
+
+infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.greaterThan(to: Expression<SOURCE, RESULT>): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.GREATER_THAN, this, to)
 infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.greaterThan(to: RESULT): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.GREATER_THAN, this, ConstExpression(to))
+
+infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.greaterThanOrEq(to: Expression<SOURCE, RESULT>): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.GREATER_THAN_OR_EQUALS, this, to)
 infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.greaterThanOrEq(to: RESULT): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.GREATER_THAN_OR_EQUALS, this, ConstExpression(to))
+
+infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.lessThan(to: Expression<SOURCE, RESULT>): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.LESS_THAN, this, to)
 infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.lessThan(to: RESULT): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.LESS_THAN, this, ConstExpression(to))
+
+infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.lessThanOrEq(to: Expression<SOURCE, RESULT>): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.LESS_THAN_OR_EQUALS, this, to)
 infix fun <SOURCE, RESULT> Expression<SOURCE, RESULT>.lessThanOrEq(to: RESULT): ComparisonCondition<SOURCE, RESULT> = ComparisonCondition(ComparisonOperator.LESS_THAN_OR_EQUALS, this, ConstExpression(to))
+
+infix fun <SOURCE> Expression<SOURCE, String>.like(to: Expression<SOURCE, String>): ComparisonCondition<SOURCE, String> = ComparisonCondition(ComparisonOperator.LIKE, this, to)
 infix fun <SOURCE> Expression<SOURCE, String>.like(to: String): ComparisonCondition<SOURCE, String> = ComparisonCondition(ComparisonOperator.LIKE, this, ConstExpression(to))
+
+infix fun <SOURCE> Expression<SOURCE, String>.notLike(to: Expression<SOURCE, String>): ComparisonCondition<SOURCE, String> = ComparisonCondition(ComparisonOperator.NOT_LIKE, this, to)
 infix fun <SOURCE> Expression<SOURCE, String>.notLike(to: String): ComparisonCondition<SOURCE, String> = ComparisonCondition(ComparisonOperator.NOT_LIKE, this, ConstExpression(to))
 
 /* Complex operators */

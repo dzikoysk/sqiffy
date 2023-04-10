@@ -145,6 +145,7 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
                         GuildTable.createdAt notBetween (insertedGuild.createdAt and insertedGuild.createdAt)
                     ),
                     and(
+                        GuildTable.id eq GuildTable.id,
                         GuildTable.name like "G%O%N%E",
                         GuildTable.createdAt between (insertedGuild.createdAt.minusMinutes(1) and insertedGuild.createdAt.plusMinutes(1)),
                     )
