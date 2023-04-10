@@ -158,7 +158,6 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
 
         val aggregatedData = database.select(UserTable)
             .slice(
-                UserTable.displayName,
                 UserTable.name.count(),
                 UserTable.id.sum(),
                 UserTable.id.avg(),
