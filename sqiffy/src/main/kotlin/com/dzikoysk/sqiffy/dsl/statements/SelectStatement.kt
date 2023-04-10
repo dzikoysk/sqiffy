@@ -40,6 +40,7 @@ open class SelectStatement(
     protected val from: Table,
 ) : Statement {
 
+    protected var distinct: Boolean = false
     protected var slice: MutableList<Selectable> = from.getColumns().toMutableList()
     protected val joins: MutableList<Join> = mutableListOf()
     protected var where: Expression<*, Boolean>? = null
@@ -48,6 +49,10 @@ open class SelectStatement(
     protected var limit: Int? = null
     protected var offset: Int? = null
     protected var orderBy: List<OrderBy>? = null
+
+    fun distinct(): SelectStatement = also {
+        this.distinct = true
+    }
 
     fun <T> join(type: JoinType, on: Column<T>, to: Column<T>): SelectStatement = also {
         joins.add(Join(type, on, to))
@@ -111,6 +116,7 @@ open class SelectStatement(
 
             val query = database.sqlQueryGenerator.createSelectQuery(
                 tableName = from.getTableName(),
+                distinct = distinct,
                 selected = slice,
                 joins = joins,
                 where = whereResult?.query,

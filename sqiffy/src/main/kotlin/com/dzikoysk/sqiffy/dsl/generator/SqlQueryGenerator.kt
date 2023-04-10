@@ -42,6 +42,7 @@ interface SqlQueryGenerator {
 
     fun createSelectQuery(
         tableName: String,
+        distinct: Boolean = false,
         selected: List<Selectable>,
         where: String? = null,
         joins: List<Join> = emptyList(),
@@ -202,6 +203,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
 
     override fun createSelectQuery(
         tableName: String,
+        distinct: Boolean,
         selected: List<Selectable>,
         where: String?,
         joins: List<Join>,
@@ -213,7 +215,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
     ): GeneratorResult =
         GeneratorResult(
             query = multiline("""
-                SELECT ${selected.joinToString(separator = ", ") { 
+                SELECT ${if (distinct) "DISTINCT" else ""} ${selected.joinToString(separator = ", ") { 
                     it.toIdentifier() + " AS " + when (it) {
                         is Column<*> -> ("${it.table.getTableName()}.${it.name}").toQuoted()
                         is Aggregation<*> -> ("${it.getAggregationFunction()}(${it.getTableName()}.${it.getColumnName()})").toQuoted()

@@ -118,6 +118,7 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
         println("Inserted guild: $insertedGuild")
 
         val joinedData = database.select(UserTable)
+            .distinct()
             .join(INNER, UserTable.id, GuildTable.owner)
             .slice(UserTable.name, GuildTable.name)
             .where { GuildTable.owner eq insertedGuild.owner }
