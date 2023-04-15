@@ -33,13 +33,13 @@ internal class ChangelogConstraintsGenerator {
                         on = constraint.on
                             .takeIf { it.isNotEmpty() }
                             ?.toList()
-                            ?: throw IllegalStateException("Primary key declaration misses `on` property")
+                            ?: throw IllegalStateException("Primary key '${constraint.name}' declaration misses `on` property")
                     )
 
                     val properties = primaryKey.on.map {
                         state.properties
                             .firstOrNull { property -> property.name == it }
-                            ?: throw IllegalStateException("Primary key column $it not found")
+                            ?: throw IllegalStateException("Column $it marked as primary key not found in table ${state.tableName}")
                     }
 
                     require(properties.none { it.nullable }) { "Column marked as primary key is nullable (${constraint.name} = ${constraint.on.contentToString()})" }
@@ -76,13 +76,13 @@ internal class ChangelogConstraintsGenerator {
                         on = constraint.on
                             .takeIf { it.size == 1 }
                             ?.first()
-                            ?: throw IllegalStateException("Foreign key declaration misses `on` property or contains more than one column"),
+                            ?: throw IllegalStateException("Foreign key '${constraint.name}' declaration misses `on` property or contains more than one column"),
                         referenced = typeFactory.getTypeDefinition(constraint) { referenced }
                             .takeIf { it.qualifiedName != NULL_CLASS::class.qualifiedName }
-                            ?: throw IllegalStateException("Foreign key declaration misses `referenced` class"),
+                            ?: throw IllegalStateException("Foreign key '${constraint.name}' declaration misses `referenced` class"),
                         references = constraint.references
                             .takeUnless { it == NULL_STRING }
-                            ?: throw IllegalStateException("Foreign key declaration misses `references` property")
+                            ?: throw IllegalStateException("Foreign key '${constraint.name}' declaration misses `references` property")
                     )
 
                     checkIfConstraintOrIndexNameAlreadyUsed(foreignKey.name)

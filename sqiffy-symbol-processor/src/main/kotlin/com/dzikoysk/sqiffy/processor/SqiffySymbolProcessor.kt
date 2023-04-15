@@ -22,6 +22,7 @@ import com.dzikoysk.sqiffy.shared.replaceFirst
 import com.google.devtools.ksp.KSTypeNotPresentException
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
@@ -82,7 +83,7 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
             .toList()
 
         if (tables.isNotEmpty()) {
-            val typeFactory = KspTypeFactory()
+            val typeFactory = KspTypeFactory(resolver)
             val baseSchemeGenerator = ChangeLogGenerator(PostgreSqlSchemeGenerator, typeFactory)
             val changeLog = baseSchemeGenerator.generateChangeLog(tables)
             generateDls(typeFactory, changeLog)
@@ -120,13 +121,13 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
 
 }
 
-private class KspTypeFactory : TypeFactory {
+private class KspTypeFactory(private val resolver: Resolver) : TypeFactory {
 
     @OptIn(KspExperimental::class)
     private fun <A : Annotation> getKSType(annotation: A, supplier: A.() -> KClass<*>): KSType =
         try {
-            supplier(annotation)
-            throw IllegalStateException("Property accessor should throw KSTypeNotPresentException")
+            val type = supplier(annotation)
+            resolver.getClassDeclarationByName(type.qualifiedName!!)!!.asStarProjectedType()
         } catch (exception: KSTypeNotPresentException) {
             exception.ksType
         }
