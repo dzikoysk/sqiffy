@@ -60,18 +60,24 @@ object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
         }
 
     override fun createDataType(property: PropertyData, availableEnums: Enums): String =
-        when (property.type) {
-            DataType.SERIAL -> "INT AUTO_INCREMENT"
-            DataType.UUID_TYPE -> "VARCHAR(36)"
-            DataType.ENUM ->
-                property.enumDefinition
-                    ?.let { availableEnums.getEnum(it.type) }
-                    ?.values
-                    ?.joinToString { "'$it'" }
-                    ?.let { "ENUM($it)" }
-                    ?: throw IllegalStateException("Missing enum data for property ${property.name}")
-            DataType.DATETIME -> "DATETIME"
-            else -> createRegularDataType(property)
+        with (property) {
+            when (type) {
+                DataType.SERIAL -> "INT AUTO_INCREMENT"
+                DataType.UUID_TYPE -> "VARCHAR(36)"
+                DataType.ENUM ->
+                    enumDefinition
+                        ?.let { availableEnums.getEnum(it.type) }
+                        ?.values
+                        ?.joinToString { "'$it'" }
+                        ?.let { "ENUM($it)" }
+                        ?: throw IllegalStateException("Missing enum data for property $name")
+                DataType.DATETIME -> "DATETIME"
+                DataType.BINARY -> {
+                    require(details != null) { "Missing binary size in '$name' property" }
+                    "BINARY($details)"
+                }
+                else -> createRegularDataType(property)
+            }
         }
 
     override fun removeIndex(tableName: String, name: String): String =
@@ -118,8 +124,9 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
                 ?.let { enums.getEnum(it.type) }
                 ?.name
                 ?.toQuoted()
-                ?: throw IllegalStateException("Missing enum data for property ${property.name}")
+                ?: throw IllegalStateException("Missing enum data for property '${property.name}'")
             DataType.DATETIME -> "TIMESTAMPTZ"
+            DataType.BINARY -> "BYTEA"
             else -> createRegularDataType(property)
         }
 
@@ -178,9 +185,14 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
     protected fun createRegularDataType(property: PropertyData): String =
         with (property) {
             when (type) {
-            DataType.CHAR -> "CHAR($details)"
-                DataType.VARCHAR -> "VARCHAR($details)"
-                DataType.BINARY -> "BINARY($details)"
+                DataType.CHAR -> {
+                    require(details != null) { "Missing char size in '${property.name}' property" }
+                    "CHAR($details)"
+                }
+                DataType.VARCHAR -> {
+                    require(details != null) { "Missing varchar size in '${property.name}' property" }
+                    "VARCHAR($details)"
+                }
                 DataType.TEXT -> "TEXT"
                 DataType.BOOLEAN -> "BOOLEAN"
                 DataType.INT -> "INT"
