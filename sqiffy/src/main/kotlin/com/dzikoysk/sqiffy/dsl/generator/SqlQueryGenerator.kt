@@ -257,7 +257,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                 )
             is Aggregation<*> ->
                 GeneratorResult(
-                    query = "${expression.aggregationFunction}(${expression.rawIdentifier})"
+                    query = "${expression.aggregationFunction}(${expression.quotedIdentifier})"
                 )
             is ConstExpression ->
                 Arguments(allocator).let {
