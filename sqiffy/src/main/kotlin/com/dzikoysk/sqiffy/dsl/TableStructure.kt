@@ -10,7 +10,8 @@ import kotlin.reflect.KClass
 abstract class Table(name: String) {
 
     private val tableName: String = name
-    fun getTableName(): String = tableName
+    fun getName(): String = tableName
+    fun getQuotedName(): String = getName().toQuoted()
 
     private val columns: MutableList<Column<*>> = mutableListOf()
     fun getColumns(): List<Column<*>> = columns
@@ -38,7 +39,7 @@ abstract class Table(name: String) {
     protected fun datetime(name: String, dbType: String): Column<LocalDateTime> = column(name,  dbType, LocalDateTime::class)
     protected fun timestamp(name: String, dbType: String): Column<Instant> = column(name,  dbType, Instant::class)
 
-    override fun toString(): String = "table ${getTableName()}"
+    override fun toString(): String = "table ${getName()}"
 
 }
 
@@ -56,9 +57,11 @@ data class Column<T>(
 
     override val selectableType: SelectableType = SelectableType.COLUMN
 
+    val quotedName = name.toQuoted()
+    val rawIdentifier: String = "${table.getName()}.$name"
+    val quotedIdentifier: String = "${table.getQuotedName()}.$quotedName"
+
     @Suppress("UNCHECKED_CAST")
     fun nullable(): Column<T?> = copy(nullable = true) as Column<T?>
-
-    fun toQuotedIdentifier(): String = "${table.getTableName().toQuoted()}.${name.toQuoted()}"
 
 }

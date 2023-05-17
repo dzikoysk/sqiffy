@@ -16,7 +16,7 @@ fun multiline(text: String): String =
 
 operator fun <T> RowView.get(column: Column<T>): T =
     try {
-        getColumn(column.table.getTableName() + "." + column.name, column.type) // get column from generated alias
+        getColumn(column.rawIdentifier, column.type) // get column from generated alias
     } catch (mappingException: MappingException) {
         getColumn(column.name, column.type) // default column name fallback
     }
@@ -24,8 +24,8 @@ operator fun <T> RowView.get(column: Column<T>): T =
 operator fun <T> RowView.get(aggregation: Aggregation<T>): T =
     with (aggregation) {
         try {
-            getColumn("${type.aggregationFunction}(${column.table.getTableName()}.${column.name})", resultType) // get column from generated alias
+            getColumn("${type.aggregationFunction}($rawIdentifier)", resultType) // get column from generated alias
         } catch (mappingException: MappingException) {
-            getColumn("${type.aggregationFunction}(${column.name})", resultType) // default column name fallback
+            getColumn("${type.aggregationFunction}($fallbackAlias)", resultType) // default column name fallback
         }
     }

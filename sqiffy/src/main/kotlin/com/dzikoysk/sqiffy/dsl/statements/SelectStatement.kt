@@ -115,7 +115,7 @@ open class SelectStatement(
             }
 
             val query = database.sqlQueryGenerator.createSelectQuery(
-                tableName = from.getTableName(),
+                tableName = from.getName(),
                 distinct = distinct,
                 selected = slice,
                 joins = joins,

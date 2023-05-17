@@ -31,7 +31,7 @@ open class DeleteStatement(
             }
 
             val (query, queryArguments) = database.sqlQueryGenerator.createDeleteQuery(
-                tableName = table.getTableName(),
+                tableName = table.getName(),
                 where = expression?.query
             )
 

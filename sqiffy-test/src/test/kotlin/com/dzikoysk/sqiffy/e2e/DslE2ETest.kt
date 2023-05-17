@@ -160,6 +160,7 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
 
         val aggregatedData = database.select(UserTable)
             .slice(
+                UserTable.count(),
                 UserTable.name.count(),
                 UserTable.id.sum(),
                 UserTable.id.avg(),
@@ -170,6 +171,7 @@ abstract class DslE2ETest : SqiffyE2ETestSpecification() {
             .having { UserTable.id.count() greaterThan 0 }
             .map {
                 mutableMapOf(
+                    "row_count" to it[UserTable.count()],
                     "count" to it[UserTable.name.count()],
                     "sum" to it[UserTable.id.sum()],
                     "avg" to it[UserTable.id.avg()],

@@ -27,7 +27,7 @@ class QueryColumn(
 
 fun Column<*>.toQueryColumn(): QueryColumn =
     QueryColumn(
-        table = table.getTableName(),
+        table = table.getName(),
         name = name,
         dbType = dbType,
         type = type
@@ -196,8 +196,8 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
 
     private fun Selectable.toIdentifier(): String =
         when (this) {
-            is Column<*> -> toQuotedIdentifier()
-            is Aggregation<*> -> "${getAggregationFunction()}(${column.toQuotedIdentifier()})"
+            is Column<*> -> quotedIdentifier
+            is Aggregation<*> -> "$aggregationFunction($quotedIdentifier)"
             else -> throw IllegalArgumentException("Unknown selectable type: $javaClass")
         }
 
@@ -217,8 +217,8 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
             query = multiline("""
                 SELECT ${if (distinct) "DISTINCT" else ""} ${selected.joinToString(separator = ", ") { 
                     it.toIdentifier() + " AS " + when (it) {
-                        is Column<*> -> ("${it.table.getTableName()}.${it.name}").toQuoted()
-                        is Aggregation<*> -> ("${it.getAggregationFunction()}(${it.getTableName()}.${it.getColumnName()})").toQuoted()
+                        is Column<*> -> "${it.table.getName()}.${it.name}".toQuoted()
+                        is Aggregation<*> -> ("${it.aggregationFunction}(${it.rawIdentifier})").toQuoted()
                         else -> throw IllegalArgumentException("Unknown selectable type: $javaClass")
                     }
                 }}
@@ -230,10 +230,10 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                         JoinType.RIGHT -> "RIGHT JOIN"
                         JoinType.FULL -> "FULL JOIN"
                     }
-                    "$joinType ${join.onTo.table.getTableName().toQuoted()} ON ${join.on.toQuotedIdentifier()} = ${join.onTo.toQuotedIdentifier()}"
+                    "$joinType ${join.onTo.table.getName().toQuoted()} ON ${join.on.quotedIdentifier} = ${join.onTo.quotedIdentifier}"
                 }}
                 ${where?.let { "WHERE $it" } ?: ""}
-                ${groupBy?.let { "GROUP BY ${groupBy.joinToString(separator = ", ") { it.toQuotedIdentifier() }}" } ?: ""}
+                ${groupBy?.let { "GROUP BY ${groupBy.joinToString(separator = ", ") { it.quotedIdentifier }}" } ?: ""}
                 ${having?.let { "HAVING $it" } ?: ""}
                 ${orderBy?.let { "ORDER BY ${orderBy.joinToString(separator = ", ") { "${it.selectable.toIdentifier()} ${it.order}" }}" } ?: ""}
                 ${limit?.let { "LIMIT $it" } ?: ""}
@@ -253,11 +253,11 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
         when (expression) {
             is Column<*> ->
                 GeneratorResult(
-                    query = expression.toQuotedIdentifier()
+                    query = expression.quotedIdentifier
                 )
             is Aggregation<*> ->
                 GeneratorResult(
-                    query = "${expression.getAggregationFunction()}(${expression.column.toQuotedIdentifier()})"
+                    query = "${expression.aggregationFunction}(${expression.quotedIdentifier})"
                 )
             is ConstExpression ->
                 Arguments(allocator).let {

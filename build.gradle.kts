@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm") version "1.8.10"
     `java-library`
+
     application
     signing
     `maven-publish`
@@ -20,7 +21,7 @@ allprojects {
     apply(plugin = "signing")
 
     group = "com.dzikoysk.sqiffy"
-    version = "1.0.0-alpha.16"
+    version = "1.0.0-alpha.17"
 
     java {
         sourceCompatibility = JavaVersion.VERSION_1_8

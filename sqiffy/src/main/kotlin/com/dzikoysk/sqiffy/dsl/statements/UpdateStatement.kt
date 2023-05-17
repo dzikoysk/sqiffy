@@ -36,7 +36,7 @@ open class UpdateStatement(
 
             val (query, queryArguments) = database.sqlQueryGenerator.createUpdateQuery(
                 allocator = allocator,
-                tableName = table.getTableName(),
+                tableName = table.getName(),
                 columns = values.getColumns().map { it.toQueryColumn() },
                 where = expression?.query
             )

@@ -22,7 +22,7 @@ open class InsertStatement(
 
             val (query, args) = database.sqlQueryGenerator.createInsertQuery(
                 allocator = allocator,
-                tableName = table.getTableName(),
+                tableName = table.getName(),
                 columns = values.getColumns().map { it.toQueryColumn() }
             )
 
