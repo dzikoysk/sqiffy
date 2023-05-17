@@ -19,7 +19,7 @@ class Migrator(private val database: SqiffyDatabase) {
 
     @Suppress("RemoveRedundantQualifierName")
     fun runMigrations(metadataTable: SqiffyMetadataTable = SqiffyMetadataTable(), changeLog: ChangeLog) {
-        val tableName = metadataTable.getTableName()
+        val tableName = metadataTable.getName()
 
         val columnProperty = PropertyData(
             name = "property",
