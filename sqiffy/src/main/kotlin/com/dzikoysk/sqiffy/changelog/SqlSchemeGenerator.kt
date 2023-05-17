@@ -62,7 +62,7 @@ object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
     override fun createDataType(property: PropertyData, availableEnums: Enums): String =
         with (property) {
             when (type) {
-                DataType.SERIAL -> "INT AUTO_INCREMENT"
+                DataType.SERIAL -> "INT AUTO_INCREMENT PRIMARY KEY"
                 DataType.UUID_TYPE -> "VARCHAR(36)"
                 DataType.ENUM ->
                     enumDefinition
