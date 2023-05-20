@@ -19,17 +19,17 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
-class H2MySQLModeJdbiE2ETest : JdbiE2ETest() {
+internal class H2MySQLModeJdbiE2ETest : JdbiE2ETest() {
     override fun createDataSource(): HikariDataSource = createH2DataSource(MYSQL)
 }
 
-class PostgresJdbiE2ETest : JdbiE2ETest() {
+internal class EmbeddedPostgresJdbiE2ETest : JdbiE2ETest() {
     val postgres = postgresDataSource()
     override fun createDataSource(): HikariDataSource = postgres.dataSource
     @AfterEach fun stop() { postgres.pg.close() }
 }
 
-abstract class JdbiE2ETest : SqiffyE2ETestSpecification() {
+internal abstract class JdbiE2ETest : SqiffyE2ETestSpecification() {
 
     @Test
     fun `should insert and select entity`() {
