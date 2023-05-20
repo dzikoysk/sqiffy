@@ -50,6 +50,7 @@ object Sqiffy {
 
         val dialect = when {
             dataSource.jdbcUrl.contains("mysql", ignoreCase = true) -> Dialect.MYSQL
+            dataSource.jdbcUrl.contains("mariadb", ignoreCase = true) -> Dialect.MYSQL
             dataSource.jdbcUrl.contains("postgresql", ignoreCase = true) -> Dialect.POSTGRESQL
             else -> throw IllegalArgumentException("Unsupported dialect for ${dataSource.jdbcUrl}")
         }

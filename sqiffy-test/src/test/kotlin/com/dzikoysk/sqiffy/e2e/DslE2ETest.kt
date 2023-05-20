@@ -31,24 +31,67 @@ import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
 import com.dzikoysk.sqiffy.shared.H2Mode.MYSQL
 import com.dzikoysk.sqiffy.shared.createH2DataSource
+import com.dzikoysk.sqiffy.shared.createHikariDataSource
 import com.zaxxer.hikari.HikariDataSource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.testcontainers.containers.MariaDBContainer
+import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.utility.DockerImageName
 import java.time.LocalDateTime
 import java.util.UUID
 
-class H2MySQLModeDslE2ETest : DslE2ETest() {
+internal class H2MySQLModeDslE2ETest : DslE2ETest() {
     override fun createDataSource(): HikariDataSource = createH2DataSource(MYSQL)
 }
 
-class EmbeddedPostgresDslE2ETest : DslE2ETest() {
+internal class EmbeddedPostgresDslE2ETest : DslE2ETest() {
     val postgres = postgresDataSource()
     override fun createDataSource(): HikariDataSource = postgres.dataSource
     @AfterEach fun stop() { postgres.pg.close() }
 }
 
-abstract class DslE2ETest : SqiffyE2ETestSpecification() {
+@Testcontainers
+internal class PostgreSQLDslE2ETest : DslE2ETest() {
+    private class SpecifiedPostgreSQLContainer(image: String) : PostgreSQLContainer<SpecifiedPostgreSQLContainer>(DockerImageName.parse(image))
+
+    companion object {
+        @Container
+        private val POSTGRESQL_CONTAINER = SpecifiedPostgreSQLContainer("postgres:11.12")
+    }
+
+    override fun createDataSource(): HikariDataSource =
+        createHikariDataSource(
+            driver = "org.postgresql.Driver",
+            url = POSTGRESQL_CONTAINER.jdbcUrl,
+            username = POSTGRESQL_CONTAINER.username,
+            password = POSTGRESQL_CONTAINER.password
+        )
+}
+
+@Testcontainers
+internal class MariaDbDslE2ETest : DslE2ETest() {
+    private class SpecifiedMariaDbContainer(image: String) : MariaDBContainer<SpecifiedMariaDbContainer>(DockerImageName.parse(image))
+
+    companion object {
+        @Container
+        private val MARIADB_CONTAINER = SpecifiedMariaDbContainer("mariadb:10.6.1")
+    }
+
+    override fun createDataSource(): HikariDataSource =
+        createHikariDataSource(
+            driver = "org.mariadb.jdbc.Driver",
+            url = MARIADB_CONTAINER.jdbcUrl,
+            username = MARIADB_CONTAINER.username,
+            password = MARIADB_CONTAINER.password
+        )
+}
+
+
+internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
 
     @Test
     fun `should insert and select entity`() {
