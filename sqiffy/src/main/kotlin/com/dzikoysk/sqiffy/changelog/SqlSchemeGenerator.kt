@@ -55,7 +55,7 @@ object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
             val type = "${propertyData.name.toQuoted()} ${createDataTypeWithAttributes(propertyData, enums)}";
 
             when (propertyData.type) {
-                DataType.SERIAL -> "$type, KEY ${propertyData.name.toQuoted()} (${propertyData.name.toQuoted()})"
+                DataType.SERIAL -> "$type, KEY (${propertyData.name.toQuoted()})"
                 else -> type
             }
         }

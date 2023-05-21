@@ -36,7 +36,7 @@ abstract class SqiffyE2ETestSpecification {
 }
 
 data class Postgres(
-    val pg: EmbeddedPostgres,
+    val embeddedPostgres: EmbeddedPostgres,
     val dataSource: HikariDataSource
 )
 

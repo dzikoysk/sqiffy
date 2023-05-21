@@ -9,8 +9,6 @@ import com.dzikoysk.sqiffy.User
 import com.dzikoysk.sqiffy.UserTableNames
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
-import com.dzikoysk.sqiffy.shared.H2Mode.MYSQL
-import com.dzikoysk.sqiffy.shared.createH2DataSource
 import com.dzikoysk.sqiffy.shared.multiline
 import com.zaxxer.hikari.HikariDataSource
 import org.assertj.core.api.Assertions.assertThat
@@ -19,14 +17,10 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
-internal class H2MySQLModeJdbiE2ETest : JdbiE2ETest() {
-    override fun createDataSource(): HikariDataSource = createH2DataSource(MYSQL)
-}
-
 internal class EmbeddedPostgresJdbiE2ETest : JdbiE2ETest() {
-    val postgres = postgresDataSource()
+    private val postgres = postgresDataSource()
     override fun createDataSource(): HikariDataSource = postgres.dataSource
-    @AfterEach fun stop() { postgres.pg.close() }
+    @AfterEach fun stop() { postgres.embeddedPostgres.close() }
 }
 
 internal abstract class JdbiE2ETest : SqiffyE2ETestSpecification() {
