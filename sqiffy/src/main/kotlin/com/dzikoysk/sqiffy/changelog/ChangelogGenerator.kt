@@ -4,6 +4,7 @@ import com.dzikoysk.sqiffy.changelog.generators.ChangelogConstraintsGenerator
 import com.dzikoysk.sqiffy.changelog.generators.ChangelogEnumGenerator
 import com.dzikoysk.sqiffy.changelog.generators.ChangelogIndicesGenerator
 import com.dzikoysk.sqiffy.changelog.generators.ChangelogPropertiesGenerator
+import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.DefinitionEntry
 import com.dzikoysk.sqiffy.definition.DefinitionVersion
 import com.dzikoysk.sqiffy.definition.PropertyData
@@ -115,6 +116,10 @@ class ChangeLogGenerator(
                 changeLogPropertiesGenerator.generateProperties(propertiesContext)
                 contexts.add(propertiesContext)
                 propertiesState.computeIfAbsent(version) { mutableMapOf() }[state.tableName] = propertiesContext.state.properties.toList()
+
+                if (state.properties.count { it.type == DataType.SERIAL } > 1) {
+                    throw IllegalStateException("Table '${state.tableName}' has more than one SERIAL column")
+                }
 
                 constraints.add {
                     val constraintsContext = baseContext.copy(changes = mutableListOf())

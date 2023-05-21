@@ -6,6 +6,7 @@ import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.ADD_CONSTRAINT
 import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.REMOVE_CONSTRAINT
 import com.dzikoysk.sqiffy.definition.ConstraintType.FOREIGN_KEY
 import com.dzikoysk.sqiffy.definition.ConstraintType.PRIMARY_KEY
+import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.ForeignKey
 import com.dzikoysk.sqiffy.definition.NULL_CLASS
 import com.dzikoysk.sqiffy.definition.NULL_STRING
@@ -86,6 +87,14 @@ internal class ChangelogConstraintsGenerator {
                     )
 
                     checkIfConstraintOrIndexNameAlreadyUsed(foreignKey.name)
+
+                    val onColumn = state.properties
+                        .firstOrNull { it.name == foreignKey.on }
+                        ?: throw IllegalStateException("Column ${foreignKey.on} marked as foreign key not found in table ${state.tableName}")
+
+                    onColumn
+                        .takeIf { it.type != DataType.SERIAL }
+                        ?: throw IllegalStateException("Column ${foreignKey.on} marked as foreign key cannot be of type SERIAL")
 
                     val foreignTable = currentScheme
                         .firstOrNull { it.source == foreignKey.referenced.qualifiedName }
