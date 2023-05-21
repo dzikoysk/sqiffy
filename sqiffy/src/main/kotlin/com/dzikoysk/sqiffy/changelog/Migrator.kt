@@ -3,9 +3,7 @@ package com.dzikoysk.sqiffy.changelog
 import com.dzikoysk.sqiffy.SqiffyDatabase
 import com.dzikoysk.sqiffy.definition.DataType.TEXT
 import com.dzikoysk.sqiffy.definition.PropertyData
-import com.dzikoysk.sqiffy.dsl.Column
-import com.dzikoysk.sqiffy.dsl.Table
-import com.dzikoysk.sqiffy.dsl.Values
+import com.dzikoysk.sqiffy.dsl.*
 import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
 import com.dzikoysk.sqiffy.dsl.generator.bindArguments
 import com.dzikoysk.sqiffy.dsl.generator.toQueryColumn
@@ -39,15 +37,20 @@ class Migrator(private val database: SqiffyDatabase) {
         }
 
         database.getJdbi().useTransaction<Exception> { transaction ->
+            val (whereQuery, whereArguments) = database.sqlQueryGenerator.createExpression(
+                allocator = ParameterAllocator(),
+                expression = metadataTable.property eq "version"
+            )
+
             val currentVersion = transaction
                 .select(
                     database.sqlQueryGenerator.createSelectQuery(
                         tableName = tableName,
                         selected = listOf(metadataTable.property),
-                        where = """"${columnProperty.name}" = :version"""
+                        where = whereQuery,
                     ).query,
                 )
-                .bind("version", "version")
+                .bindArguments(whereArguments)
                 .mapTo(String::class.java)
                 .firstOrNull()
 

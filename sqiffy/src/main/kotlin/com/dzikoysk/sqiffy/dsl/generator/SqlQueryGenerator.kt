@@ -1,14 +1,6 @@
 package com.dzikoysk.sqiffy.dsl.generator
 
-import com.dzikoysk.sqiffy.dsl.Aggregation
-import com.dzikoysk.sqiffy.dsl.BetweenCondition
-import com.dzikoysk.sqiffy.dsl.Column
-import com.dzikoysk.sqiffy.dsl.ComparisonCondition
-import com.dzikoysk.sqiffy.dsl.ConstExpression
-import com.dzikoysk.sqiffy.dsl.Expression
-import com.dzikoysk.sqiffy.dsl.LogicalCondition
-import com.dzikoysk.sqiffy.dsl.NotCondition
-import com.dzikoysk.sqiffy.dsl.Selectable
+import com.dzikoysk.sqiffy.dsl.*
 import com.dzikoysk.sqiffy.dsl.generator.ArgumentType.COLUMN
 import com.dzikoysk.sqiffy.dsl.generator.ArgumentType.VALUE
 import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator.GeneratorResult
@@ -16,7 +8,6 @@ import com.dzikoysk.sqiffy.dsl.statements.Join
 import com.dzikoysk.sqiffy.dsl.statements.JoinType
 import com.dzikoysk.sqiffy.dsl.statements.OrderBy
 import com.dzikoysk.sqiffy.shared.multiline
-import com.dzikoysk.sqiffy.shared.toQuoted
 
 class QueryColumn(
     val table: String,
@@ -78,6 +69,8 @@ interface SqlQueryGenerator {
         expression: Expression<*, *>
     ): GeneratorResult
 
+    fun quoteType(): QuoteType = QuoteType.DOUBLE_QUOTE
+
 }
 
 object MySqlQueryGenerator : GenericQueryGenerator() {
@@ -97,7 +90,7 @@ object MySqlQueryGenerator : GenericQueryGenerator() {
         return GeneratorResult(
             query =
                 multiline("""
-                    INSERT INTO "$tableName" 
+                    INSERT INTO ${tableName.toQuoted()}
                     (${columns.joinToString(separator = ", ") { it.name.toQuoted() }})
                      VALUES ($values)
                 """),
@@ -121,13 +114,15 @@ object MySqlQueryGenerator : GenericQueryGenerator() {
         return GeneratorResult(
             query =
                 multiline("""
-                    UPDATE "$tableName" 
+                    UPDATE ${tableName.toQuoted()} 
                     SET $values
                     ${where?.let { "WHERE $it" } ?: ""}
                 """),
             arguments = arguments
         )
     }
+
+    override fun quoteType(): QuoteType = QuoteType.BACKTICK
 
 }
 
@@ -153,7 +148,7 @@ object PostgreSqlQueryGenerator : GenericQueryGenerator() {
         return GeneratorResult(
             query =
                 multiline("""
-                    INSERT INTO "$tableName" 
+                    INSERT INTO ${tableName.toQuoted()} 
                     (${columns.joinToString(separator = ", ") { it.name.toQuoted() }}) 
                     VALUES ($values)
                 """),
@@ -182,7 +177,7 @@ object PostgreSqlQueryGenerator : GenericQueryGenerator() {
         return GeneratorResult(
             query =
             multiline("""
-                    UPDATE "$tableName" 
+                    UPDATE ${tableName.toQuoted()} 
                     SET $values
                     ${where?.let { "WHERE $it" } ?: ""}
                 """),
@@ -194,9 +189,9 @@ object PostgreSqlQueryGenerator : GenericQueryGenerator() {
 
 abstract class GenericQueryGenerator : SqlQueryGenerator {
 
-    private fun Selectable.toIdentifier(): String =
+    protected open fun Selectable.toIdentifier(): String =
         when (this) {
-            is Column<*> -> quotedIdentifier
+            is Column<*> -> "${table.getName().toQuoted()}.${name.toQuoted()}"
             is Aggregation<*> -> "$aggregationFunction($quotedIdentifier)"
             else -> throw IllegalArgumentException("Unknown selectable type: $javaClass")
         }
@@ -233,7 +228,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                     "$joinType ${join.onTo.table.getName().toQuoted()} ON ${join.on.quotedIdentifier} = ${join.onTo.quotedIdentifier}"
                 }}
                 ${where?.let { "WHERE $it" } ?: ""}
-                ${groupBy?.let { "GROUP BY ${groupBy.joinToString(separator = ", ") { it.quotedIdentifier }}" } ?: ""}
+                ${groupBy?.let { "GROUP BY ${groupBy.joinToString(separator = ", ") { it.quotedIdentifier.toString(quoteType()) }}" } ?: ""}
                 ${having?.let { "HAVING $it" } ?: ""}
                 ${orderBy?.let { "ORDER BY ${orderBy.joinToString(separator = ", ") { "${it.selectable.toIdentifier()} ${it.order}" }}" } ?: ""}
                 ${limit?.let { "LIMIT $it" } ?: ""}
@@ -244,7 +239,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
     override fun createDeleteQuery(tableName: String, where: String?): GeneratorResult =
         GeneratorResult(
             query = multiline("""
-                DELETE FROM "$tableName"
+                DELETE FROM ${tableName.toQuoted()}
                 ${where?.let { "WHERE $it" } ?: ""}
             """)
         )
@@ -253,7 +248,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
         when (expression) {
             is Column<*> ->
                 GeneratorResult(
-                    query = expression.quotedIdentifier
+                    query = expression.quotedIdentifier.toString(quoteType())
                 )
             is Aggregation<*> ->
                 GeneratorResult(
@@ -302,5 +297,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                 )
             }
         }
+
+    fun String.toQuoted() = quoteType().quote(this)
 
 }
