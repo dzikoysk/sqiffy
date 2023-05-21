@@ -1,6 +1,5 @@
 package com.dzikoysk.sqiffy.dsl
 
-import com.dzikoysk.sqiffy.shared.toQuoted
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -11,7 +10,6 @@ abstract class Table(name: String) {
 
     private val tableName: String = name
     fun getName(): String = tableName
-    fun getQuotedName(): String = getName().toQuoted()
 
     private val columns: MutableList<Column<*>> = mutableListOf()
     fun getColumns(): List<Column<*>> = columns
@@ -57,9 +55,8 @@ data class Column<T>(
 
     override val selectableType: SelectableType = SelectableType.COLUMN
 
-    val quotedName = name.toQuoted()
     val rawIdentifier: String = "${table.getName()}.$name"
-    val quotedIdentifier: String = "${table.getQuotedName()}.$quotedName"
+    val quotedIdentifier = Quoted { "${it.quote(table.getName())}.${it.quote(name)}" }
 
     @Suppress("UNCHECKED_CAST")
     fun nullable(): Column<T?> = copy(nullable = true) as Column<T?>

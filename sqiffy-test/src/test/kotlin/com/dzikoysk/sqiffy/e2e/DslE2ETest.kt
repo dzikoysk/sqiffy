@@ -49,9 +49,9 @@ internal class H2MySQLModeDslE2ETest : DslE2ETest() {
 }
 
 internal class EmbeddedPostgresDslE2ETest : DslE2ETest() {
-    val postgres = postgresDataSource()
+    private val postgres = postgresDataSource()
     override fun createDataSource(): HikariDataSource = postgres.dataSource
-    @AfterEach fun stop() { postgres.pg.close() }
+    @AfterEach fun stop() { postgres.embeddedPostgres.close() }
 }
 
 @Testcontainers

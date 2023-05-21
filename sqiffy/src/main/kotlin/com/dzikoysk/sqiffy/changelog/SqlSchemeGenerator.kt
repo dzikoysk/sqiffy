@@ -3,7 +3,6 @@ package com.dzikoysk.sqiffy.changelog
 import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.shared.multiline
-import com.dzikoysk.sqiffy.shared.toQuoted
 
 interface SqlSchemeGenerator {
 
@@ -51,12 +50,25 @@ interface SqlSchemeGenerator {
 
 object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
 
+    override fun createTable(name: String, properties: List<PropertyData>, enums: Enums): String {
+        val types = properties.joinToString(separator = ", ") { propertyData ->
+            val type = "${propertyData.name.toQuoted()} ${createDataTypeWithAttributes(propertyData, enums)}";
+
+            when (propertyData.type) {
+                DataType.SERIAL -> "$type, KEY (${propertyData.name.toQuoted()})"
+                else -> type
+            }
+        }
+
+        return "CREATE TABLE IF NOT EXISTS ${name.toQuoted()} ($types);"
+    }
+
     override fun createEnum(name: String, values: List<String>): String? =
         null
 
     override fun addEnumValues(enum: EnumState, values: List<String>, inUse: List<Pair<String, PropertyData>>): String =
         inUse.joinToString("\n") { (tableName, property) ->
-            multiline("""ALTER TABLE "$tableName" MODIFY COLUMN "${property.name}" ENUM(${enum.values.joinToString(separator = ", ") { it.toQuoted().replace("\"", "'") }});""")
+            multiline("ALTER TABLE ${tableName.toQuoted()} MODIFY COLUMN ${property.name.toQuoted()} ENUM(${enum.values.joinToString(separator = ", ") { "'$it'" }});")
         }
 
     override fun createDataType(property: PropertyData, availableEnums: Enums): String =
@@ -81,7 +93,9 @@ object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
         }
 
     override fun removeIndex(tableName: String, name: String): String =
-        """DROP INDEX "$name" ON "$tableName""""
+        "DROP INDEX ${name.toQuoted()} ON ${tableName.toQuoted()}"
+
+    override fun String.toQuoted(): String = "`$this`"
 
 }
 
@@ -89,8 +103,8 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
 
     override fun retypeColumn(tableName: String, property: PropertyData, enums: Enums): String =
          multiline("""
-            ALTER TABLE "$tableName" ALTER COLUMN "${property.name}" SET DATA TYPE ${createDataType(property, enums)};
-            ALTER TABLE "$tableName" ALTER COLUMN "${property.name}" ${
+            ALTER TABLE ${tableName.toQuoted()} ALTER COLUMN ${property.name.toQuoted()} SET DATA TYPE ${createDataType(property, enums)};
+            ALTER TABLE ${tableName.toQuoted()} ALTER COLUMN ${property.name.toQuoted()} ${
                 when {
                     property.nullable -> "DROP NOT NULL;"
                     else -> "SET NOT NULL;"
@@ -100,21 +114,21 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
 
     override fun createEnum(name: String, values: List<String>): String =
         multiline("""
-            CREATE TYPE "$name" AS ENUM (
-                ${values.joinToString(separator = ",\n") { "'$it'" }}
+            CREATE TYPE ${name.toQuoted()} AS ENUM (
+               ${values.joinToString(separator = ",\n") { "'$it'" }}
             );
         """)
 
     override fun addEnumValues(enum: EnumState, values: List<String>, inUse: List<Pair<String, PropertyData>>): String =
         listOf(values.first()).joinToString(separator = "\n") {
-            """ALTER TYPE "${enum.name}" ADD VALUE '$it';"""
+            """ALTER TYPE ${enum.name.toQuoted()} ADD VALUE '$it';"""
         }
 
     override fun removeForeignKey(tableName: String, name: String): String =
-        """ALTER TABLE "$tableName" DROP CONSTRAINT "$name""""
+        """ALTER TABLE ${tableName.toQuoted()} DROP CONSTRAINT ${name.toQuoted()}"""
 
     override fun removeIndex(tableName: String, name: String): String =
-        """DROP INDEX "$name""""
+        """DROP INDEX ${name.toQuoted()}"""
 
     override fun createDataType(property: PropertyData, enums: Enums): String =
         when (property.type) {
@@ -123,7 +137,7 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
             DataType.ENUM -> property.enumDefinition
                 ?.let { enums.getEnum(it.type) }
                 ?.name
-                ?.toQuoted()
+                ?.let { it.toQuoted() }
                 ?: throw IllegalStateException("Missing enum data for property '${property.name}'")
             DataType.DATETIME -> "TIMESTAMPTZ"
             DataType.BINARY -> "BYTEA"
@@ -137,50 +151,52 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
     /* Table */
 
     override fun createTable(name: String, properties: List<PropertyData>, enums: Enums): String =
-        """CREATE TABLE IF NOT EXISTS "$name" (${properties.joinToString(separator = ", ") { "${it.name.toQuoted()} ${createDataTypeWithAttributes(it, enums)}"}});"""
+        """CREATE TABLE IF NOT EXISTS ${name.toQuoted()} (${properties.joinToString(separator = ", ") { "${it.name.toQuoted()} ${createDataTypeWithAttributes(it, enums)}"}});"""
 
     override fun renameTable(currentName: String, renameTo: String): String =
-        """ALTER TABLE "$currentName" RENAME "$renameTo""""
+        """ALTER TABLE ${currentName.toQuoted()} RENAME ${renameTo.toQuoted()}"""
 
     /* Columns */
 
     override fun createColumn(tableName: String, property: PropertyData, enums: Enums): String =
-         """ALTER TABLE "$tableName" ADD "${property.name}" ${createDataTypeWithAttributes(property, enums)}"""
+         "ALTER TABLE ${tableName.toQuoted()} ADD ${property.name.toQuoted()} ${createDataTypeWithAttributes(property, enums)}"
 
     override fun renameColumn(tableName: String, currentName: String, renameTo: String): String =
-        """ALTER TABLE "$tableName" RENAME COLUMN "$currentName" TO "$renameTo""""
+        "ALTER TABLE ${tableName.toQuoted()} RENAME COLUMN ${currentName.toQuoted()} TO ${renameTo.toQuoted()}"
 
     override fun retypeColumn(tableName: String, property: PropertyData, enums: Enums): String =
-        """ALTER TABLE "$tableName" MODIFY "${property.name}" ${createDataTypeWithAttributes(property, enums)}"""
+        "ALTER TABLE ${tableName.toQuoted()} MODIFY ${property.name.toQuoted()} ${createDataTypeWithAttributes(property, enums)}"
 
     override fun removeColumn(tableName: String, columnName: String): String =
-        """ALTER TABLE "$tableName" DROP COLUMN "$columnName""""
+        "ALTER TABLE ${tableName.toQuoted()} DROP COLUMN ${columnName.toQuoted()}"
 
     /* Constraints */
 
     override fun createPrimaryKey(tableName: String, name: String, on: List<String>): String =
-        """ALTER TABLE "$tableName" ADD CONSTRAINT "$name" PRIMARY KEY (${on.joinToString(separator = ", ") { it.toQuoted() }})"""
+        """ALTER TABLE ${tableName.toQuoted()} ADD CONSTRAINT ${name.toQuoted()} PRIMARY KEY (${on.joinToString(separator = ", ") { it.toQuoted() }})"""
 
     override fun removePrimaryKey(tableName: String, name: String): String =
-        """ALTER TABLE "$tableName" DROP PRIMARY KEY"""
+        """ALTER TABLE ${tableName.toQuoted()} DROP PRIMARY KEY"""
 
     override fun createForeignKey(tableName: String, name: String, on: String, foreignTable: String, foreignColumn: String): String =
-        """ALTER TABLE "$tableName" ADD CONSTRAINT "$name" FOREIGN KEY ("$on") REFERENCES "$foreignTable" ("$foreignColumn")"""
+        """ALTER TABLE ${tableName.toQuoted()} ADD CONSTRAINT ${name.toQuoted()} FOREIGN KEY (${on.toQuoted()}) REFERENCES ${foreignTable.toQuoted()} (${foreignColumn.toQuoted()})"""
 
     override fun removeForeignKey(tableName: String, name: String): String =
-        """ALTER TABLE "$tableName" DROP FOREIGN KEY "$name""""
+        """ALTER TABLE ${tableName.toQuoted()} DROP FOREIGN KEY ${name.toQuoted()}"""
 
     /* Indices */
 
     override fun createIndex(tableName: String, name: String, on: List<String>): String =
-        """CREATE INDEX "$name" ON "$tableName" (${createIndexColumns(on)})"""
+        """CREATE INDEX ${name.toQuoted()} ON ${tableName.toQuoted()} (${createIndexColumns(on)})"""
 
     override fun createUniqueIndex(tableName: String, name: String, on: List<String>): String =
-        """CREATE UNIQUE INDEX "$name" ON "$tableName" (${createIndexColumns(on)})"""
+        """CREATE UNIQUE INDEX ${name.toQuoted()} ON ${tableName.toQuoted()} (${createIndexColumns(on)})"""
 
     /* Utilities */
 
     abstract fun createDataType(property: PropertyData, availableEnums: Enums): String
+    
+    open fun String.toQuoted(): String = "\"$this\""
 
     protected fun createRegularDataType(property: PropertyData): String =
         with (property) {
@@ -205,7 +221,7 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
             }
         }
 
-    private fun createDataTypeWithAttributes(property: PropertyData, availableEnums: Enums): String =
+    protected fun createDataTypeWithAttributes(property: PropertyData, availableEnums: Enums): String =
         with (property) {
             var dataType = createDataType(property, availableEnums)
 
@@ -217,7 +233,7 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
         }
 
     private fun createIndexColumns(columns: List<String>): String =
-        columns.joinToString(separator = ", ") { "\"$it\"" }
+        columns.joinToString(separator = ", ") { it.toQuoted() }
 
 }
 
