@@ -17,6 +17,7 @@ import com.dzikoysk.sqiffy.dsl.statements.DeleteStatement
 import com.dzikoysk.sqiffy.dsl.statements.InsertStatement
 import com.dzikoysk.sqiffy.dsl.statements.SelectStatement
 import com.dzikoysk.sqiffy.dsl.statements.UpdateStatement
+import com.dzikoysk.sqiffy.shared.UUIDArgumentFactory
 import com.zaxxer.hikari.HikariDataSource
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.kotlin.KotlinPlugin
@@ -39,6 +40,13 @@ object Sqiffy {
         logger: SqiffyLogger = StdoutSqiffyLogger(),
         dataSource: HikariDataSource
     ): SqiffyDatabase {
+        val dialect = when {
+            dataSource.jdbcUrl.contains("mysql", ignoreCase = true) -> Dialect.MYSQL
+            dataSource.jdbcUrl.contains("mariadb", ignoreCase = true) -> Dialect.MYSQL
+            dataSource.jdbcUrl.contains("postgresql", ignoreCase = true) -> Dialect.POSTGRESQL
+            else -> throw IllegalArgumentException("Unsupported dialect for ${dataSource.jdbcUrl}")
+        }
+
         val localJdbi = Jdbi.create(dataSource)
             .installPlugin(SqlObjectPlugin())
             .installPlugin(Jackson2Plugin())
@@ -47,13 +55,12 @@ object Sqiffy {
             .also {
                 it.configure(SqlStatements::class.java) { statements -> statements.isUnusedBindingAllowed = false }
             }
-
-        val dialect = when {
-            dataSource.jdbcUrl.contains("mysql", ignoreCase = true) -> Dialect.MYSQL
-            dataSource.jdbcUrl.contains("mariadb", ignoreCase = true) -> Dialect.MYSQL
-            dataSource.jdbcUrl.contains("postgresql", ignoreCase = true) -> Dialect.POSTGRESQL
-            else -> throw IllegalArgumentException("Unsupported dialect for ${dataSource.jdbcUrl}")
-        }
+            .also {
+                when (dialect) {
+                    Dialect.MYSQL -> it.registerArgument(UUIDArgumentFactory())
+                    Dialect.POSTGRESQL -> {}
+                }
+            }
 
         val sqlSchemeGenerator: SqlSchemeGenerator = when (dialect) {
             Dialect.MYSQL -> MySqlSchemeGenerator
