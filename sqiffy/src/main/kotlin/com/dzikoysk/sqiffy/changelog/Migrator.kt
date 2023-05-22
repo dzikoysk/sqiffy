@@ -1,58 +1,57 @@
 package com.dzikoysk.sqiffy.changelog
 
 import com.dzikoysk.sqiffy.SqiffyDatabase
-import com.dzikoysk.sqiffy.definition.DataType.TEXT
-import com.dzikoysk.sqiffy.definition.PropertyData
-import com.dzikoysk.sqiffy.dsl.*
+import com.dzikoysk.sqiffy.dsl.Column
+import com.dzikoysk.sqiffy.dsl.Table
+import com.dzikoysk.sqiffy.dsl.Values
+import com.dzikoysk.sqiffy.dsl.eq
 import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
+import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator.GeneratorResult
 import com.dzikoysk.sqiffy.dsl.generator.bindArguments
 import com.dzikoysk.sqiffy.dsl.generator.toQueryColumn
 import org.slf4j.event.Level
 
+private const val VERSION_KEY = "version"
+
 class Migrator(private val database: SqiffyDatabase) {
 
     class SqiffyMetadataTable(name: String = "sqiffy_metadata") : Table(name) {
-        val property: Column<String> = text("property", "text")
+        val key: Column<String> = text("key", "varchar(32)")
+        val value: Column<String> = text("value", "text")
     }
 
-    @Suppress("RemoveRedundantQualifierName")
-    fun runMigrations(metadataTable: SqiffyMetadataTable = SqiffyMetadataTable(), changeLog: ChangeLog) {
+    fun runMigrations(metadataTable: SqiffyMetadataTable = SqiffyMetadataTable(), changeLog: ChangeLog): List<Version> {
         val tableName = metadataTable.getName()
-
-        val columnProperty = PropertyData(
-            name = "property",
-            type = TEXT
-        )
-
-        val queryColumn = metadataTable.property.toQueryColumn()
 
         database.getJdbi().useHandle<Exception> { handle ->
             handle.execute(
                 database.sqlSchemeGenerator.createTable(
                     name = tableName,
-                    properties = listOf(columnProperty),
+                    properties = metadataTable.getColumns().map { it.getPropertyData() },
                     enums = Enums()
                 ).also { database.logger.log(Level.INFO, it) }
             )
         }
 
-        database.getJdbi().useTransaction<Exception> { transaction ->
-            val (whereQuery, whereArguments) = database.sqlQueryGenerator.createExpression(
-                allocator = ParameterAllocator(),
-                expression = metadataTable.property eq "version"
-            )
-
-            val currentVersion = transaction
-                .select(
-                    database.sqlQueryGenerator.createSelectQuery(
-                        tableName = tableName,
-                        selected = listOf(metadataTable.property),
-                        where = whereQuery,
-                    ).query,
+        return database.getJdbi().inTransaction<List<Version>, Exception> { transaction ->
+            val currentVersion = let {
+                val (whereQuery, whereArguments) = database.sqlQueryGenerator.createExpression(
+                    allocator = ParameterAllocator(),
+                    expression = metadataTable.key eq VERSION_KEY
                 )
-                .bindArguments(whereArguments)
-                .mapTo(String::class.java)
-                .firstOrNull()
+
+                transaction
+                    .select(
+                        database.sqlQueryGenerator.createSelectQuery(
+                            tableName = tableName,
+                            selected = listOf(metadataTable.value),
+                            where = whereQuery,
+                        ).query,
+                    )
+                    .bindArguments(whereArguments)
+                    .mapTo(String::class.java)
+                    .firstOrNull()
+            }
 
             database.logger.log(Level.INFO, "Current version of database scheme: $currentVersion")
 
@@ -66,7 +65,7 @@ class Migrator(private val database: SqiffyDatabase) {
 
             if (changesToApply.isEmpty()) {
                 database.logger.log(Level.INFO, "Database scheme is up to date")
-                return@useTransaction
+                return@inTransaction emptyList()
             }
 
             database.logger.log(Level.INFO, "Changes to apply: ${changesToApply.joinToString(", ")}")
@@ -79,7 +78,7 @@ class Migrator(private val database: SqiffyDatabase) {
 
             if (currentVersion == latestVersion) {
                 database.logger.log(Level.INFO, "Database scheme is up to date")
-                return@useTransaction
+                return@inTransaction emptyList()
             }
 
             changesToApply.forEach { (version, changes) ->
@@ -92,27 +91,48 @@ class Migrator(private val database: SqiffyDatabase) {
             }
 
             val allocator = ParameterAllocator()
+            val values = Values()
 
             val (query, arguments) = when (currentVersion) {
                 null -> database.sqlQueryGenerator.createInsertQuery(
                     allocator = allocator,
                     tableName = tableName,
-                    columns = listOf(queryColumn)
+                    columns = listOf(
+                        metadataTable.key.toQueryColumn(),
+                        metadataTable.value.toQueryColumn(),
+                    )
                 )
-                else -> database.sqlQueryGenerator.createUpdateQuery(
-                    allocator = allocator,
-                    tableName = tableName,
-                    columns = listOf(queryColumn),
-                )
+                else -> {
+                    val (whereQuery, whereArguments) = database.sqlQueryGenerator.createExpression(
+                        allocator = allocator,
+                        expression = metadataTable.key eq VERSION_KEY
+                    )
+
+                    val (updateQuery, updateArguments) = database.sqlQueryGenerator.createUpdateQuery(
+                        allocator = allocator,
+                        tableName = tableName,
+                        columns = listOf(
+                            metadataTable.value.toQueryColumn(),
+                        ),
+                        where = whereQuery
+                    )
+
+                    GeneratorResult(
+                        query = updateQuery,
+                        arguments = (whereArguments + updateArguments)
+                    )
+                }
             }
 
-            val values = Values()
-            values[metadataTable.property] = latestVersion
+            values[metadataTable.key] = VERSION_KEY
+            values[metadataTable.value] = latestVersion
 
             transaction
                 .createUpdate(query)
                 .bindArguments(arguments, values)
                 .execute()
+
+            changesToApply.map { it.version }
         }
     }
 

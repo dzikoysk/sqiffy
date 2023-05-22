@@ -12,7 +12,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.slf4j.LoggerFactory
 
-abstract class SqiffyE2ETestSpecification {
+abstract class SqiffyE2ETestSpecification(private val runMigrations: Boolean = true) {
 
     lateinit var database: SqiffyDatabase
 
@@ -24,8 +24,11 @@ abstract class SqiffyE2ETestSpecification {
             dataSource = createDataSource(),
             logger = Slf4JSqiffyLogger(LoggerFactory.getLogger(SqiffyDatabase::class.java))
         )
-        val changeLog = database.generateChangeLog(UserDefinition::class, GuildDefinition::class)
-        database.runMigrations(changeLog = changeLog)
+
+        if (runMigrations) {
+            val changeLog = database.generateChangeLog(UserDefinition::class, GuildDefinition::class)
+            database.runMigrations(changeLog = changeLog)
+        }
     }
 
     @AfterEach

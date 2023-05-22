@@ -21,9 +21,13 @@ class EntityGenerator(private val context: KspContext) {
         val entityClassName = ClassName(entityClass.packageName, entityClass.name)
         entityClass.writeTo(context.codeGenerator, Dependencies(true))
 
-        if (properties.any { it.type == DataType.SERIAL }) { // TODO: Replace with check for PK+Serial
+        if (properties.any { it.type == DataType.SERIAL }) {
             val serialProperties = properties.filter { it.type == DataType.SERIAL }
-            val requiredProperties = properties.filter { it.type != DataType.SERIAL }
+
+            val requiredProperties = properties
+                .filter { it.type != DataType.SERIAL }
+                .takeIf { it.isNotEmpty() }
+                ?: return
 
             val unidentifiedEntityBuilder = generateEntityClass(
                 packageName = definitionEntry.packageName,
