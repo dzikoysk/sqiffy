@@ -13,14 +13,30 @@ import org.slf4j.event.Level
 
 private const val VERSION_KEY = "version"
 
-class Migrator(private val database: SqiffyDatabase) {
+class SqiffyMetadataTable(name: String = "sqiffy_metadata") : Table(name) {
+    val key: Column<String> = text("key", "varchar(32)")
+    val value: Column<String> = text("value", "text")
+}
 
-    class SqiffyMetadataTable(name: String = "sqiffy_metadata") : Table(name) {
-        val key: Column<String> = text("key", "varchar(32)")
-        val value: Column<String> = text("value", "text")
-    }
+internal data class VersionCallback(
+    val before: (() -> Unit)? = null,
+    val after: (() -> Unit)? = null
+)
 
-    fun runMigrations(metadataTable: SqiffyMetadataTable = SqiffyMetadataTable(), changeLog: ChangeLog): List<Version> {
+class VersionCallbacks {
+    internal val versionCallbacks = mutableMapOf<Version, VersionCallback>()
+    fun before(version: Version, callback: () -> Unit): VersionCallbacks = also { versionCallbacks.merge(version, VersionCallback(before = callback)) { old, new -> old.copy(before = new.before) } }
+    fun after(version: Version, callback: () -> Unit): VersionCallbacks = also { versionCallbacks.merge(version, VersionCallback(after = callback)) { old, new -> old.copy(after = new.after) } }
+}
+
+class Migrator(
+    private val database: SqiffyDatabase,
+    private val metadataTable: SqiffyMetadataTable,
+    private val changeLog: ChangeLog,
+    private val versionCallbacks: VersionCallbacks,
+) {
+
+    fun runMigrations(): List<Version> {
         val tableName = metadataTable.getName()
 
         database.getJdbi().useHandle<Exception> { handle ->
@@ -84,10 +100,15 @@ class Migrator(private val database: SqiffyDatabase) {
             changesToApply.forEach { (version, changes) ->
                 database.logger.log(Level.INFO, "Applying changes for version $version")
 
+                val callback = versionCallbacks.versionCallbacks[version]
+                callback?.before?.invoke()
+
                 changes.forEach {
                     database.logger.log(Level.DEBUG, it.query)
                     transaction.execute(it.query)
                 }
+
+                callback?.after?.invoke()
             }
 
             val allocator = ParameterAllocator()

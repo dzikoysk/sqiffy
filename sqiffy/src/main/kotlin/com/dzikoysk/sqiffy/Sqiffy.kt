@@ -3,10 +3,11 @@ package com.dzikoysk.sqiffy
 import com.dzikoysk.sqiffy.changelog.ChangeLog
 import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator
 import com.dzikoysk.sqiffy.changelog.Migrator
-import com.dzikoysk.sqiffy.changelog.Migrator.SqiffyMetadataTable
 import com.dzikoysk.sqiffy.changelog.MySqlSchemeGenerator
 import com.dzikoysk.sqiffy.changelog.PostgreSqlSchemeGenerator
+import com.dzikoysk.sqiffy.changelog.SqiffyMetadataTable
 import com.dzikoysk.sqiffy.changelog.SqlSchemeGenerator
+import com.dzikoysk.sqiffy.changelog.VersionCallbacks
 import com.dzikoysk.sqiffy.definition.RuntimeTypeFactory
 import com.dzikoysk.sqiffy.dsl.Table
 import com.dzikoysk.sqiffy.dsl.Values
@@ -103,8 +104,17 @@ open class SqiffyDatabase(
     fun generateChangeLog(vararg classes: KClass<*>): ChangeLog =
         changeLogGenerator.generateChangeLog(*classes)
 
-    fun runMigrations(metadataTable: SqiffyMetadataTable = SqiffyMetadataTable(), changeLog: ChangeLog) =
-        Migrator(this).runMigrations(metadataTable, changeLog)
+    fun runMigrations(
+        changeLog: ChangeLog,
+        versionCallbacks: VersionCallbacks = VersionCallbacks(),
+        metadataTable: SqiffyMetadataTable = SqiffyMetadataTable(),
+    ) =
+        Migrator(
+            database = this,
+            metadataTable = metadataTable,
+            changeLog = changeLog,
+            versionCallbacks = versionCallbacks
+        ).runMigrations()
 
     fun select(table: Table): SelectStatement =
         SelectStatement(this, table)
