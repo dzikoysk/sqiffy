@@ -31,7 +31,7 @@ Gradle _(kts)_:
 
 ```kotlin
 plugins {
-    id("com.google.devtools.ksp") version "1.8.10-1.0.9"
+    id("com.google.devtools.ksp") version "1.8.21-1.0.11"
 }
 
 dependencies {

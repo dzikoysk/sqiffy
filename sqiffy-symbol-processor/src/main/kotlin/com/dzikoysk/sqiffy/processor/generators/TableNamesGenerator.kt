@@ -5,6 +5,7 @@ import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.google.devtools.ksp.processing.Dependencies
 import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.KModifier.CONST
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
@@ -25,7 +26,7 @@ class TableNamesGenerator(private val context: KspContext) {
 
                         properties.forEach { property ->
                             typeBuilder.addProperty(
-                                PropertySpec.builder(property.name.uppercase(), String::class.asTypeName())
+                                PropertySpec.builder(property.name.uppercase(), String::class.asTypeName(), CONST)
                                     .initializer("%S", property.name)
                                     .build()
                             )

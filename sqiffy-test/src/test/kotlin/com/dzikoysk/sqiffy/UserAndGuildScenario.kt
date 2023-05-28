@@ -15,6 +15,7 @@ import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
 import com.dzikoysk.sqiffy.definition.DataType.VARCHAR
 import com.dzikoysk.sqiffy.definition.Definition
 import com.dzikoysk.sqiffy.definition.DefinitionVersion
+import com.dzikoysk.sqiffy.definition.DtoDefinition
 import com.dzikoysk.sqiffy.definition.EnumDefinition
 import com.dzikoysk.sqiffy.definition.EnumOperation.ADD_VALUES
 import com.dzikoysk.sqiffy.definition.EnumVersion
@@ -26,6 +27,8 @@ import com.dzikoysk.sqiffy.definition.Property
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RENAME
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RETYPE
+import com.dzikoysk.sqiffy.definition.Variant
+import java.io.Serializable
 
 object UserAndGuildScenarioVersions {
     const val V_1_0_0 = "1.0.0"
@@ -58,7 +61,7 @@ object RoleDefinition
             Property(name = "role", type = ENUM, enumDefinition = RoleDefinition::class)
         ],
         constraints = [
-            Constraint(type = PRIMARY_KEY, name = "pk_id", on =["id"]),
+            Constraint(type = PRIMARY_KEY, name = "pk_id", on = ["id"]),
         ],
         indices = [
             Index(type = INDEX, name = "idx_id", columns = ["id"]),
@@ -84,6 +87,23 @@ object RoleDefinition
     )
 ])
 object UserDefinition
+
+object Test {
+    const val NAME = "name"
+}
+
+@DtoDefinition(
+    from = UserTableNames::class,
+    variants = [
+        Variant(
+            name = UserTableNames.NAME,
+            properties = [ Test.NAME, UserTableNames.ID, UserTableNames.UUID, UserTableNames.NAME, UserTableNames.ROLE ],
+            implements = [ Serializable::class ]
+        ),
+
+    ]
+)
+object UserDtoDefinition
 
 @Definition([
     DefinitionVersion(

@@ -9,8 +9,8 @@ typealias Query = String
 
 data class ChangeLog(
     val enums: Map<EnumReference, EnumState>,
-    private val enumChanges: List<SchemeChange>,
     val tables: Map<DefinitionEntry, TableName>,
+    private val enumChanges: List<SchemeChange>,
     private val schemeChanges: List<SchemeChange>
 ) {
 
