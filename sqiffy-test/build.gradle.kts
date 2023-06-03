@@ -15,9 +15,11 @@ dependencies {
     testImplementation("io.zonky.test:embedded-postgres:2.0.3")
     testImplementation("org.postgresql:postgresql:42.6.0")
     testImplementation("com.h2database:h2:2.1.214")
+    testImplementation("mysql:mysql-connector-java:8.0.28")
 
     val testcontainers = "1.18.1"
     testImplementation("org.testcontainers:postgresql:$testcontainers")
+    testImplementation("org.testcontainers:mysql:$testcontainers")
     testImplementation("org.testcontainers:mariadb:$testcontainers")
     testImplementation("org.testcontainers:testcontainers:$testcontainers")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainers")

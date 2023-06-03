@@ -20,6 +20,8 @@ abstract class Table(name: String) {
         Column.of(this, name, dataType, dbType, type)
             .also { columns.add(it) }
 
+    protected fun serial(name: String, dbType: String): Column<Int> = column(name, DataType.SERIAL, dbType, Int::class)
+
     protected fun char(name: String, dbType: String): Column<Char> = column(name, DataType.CHAR, dbType, Char::class)
     protected fun varchar(name: String,  dbType: String): Column<String> = column(name, DataType.VARCHAR, dbType, String::class)
     protected fun text(name: String, dbType: String): Column<String> = column(name, DataType.TEXT, dbType, String::class)

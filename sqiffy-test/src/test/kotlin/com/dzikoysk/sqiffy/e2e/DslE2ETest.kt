@@ -37,6 +37,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.MariaDBContainer
+import org.testcontainers.containers.MySQLContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -90,6 +91,24 @@ internal class MariaDbDslE2ETest : DslE2ETest() {
         )
 }
 
+@Testcontainers
+internal class MySQLDslE2ETest : DslE2ETest() {
+    private class SpecifiedMySQLContainer(image: String) : MySQLContainer<SpecifiedMySQLContainer>(DockerImageName.parse(image))
+
+    companion object {
+        @Container
+        private val MYSQL_CONTAINER = SpecifiedMySQLContainer("mysql:8.0.25")
+    }
+
+    override fun createDataSource(): HikariDataSource =
+        createHikariDataSource(
+            driver = "com.mysql.cj.jdbc.Driver",
+            url = MYSQL_CONTAINER.jdbcUrl,
+            username = MYSQL_CONTAINER.username,
+            password = MYSQL_CONTAINER.password
+        )
+}
+
 
 internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
 
@@ -109,7 +128,9 @@ internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
                 it[UserTable.displayName] = userToInsert.displayName
                 it[UserTable.role] = userToInsert.role
             }
-            .map { userToInsert.withId(id = it[UserTable.id]) }
+            .map {
+                userToInsert.withId(id = it[UserTable.id])
+            }
             .first()
 
         val updatedRecords = database
