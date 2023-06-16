@@ -47,71 +47,6 @@ import org.testcontainers.utility.DockerImageName
 import java.time.LocalDateTime
 import java.util.UUID
 
-internal class H2MySQLModeDslE2ETest : DslE2ETest() {
-    override fun createDataSource(): HikariDataSource = createH2DataSource(MYSQL)
-}
-
-internal class EmbeddedPostgresDslE2ETest : DslE2ETest() {
-    private val postgres = postgresDataSource()
-    override fun createDataSource(): HikariDataSource = postgres.dataSource
-    @AfterEach fun stop() { postgres.embeddedPostgres.close() }
-}
-
-@Testcontainers
-internal class PostgreSQLDslE2ETest : DslE2ETest() {
-    private class SpecifiedPostgreSQLContainer(image: String) : PostgreSQLContainer<SpecifiedPostgreSQLContainer>(DockerImageName.parse(image))
-
-    companion object {
-        @Container
-        private val POSTGRESQL_CONTAINER = SpecifiedPostgreSQLContainer("postgres:11.12")
-    }
-
-    override fun createDataSource(): HikariDataSource =
-        createHikariDataSource(
-            driver = "org.postgresql.Driver",
-            url = POSTGRESQL_CONTAINER.jdbcUrl,
-            username = POSTGRESQL_CONTAINER.username,
-            password = POSTGRESQL_CONTAINER.password
-        )
-}
-
-@Testcontainers
-internal class MariaDbDslE2ETest : DslE2ETest() {
-    private class SpecifiedMariaDbContainer(image: String) : MariaDBContainer<SpecifiedMariaDbContainer>(DockerImageName.parse(image))
-
-    companion object {
-        @Container
-        private val MARIADB_CONTAINER = SpecifiedMariaDbContainer("mariadb:10.6.1")
-    }
-
-    override fun createDataSource(): HikariDataSource =
-        createHikariDataSource(
-            driver = "org.mariadb.jdbc.Driver",
-            url = MARIADB_CONTAINER.jdbcUrl,
-            username = MARIADB_CONTAINER.username,
-            password = MARIADB_CONTAINER.password
-        )
-}
-
-@Testcontainers
-internal class MySQLDslE2ETest : DslE2ETest() {
-    private class SpecifiedMySQLContainer(image: String) : MySQLContainer<SpecifiedMySQLContainer>(DockerImageName.parse(image))
-
-    companion object {
-        @Container
-        private val MYSQL_CONTAINER = SpecifiedMySQLContainer("mysql:8.0.25")
-    }
-
-    override fun createDataSource(): HikariDataSource =
-        createHikariDataSource(
-            driver = "com.mysql.cj.jdbc.Driver",
-            url = MYSQL_CONTAINER.jdbcUrl,
-            username = MYSQL_CONTAINER.username,
-            password = MYSQL_CONTAINER.password
-        )
-}
-
-
 internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
 
     @Test
@@ -248,4 +183,68 @@ internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
         assertThat(deletedCount).isEqualTo(1)
     }
 
+}
+
+internal class H2MySQLModeDslE2ETest : DslE2ETest() {
+    override fun createDataSource(): HikariDataSource = createH2DataSource(MYSQL)
+}
+
+internal class EmbeddedPostgresDslE2ETest : DslE2ETest() {
+    private val postgres = postgresDataSource()
+    override fun createDataSource(): HikariDataSource = postgres.dataSource
+    @AfterEach fun stop() { postgres.embeddedPostgres.close() }
+}
+
+@Testcontainers
+internal class PostgreSQLDslE2ETest : DslE2ETest() {
+    private class SpecifiedPostgreSQLContainer(image: String) : PostgreSQLContainer<SpecifiedPostgreSQLContainer>(DockerImageName.parse(image))
+
+    companion object {
+        @Container
+        private val POSTGRESQL_CONTAINER = SpecifiedPostgreSQLContainer("postgres:11.12")
+    }
+
+    override fun createDataSource(): HikariDataSource =
+        createHikariDataSource(
+            driver = "org.postgresql.Driver",
+            url = POSTGRESQL_CONTAINER.jdbcUrl,
+            username = POSTGRESQL_CONTAINER.username,
+            password = POSTGRESQL_CONTAINER.password
+        )
+}
+
+@Testcontainers
+internal class MariaDbDslE2ETest : DslE2ETest() {
+    private class SpecifiedMariaDbContainer(image: String) : MariaDBContainer<SpecifiedMariaDbContainer>(DockerImageName.parse(image))
+
+    companion object {
+        @Container
+        private val MARIADB_CONTAINER = SpecifiedMariaDbContainer("mariadb:10.6.1")
+    }
+
+    override fun createDataSource(): HikariDataSource =
+        createHikariDataSource(
+            driver = "org.mariadb.jdbc.Driver",
+            url = MARIADB_CONTAINER.jdbcUrl,
+            username = MARIADB_CONTAINER.username,
+            password = MARIADB_CONTAINER.password
+        )
+}
+
+@Testcontainers
+internal class MySQLDslE2ETest : DslE2ETest() {
+    private class SpecifiedMySQLContainer(image: String) : MySQLContainer<SpecifiedMySQLContainer>(DockerImageName.parse(image))
+
+    companion object {
+        @Container
+        private val MYSQL_CONTAINER = SpecifiedMySQLContainer("mysql:8.0.25")
+    }
+
+    override fun createDataSource(): HikariDataSource =
+        createHikariDataSource(
+            driver = "com.mysql.cj.jdbc.Driver",
+            url = MYSQL_CONTAINER.jdbcUrl,
+            username = MYSQL_CONTAINER.username,
+            password = MYSQL_CONTAINER.password
+        )
 }
