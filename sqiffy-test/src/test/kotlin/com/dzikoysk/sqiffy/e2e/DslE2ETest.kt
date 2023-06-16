@@ -125,15 +125,8 @@ internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
 
         val insertedUser = database
             .insert(UserTable)
-            .values(
-                uuid = userToInsert.uuid,
-                name = userToInsert.name,
-                displayName = userToInsert.displayName,
-                role = userToInsert.role,
-            )
-            .map {
-                userToInsert.withId(id = it[UserTable.id])
-            }
+            .values(userToInsert)
+            .map { userToInsert.withId(id = it[UserTable.id]) }
             .first()
 
         val updatedRecords = database
@@ -174,11 +167,7 @@ internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
 
         val insertedGuild = database
             .insert(GuildTable)
-            .values(
-                name = guildToInsert.name,
-                owner = guildToInsert.owner,
-                createdAt = guildToInsert.createdAt,
-            )
+            .values(guildToInsert)
             .map { guildToInsert.withId(id = it[GuildTable.id]) }
             .first()
 
