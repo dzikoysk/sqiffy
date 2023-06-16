@@ -3,11 +3,13 @@
 package com.dzikoysk.sqiffy.e2e
 
 import com.dzikoysk.sqiffy.GuildTable
+import com.dzikoysk.sqiffy.GuildTable.insert
 import com.dzikoysk.sqiffy.Role
 import com.dzikoysk.sqiffy.UnidentifiedGuild
 import com.dzikoysk.sqiffy.UnidentifiedUser
 import com.dzikoysk.sqiffy.User
 import com.dzikoysk.sqiffy.UserTable
+import com.dzikoysk.sqiffy.UserTable.insert
 import com.dzikoysk.sqiffy.dsl.and
 import com.dzikoysk.sqiffy.dsl.avg
 import com.dzikoysk.sqiffy.dsl.between
@@ -122,12 +124,13 @@ internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
         )
 
         val insertedUser = database
-            .insert(UserTable) {
-                it[UserTable.uuid] = userToInsert.uuid
-                it[UserTable.name] = userToInsert.name
-                it[UserTable.displayName] = userToInsert.displayName
-                it[UserTable.role] = userToInsert.role
-            }
+            .insert(UserTable)
+            .values(
+                uuid = userToInsert.uuid,
+                name = userToInsert.name,
+                displayName = userToInsert.displayName,
+                role = userToInsert.role,
+            )
             .map {
                 userToInsert.withId(id = it[UserTable.id])
             }
@@ -170,11 +173,12 @@ internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
         )
 
         val insertedGuild = database
-            .insert(GuildTable) {
-                it[GuildTable.name] = guildToInsert.name
-                it[GuildTable.owner] = guildToInsert.owner
-                it[GuildTable.createdAt] = guildToInsert.createdAt
-            }
+            .insert(GuildTable)
+            .values(
+                name = guildToInsert.name,
+                owner = guildToInsert.owner,
+                createdAt = guildToInsert.createdAt,
+            )
             .map { guildToInsert.withId(id = it[GuildTable.id]) }
             .first()
 

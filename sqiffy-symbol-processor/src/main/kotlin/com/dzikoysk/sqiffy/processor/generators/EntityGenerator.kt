@@ -66,8 +66,7 @@ class EntityGenerator(private val context: KspContext) {
                         FunSpec.constructorBuilder()
                             .also { constructorBuilder ->
                                 properties.forEach {
-                                    println(it)
-                                    constructorBuilder.addParameter(it.name, it.type!!.contextualType(it).toClassName().copy(nullable = it.nullable))
+                                    constructorBuilder.addParameter(it.name, it.type!!.toTypeName(it))
                                 }
                             }
                             .build()
@@ -75,7 +74,7 @@ class EntityGenerator(private val context: KspContext) {
                     .also { typeBuilder ->
                         properties.forEach {
                             typeBuilder.addProperty(
-                                PropertySpec.builder(it.name, it.type!!.contextualType(it).toClassName().copy(nullable = it.nullable))
+                                PropertySpec.builder(it.name, it.type!!.toTypeName(it))
                                     .initializer(it.name)
                                     .build()
                             )
