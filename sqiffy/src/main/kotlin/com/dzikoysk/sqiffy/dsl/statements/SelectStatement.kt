@@ -55,7 +55,9 @@ open class SelectStatement(
     }
 
     fun <T> join(type: JoinType, on: Column<T>, to: Column<T>): SelectStatement = also {
-        joins.add(Join(type, on, to))
+        val join = Join(type, on, to)
+        require(!joins.contains(join)) { "Join $join is already defined" }
+        joins.add(join)
         slice.addAll(to.table.getColumns())
     }
 
@@ -64,14 +66,17 @@ open class SelectStatement(
     }
 
     fun where(where: () -> Expression<out Column<*>, Boolean>): SelectStatement = also {
+        require(this.where == null) { "Where clause is already defined" }
         this.where = where()
     }
 
     fun groupBy(vararg columns: Column<*>): SelectStatement = also {
+        require(this.groupBy == null) { "Group by clause is already defined" }
         this.groupBy = columns.toList()
     }
 
     fun having(having: () -> Expression<out Aggregation<*>, Boolean>): SelectStatement = also {
+        require(this.having == null) { "Having clause is already defined" }
         this.having = having()
     }
 
@@ -81,6 +86,7 @@ open class SelectStatement(
     }
 
     fun orderBy(vararg columns: Pair<Column<*>, Order>): SelectStatement = also {
+        require(this.orderBy == null) { "Order by clause is already defined" }
         this.orderBy = columns
             .map { OrderBy(it.first, it.second) }
             .toList()
