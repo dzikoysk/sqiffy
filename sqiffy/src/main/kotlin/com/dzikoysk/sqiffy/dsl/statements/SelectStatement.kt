@@ -5,6 +5,7 @@ import com.dzikoysk.sqiffy.dsl.Aggregation
 import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.Expression
 import com.dzikoysk.sqiffy.dsl.Row
+import com.dzikoysk.sqiffy.dsl.RowException
 import com.dzikoysk.sqiffy.dsl.Selectable
 import com.dzikoysk.sqiffy.dsl.Statement
 import com.dzikoysk.sqiffy.dsl.Table
@@ -139,7 +140,16 @@ open class SelectStatement(
             handle
                 .select(query.query)
                 .bindArguments(arguments)
-                .map { view -> mapper(Row(view)) }
+                .map { view ->
+                    try {
+                        mapper(Row(view))
+                    } catch (rowException: RowException) {
+                        throw when {
+                            slice.contains(rowException.selectable) -> rowException
+                            else -> IllegalStateException("Row mapper tried to access ${rowException.selectable.id} that is not defined in slice")
+                        }
+                    }
+                }
                 .list()
                 .asSequence()
         }

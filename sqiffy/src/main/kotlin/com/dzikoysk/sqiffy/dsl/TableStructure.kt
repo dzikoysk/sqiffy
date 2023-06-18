@@ -62,10 +62,11 @@ data class Column<T>(
         fun <T : Any> of(table: Table, name: String, dataType: DataType, dbType: String, type: KClass<T>): Column<T> = Column(table, name, dataType, dbType, type.javaObjectType)
     }
 
-    override val selectableType: SelectableType = SelectableType.COLUMN
-
     val rawIdentifier: String = "${table.getName()}.$name"
     val quotedIdentifier = Quoted { "${it.quote(table.getName())}.${it.quote(name)}" }
+
+    override val selectableType: SelectableType = SelectableType.COLUMN
+    override val id: String = rawIdentifier
 
     @Suppress("UNCHECKED_CAST")
     fun nullable(): Column<T?> = copy(nullable = true) as Column<T?>

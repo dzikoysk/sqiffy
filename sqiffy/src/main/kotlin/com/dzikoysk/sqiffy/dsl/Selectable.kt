@@ -7,4 +7,5 @@ enum class SelectableType {
 
 interface Selectable {
     val selectableType: SelectableType
+    val id: String
 }
