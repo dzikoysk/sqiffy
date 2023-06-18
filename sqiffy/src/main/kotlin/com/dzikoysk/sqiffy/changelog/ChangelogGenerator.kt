@@ -68,14 +68,14 @@ class ChangeLogGenerator(
 
         val tableStates = tables.associateWith {
             TableAnalysisState(
-                changesToApply = ArrayDeque(it.definition.value.toList()),
+                changesToApply = ArrayDeque(it.definition.versions.toList()),
                 source = it.source,
-                tableName = it.definition.value.firstOrNull()?.name ?: throw IllegalStateException("Class ${it.source} has @Definition annotation without any scheme version"),
+                tableName = it.definition.versions.firstOrNull()?.name ?: throw IllegalStateException("Class ${it.source} has @Definition annotation without any scheme version"),
             )
         }
 
         val allVersions = tables.asSequence()
-            .flatMap { it.definition.value.asSequence() }
+            .flatMap { it.definition.versions.asSequence() }
             .map { it.version }
             .distinct()
             .sorted()

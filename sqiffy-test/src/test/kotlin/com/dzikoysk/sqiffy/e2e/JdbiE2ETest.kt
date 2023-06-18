@@ -3,12 +3,12 @@
 package com.dzikoysk.sqiffy.e2e
 
 import com.dzikoysk.sqiffy.Dialect.POSTGRESQL
-import com.dzikoysk.sqiffy.Role
-import com.dzikoysk.sqiffy.UnidentifiedUser
-import com.dzikoysk.sqiffy.User
-import com.dzikoysk.sqiffy.UserTableNames
+import com.dzikoysk.sqiffy.api.Role
+import com.dzikoysk.sqiffy.domain.UnidentifiedUser
+import com.dzikoysk.sqiffy.domain.User
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
+import com.dzikoysk.sqiffy.infra.UserTableNames
 import com.dzikoysk.sqiffy.shared.multiline
 import com.zaxxer.hikari.HikariDataSource
 import org.assertj.core.api.Assertions.assertThat

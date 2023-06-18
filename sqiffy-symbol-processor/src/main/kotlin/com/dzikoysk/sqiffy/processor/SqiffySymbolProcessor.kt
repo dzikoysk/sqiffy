@@ -100,7 +100,7 @@ internal class SqiffySymbolProcessor(context: KspContext) : SymbolProcessor {
         changeLog.tables.forEach { (table, name) ->
             val properties = LinkedList<PropertyData>()
 
-            for (definitionVersion in table.definition.value) {
+            for (definitionVersion in table.definition.versions) {
                 for (property in definitionVersion.properties) {
                     val convertedProperty = property.toPropertyData(typeFactory)
 

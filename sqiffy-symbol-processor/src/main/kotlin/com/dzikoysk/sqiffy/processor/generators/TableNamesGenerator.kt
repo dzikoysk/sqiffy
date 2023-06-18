@@ -13,7 +13,9 @@ import com.squareup.kotlinpoet.ksp.writeTo
 class TableNamesGenerator(private val context: KspContext) {
 
     internal fun generateTableNamesClass(definitionEntry: DefinitionEntry, tableName: String, properties: List<PropertyData>) {
-        val namesClass = FileSpec.builder(definitionEntry.packageName, definitionEntry.name +  "TableNames")
+        val infrastructurePackage = definitionEntry.getInfrastructurePackage()
+
+        val namesClass = FileSpec.builder(infrastructurePackage, definitionEntry.name +  "TableNames")
             .addType(
                 TypeSpec.objectBuilder(definitionEntry.name + "TableNames")
                     .also { typeBuilder ->

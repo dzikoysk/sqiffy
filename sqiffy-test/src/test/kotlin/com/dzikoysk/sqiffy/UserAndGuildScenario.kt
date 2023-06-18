@@ -33,7 +33,7 @@ object UserAndGuildScenarioVersions {
     const val V_1_0_2 = "1.0.2"
 }
 
-@EnumDefinition(name = "role", mappedTo = "Role", [
+@EnumDefinition(name = "role", mappedTo = "com.dzikoysk.sqiffy.api.Role", [
     EnumVersion(
         version = V_1_0_0,
         operation = ADD_VALUES,
@@ -47,42 +47,46 @@ object UserAndGuildScenarioVersions {
 ])
 object RoleDefinition
 
-@Definition([
-    DefinitionVersion(
-        version = V_1_0_0,
-        name = "users_table",
-        properties = [
-            Property(name = "id", type = SERIAL),
-            Property(name = "uuid", type = UUID_TYPE),
-            Property(name = "name", type = VARCHAR, details = "12"),
-            Property(name = "role", type = ENUM, enumDefinition = RoleDefinition::class)
-        ],
-        constraints = [
-            Constraint(type = PRIMARY_KEY, name = "pk_id", on =["id"]),
-        ],
-        indices = [
-            Index(type = INDEX, name = "idx_id", columns = ["id"]),
-            Index(type = UNIQUE_INDEX, name = "uq_name", columns = ["name"])
-        ]
-    ),
-    DefinitionVersion(
-        version = V_1_0_1,
-        properties = [
-            Property(operation = RETYPE, name = "name", type = VARCHAR, details = "24"),
-            Property(operation = ADD, name = "display_name", type = VARCHAR, details = "48", nullable = true),
-        ],
-        indices = [
-            Index(operation = REMOVE_INDEX, type = INDEX, name = "idx_id"),
-            Index(type = INDEX, name = "idx_id", columns = ["id"])
-        ]
-    ),
-    DefinitionVersion(
-        version = V_1_0_2,
-        properties = [
-            Property(operation = RENAME, name = "display_name", rename = "displayName")
-        ]
-    )
-])
+@Definition(
+    domainPackage = "com.dzikoysk.sqiffy.domain",
+    infrastructurePackage = "com.dzikoysk.sqiffy.infra",
+    versions = [
+        DefinitionVersion(
+            version = V_1_0_0,
+            name = "users_table",
+            properties = [
+                Property(name = "id", type = SERIAL),
+                Property(name = "uuid", type = UUID_TYPE),
+                Property(name = "name", type = VARCHAR, details = "12"),
+                Property(name = "role", type = ENUM, enumDefinition = RoleDefinition::class)
+            ],
+            constraints = [
+                Constraint(type = PRIMARY_KEY, name = "pk_id", on =["id"]),
+            ],
+            indices = [
+                Index(type = INDEX, name = "idx_id", columns = ["id"]),
+                Index(type = UNIQUE_INDEX, name = "uq_name", columns = ["name"])
+            ]
+        ),
+        DefinitionVersion(
+            version = V_1_0_1,
+            properties = [
+                Property(operation = RETYPE, name = "name", type = VARCHAR, details = "24"),
+                Property(operation = ADD, name = "display_name", type = VARCHAR, details = "48", nullable = true),
+            ],
+            indices = [
+                Index(operation = REMOVE_INDEX, type = INDEX, name = "idx_id"),
+                Index(type = INDEX, name = "idx_id", columns = ["id"])
+            ]
+        ),
+        DefinitionVersion(
+            version = V_1_0_2,
+            properties = [
+                Property(operation = RENAME, name = "display_name", rename = "displayName")
+            ]
+        )
+    ]
+)
 object UserDefinition
 
 @Definition([

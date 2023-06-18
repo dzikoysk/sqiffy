@@ -17,7 +17,8 @@ import com.squareup.kotlinpoet.ksp.writeTo
 class EntityGenerator(private val context: KspContext) {
 
     internal fun generateEntityClass(definitionEntry: DefinitionEntry, properties: List<PropertyData>) {
-        val entityClass = generateEntityClass(definitionEntry.packageName, definitionEntry.name, properties).build()
+        val domainPackage = definitionEntry.getDomainPackage()
+        val entityClass = generateEntityClass(domainPackage, definitionEntry.name, properties).build()
         val entityClassName = ClassName(entityClass.packageName, entityClass.name)
         entityClass.writeTo(context.codeGenerator, Dependencies(true))
 
@@ -30,7 +31,7 @@ class EntityGenerator(private val context: KspContext) {
                 ?: return
 
             val unidentifiedEntityBuilder = generateEntityClass(
-                packageName = definitionEntry.packageName,
+                packageName = domainPackage,
                 name = "Unidentified" + definitionEntry.name,
                 properties = requiredProperties,
                 extra = { typeSpec ->
