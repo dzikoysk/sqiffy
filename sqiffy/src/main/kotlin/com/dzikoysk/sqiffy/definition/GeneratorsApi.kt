@@ -13,12 +13,12 @@ class DefinitionEntry(
     fun getDomainPackage(): String =
         definition.domainPackage
             .takeIf { it != NULL_STRING }
-            ?: javaClass.`package`.name
+            ?: packageName
 
     fun getInfrastructurePackage(): String =
         definition.infrastructurePackage
             .takeIf { it != NULL_STRING }
-            ?: javaClass.`package`.name
+            ?: packageName
 
 }
 

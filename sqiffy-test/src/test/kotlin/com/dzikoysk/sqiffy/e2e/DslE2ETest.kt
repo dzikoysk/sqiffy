@@ -2,11 +2,10 @@
 
 package com.dzikoysk.sqiffy.e2e
 
+import com.dzikoysk.sqiffy.GuildTable
+import com.dzikoysk.sqiffy.UnidentifiedGuild
 import com.dzikoysk.sqiffy.api.Role
 import com.dzikoysk.sqiffy.api.Role.MODERATOR
-import com.dzikoysk.sqiffy.definition.GuildTable
-import com.dzikoysk.sqiffy.definition.UnidentifiedGuild
-import com.dzikoysk.sqiffy.definition.insert
 import com.dzikoysk.sqiffy.domain.UnidentifiedUser
 import com.dzikoysk.sqiffy.domain.User
 import com.dzikoysk.sqiffy.dsl.and
@@ -32,6 +31,7 @@ import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
 import com.dzikoysk.sqiffy.infra.UserTable
 import com.dzikoysk.sqiffy.infra.insert
+import com.dzikoysk.sqiffy.insert
 import com.dzikoysk.sqiffy.shared.H2Mode.MYSQL
 import com.dzikoysk.sqiffy.shared.createH2DataSource
 import com.dzikoysk.sqiffy.shared.createHikariDataSource
