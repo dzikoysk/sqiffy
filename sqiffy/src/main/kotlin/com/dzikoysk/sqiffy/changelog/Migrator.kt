@@ -132,7 +132,7 @@ class Migrator(
                     val (updateQuery, updateArguments) = database.sqlQueryGenerator.createUpdateQuery(
                         allocator = allocator,
                         tableName = tableName,
-                        columns = listOf(
+                        argumentColumns = listOf(
                             metadataTable.value.toQueryColumn(),
                         ),
                         where = whereQuery

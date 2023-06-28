@@ -24,6 +24,7 @@ import com.dzikoysk.sqiffy.dsl.notBetween
 import com.dzikoysk.sqiffy.dsl.notEq
 import com.dzikoysk.sqiffy.dsl.notLike
 import com.dzikoysk.sqiffy.dsl.or
+import com.dzikoysk.sqiffy.dsl.plus
 import com.dzikoysk.sqiffy.dsl.statements.JoinType.INNER
 import com.dzikoysk.sqiffy.dsl.statements.Order.ASC
 import com.dzikoysk.sqiffy.dsl.sum
@@ -56,6 +57,7 @@ internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
             name = "Panda",
             displayName = "Only Panda",
             uuid = UUID.randomUUID(),
+            wallet = 100f,
             role = MODERATOR
         )
 
@@ -69,6 +71,7 @@ internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
             .update(UserTable) {
                 it[UserTable.name] = "Giant Panda"
                 it[UserTable.role] = Role.ADMIN
+                it[UserTable.wallet] = UserTable.wallet + 1f
             }
             .where { UserTable.id eq insertedUser.id }
             .execute()
@@ -85,6 +88,7 @@ internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
                     name = it[UserTable.name],
                     uuid = it[UserTable.uuid],
                     displayName = it[UserTable.displayName],
+                    wallet = it[UserTable.wallet],
                     role = it[UserTable.role]
                 )
             }
@@ -93,6 +97,7 @@ internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
         assertThat(userFromDatabase).isNotNull
         assertThat(userFromDatabase.name).isEqualTo("Giant Panda")
         assertThat(userFromDatabase.role).isEqualTo(Role.ADMIN)
+        assertThat(userFromDatabase.wallet).isEqualTo(101f)
         println("Loaded user: $userFromDatabase")
 
         val guildToInsert = UnidentifiedGuild(

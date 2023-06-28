@@ -32,7 +32,8 @@ internal abstract class JdbiE2ETest : SqiffyE2ETestSpecification() {
                 name = "Panda",
                 uuid = UUID.randomUUID(),
                 displayName = "Only Panda",
-                role = Role.MODERATOR
+                role = Role.MODERATOR,
+                wallet = 100f
             )
 
             handle

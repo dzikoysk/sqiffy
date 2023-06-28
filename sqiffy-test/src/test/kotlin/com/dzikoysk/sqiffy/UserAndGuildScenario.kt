@@ -9,6 +9,7 @@ import com.dzikoysk.sqiffy.definition.ConstraintType.FOREIGN_KEY
 import com.dzikoysk.sqiffy.definition.ConstraintType.PRIMARY_KEY
 import com.dzikoysk.sqiffy.definition.DataType.DATETIME
 import com.dzikoysk.sqiffy.definition.DataType.ENUM
+import com.dzikoysk.sqiffy.definition.DataType.FLOAT
 import com.dzikoysk.sqiffy.definition.DataType.INT
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
 import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
@@ -58,6 +59,7 @@ object RoleDefinition
                 Property(name = "id", type = SERIAL),
                 Property(name = "uuid", type = UUID_TYPE),
                 Property(name = "name", type = VARCHAR, details = "12"),
+                Property(name = "wallet", type = FLOAT),
                 Property(name = "role", type = ENUM, enumDefinition = RoleDefinition::class)
             ],
             constraints = [

@@ -32,9 +32,9 @@ class Row(
 
 }
 
-class Values {
+open class Values {
 
-    private val values: MutableMap<Column<*>, Any?> = mutableMapOf()
+    protected val values: MutableMap<Column<*>, Any?> = mutableMapOf()
 
     operator fun <T : Any?> set(column: Column<T>, value: T) {
         values[column] = value
@@ -50,8 +50,5 @@ class Values {
 
     fun getColumns(): Set<Column<*>> =
         values.keys
-
-    fun getValues(): Map<Column<*>, Any?> =
-        values
 
 }

@@ -1,6 +1,16 @@
 package com.dzikoysk.sqiffy.dsl.generator
 
-import com.dzikoysk.sqiffy.dsl.*
+import com.dzikoysk.sqiffy.dsl.Aggregation
+import com.dzikoysk.sqiffy.dsl.BetweenCondition
+import com.dzikoysk.sqiffy.dsl.Column
+import com.dzikoysk.sqiffy.dsl.ComparisonCondition
+import com.dzikoysk.sqiffy.dsl.ConstExpression
+import com.dzikoysk.sqiffy.dsl.Expression
+import com.dzikoysk.sqiffy.dsl.LogicalCondition
+import com.dzikoysk.sqiffy.dsl.MathExpression
+import com.dzikoysk.sqiffy.dsl.NotCondition
+import com.dzikoysk.sqiffy.dsl.QuoteType
+import com.dzikoysk.sqiffy.dsl.Selectable
 import com.dzikoysk.sqiffy.dsl.generator.ArgumentType.COLUMN
 import com.dzikoysk.sqiffy.dsl.generator.ArgumentType.VALUE
 import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator.GeneratorResult
@@ -23,6 +33,8 @@ fun Column<*>.toQueryColumn(): QueryColumn =
         dbType = dbType,
         type = type
     )
+
+typealias ExpressionColumns = Map<QueryColumn, String>
 
 interface SqlQueryGenerator {
 
@@ -53,7 +65,8 @@ interface SqlQueryGenerator {
     fun createUpdateQuery(
         allocator: ParameterAllocator,
         tableName: String,
-        columns: List<QueryColumn>,
+        argumentColumns: List<QueryColumn>,
+        expressionColumns: ExpressionColumns = emptyMap(),
         where: String? = null
     ): GeneratorResult
 
@@ -69,7 +82,8 @@ interface SqlQueryGenerator {
         expression: Expression<*, *>
     ): GeneratorResult
 
-    fun quoteType(): QuoteType = QuoteType.DOUBLE_QUOTE
+    fun quoteType(): QuoteType =
+        QuoteType.DOUBLE_QUOTE
 
 }
 
@@ -101,12 +115,13 @@ object MySqlQueryGenerator : GenericQueryGenerator() {
     override fun createUpdateQuery(
         allocator: ParameterAllocator,
         tableName: String,
-        columns: List<QueryColumn>,
+        argumentColumns: List<QueryColumn>,
+        expressionColumns: ExpressionColumns,
         where: String?
     ): GeneratorResult {
         val arguments = Arguments(allocator)
 
-        val values = columns.joinToString(
+        val argumentValues = argumentColumns.joinToString(
             separator = ", ",
             transform = { "${it.name.toQuoted()} = :${arguments.createArgument(COLUMN, it.name)}" }
         )
@@ -115,7 +130,7 @@ object MySqlQueryGenerator : GenericQueryGenerator() {
             query =
                 multiline("""
                     UPDATE ${tableName.toQuoted()} 
-                    SET $values
+                    SET ${listOf(argumentValues, expressionColumns.toUpdateValues()).filter { it.isNotBlank() }.joinToString(separator = ", ")}
                     ${where?.let { "WHERE $it" } ?: ""}
                 """),
             arguments = arguments
@@ -159,12 +174,13 @@ object PostgreSqlQueryGenerator : GenericQueryGenerator() {
     override fun createUpdateQuery(
         allocator: ParameterAllocator,
         tableName: String,
-        columns: List<QueryColumn>,
+        argumentColumns: List<QueryColumn>,
+        expressionColumns: ExpressionColumns,
         where: String?
     ): GeneratorResult {
         val arguments = Arguments(allocator)
 
-        val values = columns.joinToString(
+        val values = argumentColumns.joinToString(
             separator = ", ",
             transform = {
                 it.name.toQuoted() + " = " + when {
@@ -178,7 +194,7 @@ object PostgreSqlQueryGenerator : GenericQueryGenerator() {
             query =
             multiline("""
                     UPDATE ${tableName.toQuoted()} 
-                    SET $values
+                    SET ${listOf(values, expressionColumns.toUpdateValues()).filter { it.isNotBlank() }.joinToString(separator = ", ")}
                     ${where?.let { "WHERE $it" } ?: ""}
                 """),
             arguments = arguments
@@ -195,6 +211,11 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
             is Aggregation<*> -> "$aggregationFunction(${quotedIdentifier.toString(quoteType())})"
             else -> throw IllegalArgumentException("Unknown selectable type: $javaClass")
         }
+
+    protected fun ExpressionColumns.toUpdateValues(): String =
+        this
+            .map { (column, expression) -> "${column.name.toQuoted()} = $expression" }
+            .joinToString(separator = ", ")
 
     override fun createSelectQuery(
         tableName: String,
@@ -261,6 +282,15 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                         arguments = it
                     )
                 }
+            is MathExpression<*, *> -> {
+                val leftResult = createExpression(allocator, expression.left)
+                val rightResult = createExpression(allocator, expression.right)
+
+                GeneratorResult(
+                    query = "${leftResult.query} ${expression.operator.symbol} ${rightResult.query}",
+                    arguments = (leftResult.arguments + rightResult.arguments)
+                )
+            }
             is NotCondition -> {
                 createExpression(allocator, expression.condition).let {
                     GeneratorResult(
@@ -298,6 +328,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
             }
         }
 
-    fun String.toQuoted() = quoteType().quote(this)
+    fun String.toQuoted() =
+        quoteType().quote(this)
 
 }

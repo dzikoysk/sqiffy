@@ -20,6 +20,7 @@ import com.dzikoysk.sqiffy.dsl.statements.DeleteStatement
 import com.dzikoysk.sqiffy.dsl.statements.InsertStatement
 import com.dzikoysk.sqiffy.dsl.statements.SelectStatement
 import com.dzikoysk.sqiffy.dsl.statements.UpdateStatement
+import com.dzikoysk.sqiffy.dsl.statements.UpdateValues
 import com.dzikoysk.sqiffy.shared.UUIDArgumentFactory
 import com.zaxxer.hikari.HikariDataSource
 import org.jdbi.v3.core.Jdbi
@@ -127,8 +128,8 @@ open class SqiffyDatabase(
     fun insert(table: Table, values: (Values) -> Unit): InsertStatement =
         InsertStatement(this, table, Values().also { values.invoke(it) })
 
-    fun update(table: Table, values: (Values) -> Unit): UpdateStatement =
-        UpdateStatement(this, table, Values().also { values.invoke(it) })
+    fun update(table: Table, values: (UpdateValues) -> Unit): UpdateStatement =
+        UpdateStatement(this, table, UpdateValues().also { values.invoke(it) })
 
     fun delete(table: Table): DeleteStatement =
         DeleteStatement(this, table)
