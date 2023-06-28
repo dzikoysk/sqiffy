@@ -39,16 +39,17 @@ internal abstract class JdbiE2ETest : SqiffyE2ETestSpecification() {
             handle
                 .createUpdate(multiline("""
                     INSERT INTO "${UserTableNames.TABLE}" 
-                    ("${UserTableNames.UUID}", "${UserTableNames.NAME}", "${UserTableNames.DISPLAYNAME}", "${UserTableNames.ROLE}")
+                    ("${UserTableNames.UUID}", "${UserTableNames.NAME}", "${UserTableNames.DISPLAYNAME}", "${UserTableNames.ROLE}", "${UserTableNames.WALLET}")
                     VALUES (:0, :1, :2, :3${when (database.dialect) {
                         POSTGRESQL -> "::${Role.TYPE_NAME}" // jdbc requires explicit casts for enums in postgres
                         else -> ""
-                    }})
+                    }}, :4)
                 """))
                 .bind("0", userToInsert.uuid)
                 .bind("1", userToInsert.name)
                 .bind("2", userToInsert.displayName)
                 .bind("3", userToInsert.role)
+                .bind("4", userToInsert.wallet)
                 .executeAndReturnGeneratedKeys()
                 .map { row -> row.getColumn(UserTableNames.ID, Int::class.javaObjectType) }
                 .first()
