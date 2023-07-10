@@ -53,14 +53,16 @@ class ChangeLogGenerator(
 
     fun generateChangeLog(vararg classes: KClass<*>): ChangeLog =
         generateChangeLog(
-            classes.map {
-                DefinitionEntry(
-                    source = it.qualifiedName!!,
-                    packageName = it.java.`package`.name,
-                    name = it::class.simpleName!!.substringBeforeLast("Definition"),
-                    definition = it.findAnnotation()!!
-                )
-            }
+            classes
+                .toSet()
+                .map {
+                    DefinitionEntry(
+                        source = it.qualifiedName!!,
+                        packageName = it.java.`package`.name,
+                        name = it::class.simpleName!!.substringBeforeLast("Definition"),
+                        definition = it.findAnnotation()!!
+                    )
+                }
         )
 
     fun generateChangeLog(tables: List<DefinitionEntry>): ChangeLog {
