@@ -36,6 +36,7 @@ import com.dzikoysk.sqiffy.insert
 import com.dzikoysk.sqiffy.shared.H2Mode.MYSQL
 import com.dzikoysk.sqiffy.shared.createH2DataSource
 import com.dzikoysk.sqiffy.shared.createHikariDataSource
+import com.dzikoysk.sqiffy.shared.createSQLiteDataSource
 import com.zaxxer.hikari.HikariDataSource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -199,6 +200,10 @@ internal class EmbeddedPostgresDslE2ETest : DslE2ETest() {
     private val postgres = postgresDataSource()
     override fun createDataSource(): HikariDataSource = postgres.dataSource
     @AfterEach fun stop() { postgres.embeddedPostgres.close() }
+}
+
+internal class SqliteDslE2ETest : DslE2ETest() {
+    override fun createDataSource(): HikariDataSource = createSQLiteDataSource()
 }
 
 @Testcontainers

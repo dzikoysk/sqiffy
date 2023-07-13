@@ -36,9 +36,7 @@ class UUIDArgumentFactory(sqlType: Int = Types.VARCHAR) : AbstractArgumentFactor
 }
 
 class UUIDArgument(private val value: UUID) : JdbiArgument {
-
     override fun apply(position: Int, statement: PreparedStatement, ctx: StatementContext) {
         statement.setString(position, value.toString())
     }
-
 }

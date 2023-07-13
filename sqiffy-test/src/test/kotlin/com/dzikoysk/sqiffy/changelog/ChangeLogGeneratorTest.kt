@@ -2,6 +2,7 @@ package com.dzikoysk.sqiffy.changelog
 
 import com.dzikoysk.sqiffy.GuildDefinition
 import com.dzikoysk.sqiffy.UserDefinition
+import com.dzikoysk.sqiffy.changelog.generator.dialects.MySqlSchemeGenerator
 import com.dzikoysk.sqiffy.definition.RuntimeTypeFactory
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow

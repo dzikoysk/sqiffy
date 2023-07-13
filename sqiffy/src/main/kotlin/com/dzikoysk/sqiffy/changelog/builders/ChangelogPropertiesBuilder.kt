@@ -1,4 +1,4 @@
-package com.dzikoysk.sqiffy.changelog.generators
+package com.dzikoysk.sqiffy.changelog.builders
 
 import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator.ChangeLogGeneratorContext
 import com.dzikoysk.sqiffy.definition.DataType.ENUM
@@ -11,7 +11,7 @@ import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RETYPE
 import com.dzikoysk.sqiffy.definition.toPropertyData
 import com.dzikoysk.sqiffy.shared.replaceFirst
 
-class ChangelogPropertiesGenerator {
+class ChangelogPropertiesBuilder {
 
     internal fun generateProperties(context: ChangeLogGeneratorContext) {
         with(context) {
@@ -126,7 +126,12 @@ class ChangelogPropertiesGenerator {
                         )
 
                         registerChange {
-                            retypeColumn(state.tableName, newProperty, currentEnums)
+                            retypeColumn(
+                                tableName = state.tableName,
+                                oldProperty = currentProperty,
+                                newProperty = newProperty,
+                                enums = currentEnums
+                            )
                         }
                     }
                     REMOVE -> {

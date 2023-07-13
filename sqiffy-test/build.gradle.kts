@@ -16,6 +16,7 @@ dependencies {
     testImplementation("org.postgresql:postgresql:42.6.0")
     testImplementation("com.h2database:h2:2.1.214")
     testImplementation("mysql:mysql-connector-java:8.0.28")
+    testImplementation("org.xerial:sqlite-jdbc:3.42.0.0")
 
     val testcontainers = "1.18.1"
     testImplementation("org.testcontainers:postgresql:$testcontainers")

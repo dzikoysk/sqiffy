@@ -2,7 +2,7 @@ package com.dzikoysk.sqiffy.processor
 
 import com.dzikoysk.sqiffy.changelog.ChangeLog
 import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator
-import com.dzikoysk.sqiffy.changelog.PostgreSqlSchemeGenerator
+import com.dzikoysk.sqiffy.changelog.generator.dialects.PostgreSqlSchemeGenerator
 import com.dzikoysk.sqiffy.definition.Definition
 import com.dzikoysk.sqiffy.definition.DefinitionEntry
 import com.dzikoysk.sqiffy.definition.PropertyData

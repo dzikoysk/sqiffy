@@ -32,8 +32,14 @@ enum class H2Mode {
     MYSQL
 }
 
-fun createH2DataSource(mode: H2Mode): HikariDataSource =
+fun createH2DataSource(mode: H2Mode, path: Path = createTestDatabaseFile("test-database")): HikariDataSource =
     createHikariDataSource(
         driver = "org.h2.Driver",
-        url = "jdbc:h2:${createTestDatabaseFile("test-database").absolutePathString()};MODE=${mode.name}"
+        url = "jdbc:h2:${path.absolutePathString()};MODE=${mode.name}"
+    )
+
+fun createSQLiteDataSource(path: Path = createTestDatabaseFile("test-database")): HikariDataSource =
+    createHikariDataSource(
+        driver = "org.sqlite.JDBC",
+        url = "jdbc:sqlite:${path.absolutePathString()}"
     )

@@ -1,9 +1,10 @@
 package com.dzikoysk.sqiffy.changelog
 
-import com.dzikoysk.sqiffy.changelog.generators.ChangelogConstraintsGenerator
-import com.dzikoysk.sqiffy.changelog.generators.ChangelogEnumGenerator
-import com.dzikoysk.sqiffy.changelog.generators.ChangelogIndicesGenerator
-import com.dzikoysk.sqiffy.changelog.generators.ChangelogPropertiesGenerator
+import com.dzikoysk.sqiffy.changelog.builders.ChangelogConstraintsBuilder
+import com.dzikoysk.sqiffy.changelog.builders.ChangelogEnumBuilder
+import com.dzikoysk.sqiffy.changelog.builders.ChangelogIndicesBuilder
+import com.dzikoysk.sqiffy.changelog.builders.ChangelogPropertiesBuilder
+import com.dzikoysk.sqiffy.changelog.generator.SqlSchemeGenerator
 import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.DefinitionEntry
 import com.dzikoysk.sqiffy.definition.DefinitionVersion
@@ -18,9 +19,9 @@ class ChangeLogGenerator(
     private val typeFactory: TypeFactory
 ) {
 
-    private val changeLogPropertiesGenerator = ChangelogPropertiesGenerator()
-    private val changeLogConstraintsGenerator = ChangelogConstraintsGenerator()
-    private val changeLogIndicesGenerator = ChangelogIndicesGenerator()
+    private val changeLogPropertiesBuilder = ChangelogPropertiesBuilder()
+    private val changeLogConstraintsBuilder = ChangelogConstraintsBuilder()
+    private val changeLogIndicesBuilder = ChangelogIndicesBuilder()
 
     internal data class ChangeLogGeneratorContext(
         val typeFactory: TypeFactory,
@@ -33,7 +34,10 @@ class ChangeLogGenerator(
     ) {
 
         fun registerChange(change: String) =
-            changes.add(change)
+            change
+                .trim()
+                .takeIf { it.isNotEmpty() }
+                ?.let { changes.add(it) }
 
         fun registerChange(supplier: SqlSchemeGenerator.() -> String) =
             registerChange(supplier.invoke(sqlSchemeGenerator))
@@ -82,7 +86,7 @@ class ChangeLogGenerator(
             .distinct()
             .sorted()
 
-        val changelogEnumGenerator = ChangelogEnumGenerator(
+        val changelogEnumBuilder = ChangelogEnumBuilder(
             sqlSchemeGenerator = sqlSchemeGenerator,
             allVersions = allVersions.toList()
         )
@@ -106,8 +110,8 @@ class ChangeLogGenerator(
                     typeFactory = typeFactory,
                     sqlSchemeGenerator = sqlSchemeGenerator,
                     currentEnums = Enums(
-                        availableEnums = { changelogEnumGenerator.enumStates[version] ?: emptyMap() },
-                        defineEnum = { changelogEnumGenerator.defineEnum(it) }
+                        availableEnums = { changelogEnumBuilder.enumStates[version] ?: emptyMap() },
+                        defineEnum = { changelogEnumBuilder.defineEnum(it) }
                     ),
                     currentScheme = currentScheme,
                     changeToApply = state.changesToApply.poll(),
@@ -115,7 +119,7 @@ class ChangeLogGenerator(
                 )
 
                 val propertiesContext = baseContext.copy(changes = mutableListOf())
-                changeLogPropertiesGenerator.generateProperties(propertiesContext)
+                changeLogPropertiesBuilder.generateProperties(propertiesContext)
                 contexts.add(propertiesContext)
                 propertiesState.computeIfAbsent(version) { mutableMapOf() }[state.tableName] = propertiesContext.state.properties.toList()
 
@@ -125,13 +129,13 @@ class ChangeLogGenerator(
 
                 constraints.add {
                     val constraintsContext = baseContext.copy(changes = mutableListOf())
-                    changeLogConstraintsGenerator.generateConstraints(constraintsContext)
+                    changeLogConstraintsBuilder.generateConstraints(constraintsContext)
                     contexts.add(constraintsContext)
                 }
 
                 indices.add {
                     val indicesContext = baseContext.copy(changes = mutableListOf())
-                    changeLogIndicesGenerator.generateIndices(indicesContext)
+                    changeLogIndicesBuilder.generateIndices(indicesContext)
                     contexts.add(indicesContext)
                 }
             }
@@ -141,7 +145,7 @@ class ChangeLogGenerator(
             contexts.forEach { changes.addAll(it.changes) }
         }
 
-        val (latestEnumState, enumChangelog) = changelogEnumGenerator.generateChangelog(
+        val (latestEnumState, enumChangelog) = changelogEnumBuilder.generateChangelog(
             propertiesState = propertiesState
         )
 
