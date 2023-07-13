@@ -19,11 +19,13 @@ Table of contents:
    4. Validates schemes and bindings to eliminate typos and invalid operations
 3. When application starts, you can run set of prepared versioned migrations against current database state
 
-### Supported
+### Supported databases
 
-* [x] MySQL / MariaDB / H2 (MySQL mode)
-* [x] PostgreSQL / Embedded PostgreSQL
-* [ ] SQLite
+| Database                                                                                                                                                                         | Support      | Notes                                                                                                                                                                                                                                                                                                             |
+|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [PostgreSQL](https://www.postgresql.org/), [Embedded PostgreSQL](https://github.com/zonkyio/embedded-postgres), [MariaDB](https://mariadb.org/), [MySQL](https://www.mysql.com/) | Full support | Main target of the library                                                                                                                                                                                                                                                                                        |
+| [SQLite](https://www.sqlite.org/index.html)                                                                                                                                      | Experimental | SQLite does not provide several crucial schema update queries & type system is flexible. Because of that, schema updates are based on top of the modifications applied to `sqlite_master`, but the stability of this solution is unknown. See [#2](https://github.com/dzikoysk/sqiffy/issues/2) for more details. |
+| [H2 (MySQL mode)](http://www.h2database.com/html/features.html#compatibility)                                                                                                    | Unstable     | Such as SQLite, H2 implements SQL standard on their own & some of the compatibility features are just a fake mocks. In most cases, it's just better to use other databases (or their embedded variants).                                                                                                          |
 
 ### How to use
 
@@ -31,11 +33,11 @@ Gradle _(kts)_:
 
 ```kotlin
 plugins {
-    id("com.google.devtools.ksp") version "1.8.10-1.0.9"
+    id("com.google.devtools.ksp") version "1.9.0-1.0.11" // for Kotlin 1.9.0
 }
 
 dependencies {
-    val sqiffy = "1.0.0-alpha.24"
+    val sqiffy = "1.0.0-alpha.25"
     ksp("com.dzikoysk.sqiffy:sqiffy-symbol-processor:$sqiffy") // annotation processor
     implementation("com.dzikoysk.sqiffy:sqiffy:$sqiffy") // core library & implementation
 }

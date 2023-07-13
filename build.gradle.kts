@@ -1,13 +1,13 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.8.10"
+    kotlin("jvm") version "1.9.0"
     `java-library`
 
     application
     signing
     `maven-publish`
-    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
+    id("io.github.gradle-nexus.publish-plugin") version "1.3.0"
 }
 
 description = "Sqiffy | Parent module"
@@ -21,7 +21,7 @@ allprojects {
     apply(plugin = "signing")
 
     group = "com.dzikoysk.sqiffy"
-    version = "1.0.0-alpha.24"
+    version = "1.0.0-alpha.25"
 
     java {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -97,7 +97,7 @@ subprojects {
     dependencies {
         api("com.zaxxer:HikariCP:5.0.1")
 
-        val junit = "5.8.2"
+        val junit = "5.9.3"
         testImplementation("org.junit.jupiter:junit-jupiter-params:$junit")
         testImplementation("org.junit.jupiter:junit-jupiter-api:$junit")
         testImplementation("org.junit.jupiter:junit-jupiter-engine:$junit")
