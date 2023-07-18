@@ -29,6 +29,7 @@ import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RENAME
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RETYPE
 import com.dzikoysk.sqiffy.definition.Variant
+import com.dzikoysk.sqiffy.infra.UserTableNames
 import java.io.Serializable
 
 object UserAndGuildScenarioVersions {
@@ -92,54 +93,14 @@ object RoleDefinition
         )
     ]
 )
-@Definition([
-    DefinitionVersion(
-        version = V_1_0_0,
-        name = "users_table",
-        properties = [
-            Property(name = "id", type = SERIAL),
-            Property(name = "uuid", type = UUID_TYPE),
-            Property(name = "name", type = VARCHAR, details = "12"),
-            Property(name = "role", type = ENUM, enumDefinition = RoleDefinition::class)
-        ],
-        constraints = [
-            Constraint(type = PRIMARY_KEY, name = "pk_id", on = ["id"]),
-        ],
-        indices = [
-            Index(type = INDEX, name = "idx_id", columns = ["id"]),
-            Index(type = UNIQUE_INDEX, name = "uq_name", columns = ["name"])
-        ]
-    ),
-    DefinitionVersion(
-        version = V_1_0_1,
-        properties = [
-            Property(operation = RETYPE, name = "name", type = VARCHAR, details = "24"),
-            Property(operation = ADD, name = "display_name", type = VARCHAR, details = "48", nullable = true),
-        ],
-        indices = [
-            Index(operation = REMOVE_INDEX, type = INDEX, name = "idx_id"),
-            Index(type = INDEX, name = "idx_id", columns = ["id"])
-        ]
-    ),
-    DefinitionVersion(
-        version = V_1_0_2,
-        properties = [
-            Property(operation = RENAME, name = "display_name", rename = "displayName")
-        ]
-    )
-])
 object UserDefinition
 
-object Test {
-    const val NAME = "name"
-}
-
 @DtoDefinition(
-    from = UserTableNames::class,
+    from = UserDefinition::class,
     variants = [
         Variant(
-            name = UserTableNames.NAME,
-            properties = [ Test.NAME, UserTableNames.ID, UserTableNames.UUID, UserTableNames.NAME, UserTableNames.ROLE ],
+            name = "UserDto",
+            properties = [ UserTableNames.NAME ],
             implements = [ Serializable::class ]
         ),
 

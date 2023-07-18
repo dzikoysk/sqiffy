@@ -82,8 +82,6 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
             .filterIsInstance<KSClassDeclaration>()
             .toList()
 
-        context.logger.warn("ROUND tables: " + tableDefinitions.size)
-
         val tables = tableDefinitions
             .map {
                 DefinitionEntry(
@@ -105,21 +103,24 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
                 .filterIsInstance<KSClassDeclaration>()
                 .toList()
 
-            if (resolver.getAllFiles().any { it.fileName == "${tables.first().name}Table" }) {
-                generateTableDls(
-                    typeFactory = typeFactory,
-                    changeLog = baseSchemeGenerator.generateChangeLog(tables),
-                )
-                return dtoDefinitions + tableDefinitions
-            } else {
-                generateEntityDsl(
-                    typeFactory = typeFactory,
-                    changeLog = baseSchemeGenerator.generateChangeLog(tables),
-                    dtoGroups = dtoDefinitions
-                        .filter { it.validate() }
-                        .flatMap { it.getAnnotationsByType(DtoDefinition::class) }
-                        .map { it.toDtoDefinitionData(typeFactory) }
-                )
+            when {
+                resolver.getAllFiles().none { it.fileName == "${tables.first().name}Table.kt" } -> {
+                    generateTableDls(
+                        typeFactory = typeFactory,
+                        changeLog = baseSchemeGenerator.generateChangeLog(tables),
+                    )
+                    return dtoDefinitions + tableDefinitions
+                }
+                else -> {
+                    generateEntityDsl(
+                        typeFactory = typeFactory,
+                        changeLog = baseSchemeGenerator.generateChangeLog(tables),
+                        dtoGroups = dtoDefinitions
+                            .filter { it.validate() }
+                            .flatMap { it.getAnnotationsByType(DtoDefinition::class) }
+                            .map { it.toDtoDefinitionData(typeFactory) }
+                    )
+                }
             }
         }
 
@@ -161,10 +162,10 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
     }
 
     private fun generateEntityDsl(typeFactory: TypeFactory, changeLog: ChangeLog, dtoGroups: List<DtoGroupData>) {
-        changeLog.tables.forEach { (table, name) ->
+        changeLog.tables.forEach { (table, _) ->
             val properties = LinkedList<PropertyData>()
 
-            for (definitionVersion in table.definition.value) {
+            for (definitionVersion in table.definition.versions) {
                 for (property in definitionVersion.properties) {
                     val convertedProperty = property.toPropertyData(typeFactory)
 
@@ -183,7 +184,7 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
                     dtoGenerator.generateDtoClass(
                         definitionEntry = table,
                         variantData = variant,
-                        selectedProperties = properties.filter { variant.properties.contains(it.name) } //.filter { it.name in variant.properties }
+                        selectedProperties = properties.filter { it.name in variant.properties }
                     )
                 }
                 ?: emptyList()
