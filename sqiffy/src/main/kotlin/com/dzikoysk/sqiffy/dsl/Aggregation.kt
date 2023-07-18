@@ -15,8 +15,9 @@ data class Aggregation<T>(
     val quotedIdentifier: Quoted,
     val fallbackAlias: String = rawIdentifier // fallback for generated alias
 ) : Selectable, Expression<Aggregation<T>, T> {
-    override val selectableType: SelectableType = SelectableType.AGGREGATION
     val aggregationFunction: String = type.aggregationFunction
+    override val selectableType: SelectableType = SelectableType.AGGREGATION
+    override val id: String = "$aggregationFunction($rawIdentifier)"
 }
 
 fun Table.count(): Aggregation<Long> = Aggregation(AggregationType.COUNT, Long::class.javaObjectType, "*", { "*" })

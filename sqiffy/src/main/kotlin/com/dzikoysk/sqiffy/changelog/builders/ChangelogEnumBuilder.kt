@@ -1,8 +1,8 @@
-package com.dzikoysk.sqiffy.changelog.generators
+package com.dzikoysk.sqiffy.changelog.builders
 
 import com.dzikoysk.sqiffy.changelog.EnumState
 import com.dzikoysk.sqiffy.changelog.Query
-import com.dzikoysk.sqiffy.changelog.SqlSchemeGenerator
+import com.dzikoysk.sqiffy.changelog.generator.SqlSchemeGenerator
 import com.dzikoysk.sqiffy.changelog.Version
 import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.EnumOperation.ADD_VALUES
@@ -10,7 +10,7 @@ import com.dzikoysk.sqiffy.definition.EnumReference
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.definition.TypeDefinition
 
-class ChangelogEnumGenerator(
+class ChangelogEnumBuilder(
     private val sqlSchemeGenerator: SqlSchemeGenerator,
     private val allVersions: List<Version>
 ) {
@@ -62,23 +62,28 @@ class ChangelogEnumGenerator(
 
                 when {
                     previousState == null -> {
-                        val createEnumQuery = sqlSchemeGenerator.createEnum(enum.enumData.name, enumVersion.values.toList())
+                        val createEnumQuery = sqlSchemeGenerator.createEnum(
+                            name = enum.enumData.name,
+                            values = enumVersion.values.toList()
+                        )
 
                         if (createEnumQuery != null) {
                             currentChangelog.add(createEnumQuery)
                         }
                     }
                     enumVersion.operation == ADD_VALUES -> {
-                        currentChangelog.add(
-                            sqlSchemeGenerator.addEnumValues(
-                                enum = currentState,
-                                values = enumVersion.values.toList(),
-                                inUse = propertiesState[enumVersion.version]
-                                    ?.flatMap { (table, properties) -> properties.map { table to it } }
-                                    ?.filter { (_, property) -> property.type == DataType.ENUM }
-                                    ?: emptyList()
-                            )
+                        val addEnumQuery = sqlSchemeGenerator.addEnumValues(
+                            enum = currentState,
+                            values = enumVersion.values.toList(),
+                            inUse = propertiesState[enumVersion.version]
+                                ?.flatMap { (table, properties) -> properties.map { table to it } }
+                                ?.filter { (_, property) -> property.type == DataType.ENUM }
+                                ?: emptyList()
                         )
+
+                        if (addEnumQuery != null) {
+                            currentChangelog.add(addEnumQuery)
+                        }
                     }
                     else -> throw IllegalStateException("Unsupported operation ${enumVersion.operation}")
                 }

@@ -8,7 +8,19 @@ class DefinitionEntry(
     val packageName: String,
     val name: String,
     val definition: Definition,
-)
+) {
+
+    fun getDomainPackage(): String =
+        definition.domainPackage
+            .takeIf { it != NULL_STRING }
+            ?: packageName
+
+    fun getInfrastructurePackage(): String =
+        definition.infrastructurePackage
+            .takeIf { it != NULL_STRING }
+            ?: packageName
+
+}
 
 data class TypeDefinition(
     val packageName: String? = null,

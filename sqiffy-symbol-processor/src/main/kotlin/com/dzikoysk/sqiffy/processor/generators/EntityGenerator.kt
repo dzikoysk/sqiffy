@@ -16,6 +16,9 @@ import com.squareup.kotlinpoet.ksp.writeTo
 
 class EntityGenerator(private val context: KspContext) {
 
+    internal fun generateEntityClass(definitionEntry: DefinitionEntry, properties: List<PropertyData>) {
+        val domainPackage = definitionEntry.getDomainPackage()
+        val entityClass = generateEntityClass(domainPackage, definitionEntry.name, properties).build()
     internal fun generateEntityClass(definitionEntry: DefinitionEntry, properties: List<PropertyData>, dtoMethods: List<Pair<FileSpec, List<PropertyData>>>) {
         val entityClass = generateEntityClass(
             packageName = definitionEntry.packageName,
@@ -36,7 +39,7 @@ class EntityGenerator(private val context: KspContext) {
                 ?: return
 
             val unidentifiedEntityBuilder = generateEntityClass(
-                packageName = definitionEntry.packageName,
+                packageName = domainPackage,
                 name = "Unidentified" + definitionEntry.name,
                 properties = requiredProperties,
                 dtoMethods = dtoMethods,
@@ -79,6 +82,7 @@ class EntityGenerator(private val context: KspContext) {
                         FunSpec.constructorBuilder()
                             .also { constructorBuilder ->
                                 properties.forEach {
+                                    constructorBuilder.addParameter(it.name, it.type!!.toTypeName(it))
                                     constructorBuilder.addParameter(it.name, it.type!!.contextualType(it).toClassName().copy(nullable = it.nullable))
                                 }
                             }
@@ -87,7 +91,7 @@ class EntityGenerator(private val context: KspContext) {
                     .also { typeBuilder ->
                         properties.forEach {
                             typeBuilder.addProperty(
-                                PropertySpec.builder(it.name, it.type!!.contextualType(it).toClassName().copy(nullable = it.nullable))
+                                PropertySpec.builder(it.name, it.type!!.toTypeName(it))
                                     .initializer(it.name)
                                     .build()
                             )

@@ -5,6 +5,7 @@ import com.dzikoysk.sqiffy.dsl.Aggregation
 import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.Expression
 import com.dzikoysk.sqiffy.dsl.Row
+import com.dzikoysk.sqiffy.dsl.RowException
 import com.dzikoysk.sqiffy.dsl.Selectable
 import com.dzikoysk.sqiffy.dsl.Statement
 import com.dzikoysk.sqiffy.dsl.Table
@@ -55,7 +56,9 @@ open class SelectStatement(
     }
 
     fun <T> join(type: JoinType, on: Column<T>, to: Column<T>): SelectStatement = also {
-        joins.add(Join(type, on, to))
+        val join = Join(type, on, to)
+        require(!joins.contains(join)) { "Join $join is already defined" }
+        joins.add(join)
         slice.addAll(to.table.getColumns())
     }
 
@@ -64,14 +67,17 @@ open class SelectStatement(
     }
 
     fun where(where: () -> Expression<out Column<*>, Boolean>): SelectStatement = also {
+        require(this.where == null) { "Where clause is already defined" }
         this.where = where()
     }
 
     fun groupBy(vararg columns: Column<*>): SelectStatement = also {
+        require(this.groupBy == null) { "Group by clause is already defined" }
         this.groupBy = columns.toList()
     }
 
     fun having(having: () -> Expression<out Aggregation<*>, Boolean>): SelectStatement = also {
+        require(this.having == null) { "Having clause is already defined" }
         this.having = having()
     }
 
@@ -81,6 +87,7 @@ open class SelectStatement(
     }
 
     fun orderBy(vararg columns: Pair<Column<*>, Order>): SelectStatement = also {
+        require(this.orderBy == null) { "Order by clause is already defined" }
         this.orderBy = columns
             .map { OrderBy(it.first, it.second) }
             .toList()
@@ -133,7 +140,16 @@ open class SelectStatement(
             handle
                 .select(query.query)
                 .bindArguments(arguments)
-                .map { view -> mapper(Row(view)) }
+                .map { view ->
+                    try {
+                        mapper(Row(view))
+                    } catch (rowException: RowException) {
+                        throw when {
+                            slice.contains(rowException.selectable) -> rowException
+                            else -> IllegalStateException("Row mapper tried to access ${rowException.selectable.id} that is not defined in slice")
+                        }
+                    }
+                }
                 .list()
                 .asSequence()
         }

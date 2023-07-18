@@ -45,7 +45,9 @@ enum class DataType(
 
 @Retention(RUNTIME)
 annotation class Definition(
-    val value: Array<DefinitionVersion>
+    val versions: Array<DefinitionVersion>,
+    val domainPackage: String = NULL_STRING,
+    val infrastructurePackage: String = NULL_STRING,
 )
 
 @Target()

@@ -2,7 +2,7 @@ package com.dzikoysk.sqiffy.processor
 
 import com.dzikoysk.sqiffy.changelog.ChangeLog
 import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator
-import com.dzikoysk.sqiffy.changelog.PostgreSqlSchemeGenerator
+import com.dzikoysk.sqiffy.changelog.generator.dialects.PostgreSqlSchemeGenerator
 import com.dzikoysk.sqiffy.definition.Definition
 import com.dzikoysk.sqiffy.definition.DefinitionEntry
 import com.dzikoysk.sqiffy.definition.DtoDefinition
@@ -134,7 +134,7 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
         changeLog.tables.forEach { (table, name) ->
             val properties = LinkedList<PropertyData>()
 
-            for (definitionVersion in table.definition.value) {
+            for (definitionVersion in table.definition.versions) {
                 for (property in definitionVersion.properties) {
                     val convertedProperty = property.toPropertyData(typeFactory)
 

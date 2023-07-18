@@ -1,7 +1,7 @@
 import com.google.devtools.ksp.gradle.KspTask
 
 plugins {
-    id("com.google.devtools.ksp") version "1.8.21-1.0.11"
+    id("com.google.devtools.ksp") version "1.9.0-1.0.11"
 }
 
 dependencies {
@@ -15,9 +15,12 @@ dependencies {
     testImplementation("io.zonky.test:embedded-postgres:2.0.3")
     testImplementation("org.postgresql:postgresql:42.6.0")
     testImplementation("com.h2database:h2:2.1.214")
+    testImplementation("mysql:mysql-connector-java:8.0.28")
+    testImplementation("org.xerial:sqlite-jdbc:3.42.0.0")
 
     val testcontainers = "1.18.1"
     testImplementation("org.testcontainers:postgresql:$testcontainers")
+    testImplementation("org.testcontainers:mysql:$testcontainers")
     testImplementation("org.testcontainers:mariadb:$testcontainers")
     testImplementation("org.testcontainers:testcontainers:$testcontainers")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainers")

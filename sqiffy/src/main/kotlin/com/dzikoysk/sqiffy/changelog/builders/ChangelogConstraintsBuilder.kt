@@ -1,4 +1,4 @@
-package com.dzikoysk.sqiffy.changelog.generators
+package com.dzikoysk.sqiffy.changelog.builders
 
 import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator.ChangeLogGeneratorContext
 import com.dzikoysk.sqiffy.definition.Constraint
@@ -12,7 +12,7 @@ import com.dzikoysk.sqiffy.definition.NULL_CLASS
 import com.dzikoysk.sqiffy.definition.NULL_STRING
 import com.dzikoysk.sqiffy.definition.PrimaryKey
 
-internal class ChangelogConstraintsGenerator {
+internal class ChangelogConstraintsBuilder {
 
     fun generateConstraints(context: ChangeLogGeneratorContext) {
         with(context) {
@@ -37,13 +37,13 @@ internal class ChangelogConstraintsGenerator {
                             ?: throw IllegalStateException("Primary key '${constraint.name}' declaration misses `on` property")
                     )
 
-                    val properties = primaryKey.on.map {
+                    val primaryKeyProperties = primaryKey.on.map {
                         state.properties
                             .firstOrNull { property -> property.name == it }
                             ?: throw IllegalStateException("Column $it marked as primary key not found in table ${state.tableName}")
                     }
 
-                    require(properties.none { it.nullable }) { "Column marked as primary key is nullable (${constraint.name} = ${constraint.on.contentToString()})" }
+                    require(primaryKeyProperties.none { it.nullable }) { "Column marked as primary key is nullable (${constraint.name} = ${constraint.on.contentToString()})" }
                     require(state.constraints.none { it.type == PRIMARY_KEY }) { "Table ${state.tableName} already has primary key" }
                     checkIfConstraintOrIndexNameAlreadyUsed(primaryKey.name)
 
@@ -51,7 +51,7 @@ internal class ChangelogConstraintsGenerator {
                         createPrimaryKey(
                             tableName = state.tableName,
                             name = primaryKey.name,
-                            on = primaryKey.on
+                            on = primaryKeyProperties
                         )
                     }
 
@@ -109,9 +109,9 @@ internal class ChangelogConstraintsGenerator {
                         createForeignKey(
                             tableName = state.tableName,
                             name = foreignKey.name,
-                            on = foreignKey.on,
+                            on = onColumn,
                             foreignTable = foreignTable.tableName,
-                            foreignColumn = foreignColumn.name
+                            foreignColumn = foreignColumn
                         )
                     }
 

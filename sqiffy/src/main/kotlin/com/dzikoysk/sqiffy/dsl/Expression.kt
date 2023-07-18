@@ -10,6 +10,28 @@ sealed interface Condition<SOURCE> : Expression<SOURCE, Boolean>
 
 class ConstExpression<T>(val value: T) : Expression<T, T>
 
+/* Math operators */
+
+enum class MathOperator(val symbol: String) {
+    ADD("+"),
+    SUBTRACT("-"),
+    MULTIPLY("*"),
+    DIVIDE("/"),
+    MODULO("%")
+}
+
+class MathExpression<SOURCE, VALUE : Number>(
+    val operator: MathOperator,
+    val left: Expression<*, VALUE>,
+    val right: Expression<*, VALUE>
+) : Expression<SOURCE, VALUE>
+
+operator fun <SOURCE, VALUE : Number> Expression<SOURCE, VALUE>.plus(value: VALUE): MathExpression<SOURCE, VALUE> = MathExpression(MathOperator.ADD, this, ConstExpression(value))
+operator fun <SOURCE, VALUE : Number> Expression<SOURCE, VALUE>.minus(value: VALUE): MathExpression<SOURCE, VALUE> = MathExpression(MathOperator.SUBTRACT, this, ConstExpression(value))
+operator fun <SOURCE, VALUE : Number> Expression<SOURCE, VALUE>.times(value: VALUE): MathExpression<SOURCE, VALUE> = MathExpression(MathOperator.MULTIPLY, this, ConstExpression(value))
+operator fun <SOURCE, VALUE : Number> Expression<SOURCE, VALUE>.div(value: VALUE): MathExpression<SOURCE, VALUE> = MathExpression(MathOperator.DIVIDE, this, ConstExpression(value))
+operator fun <SOURCE, VALUE : Number> Expression<SOURCE, VALUE>.rem(value: VALUE): MathExpression<SOURCE, VALUE> = MathExpression(MathOperator.MODULO, this, ConstExpression(value))
+
 /* Logical operators */
 
 enum class LogicalOperator(val symbol: String) {

@@ -40,6 +40,9 @@ class Arguments(private val allocator: ParameterAllocator) {
             it.arguments.putAll(arguments?.arguments ?: emptyMap())
         }
 
+    operator fun plus(iterable: Iterable<Arguments>): Arguments =
+        iterable.fold(this) { acc, arguments -> acc + arguments }
+
     override fun toString(): String =
         arguments.toString()
 

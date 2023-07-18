@@ -27,26 +27,30 @@ internal abstract class MigratorE2ETest : SqiffyE2ETestSpecification(runMigratio
         const val V_1_0_1 = "1.0.1"
     }
 
-    @Definition([
-        DefinitionVersion(
-            name = "table1",
-            version = SchemeVersion.V_1_0_0,
-            properties = [
-                Property(name = "id", type = SERIAL),
-            ]
-        )
-    ])
+    @Definition(
+        versions = [
+            DefinitionVersion(
+                name = "table1",
+                version = SchemeVersion.V_1_0_0,
+                properties = [
+                    Property(name = "id", type = SERIAL),
+                ]
+            )
+        ]
+    )
     private object Table1Definition
 
-    @Definition([
-        DefinitionVersion(
-            name = "table2",
-            version = SchemeVersion.V_1_0_1,
-            properties = [
-                Property(name = "id", type = SERIAL),
-            ]
-        )
-    ])
+    @Definition(
+        versions = [
+            DefinitionVersion(
+                name = "table2",
+                version = SchemeVersion.V_1_0_1,
+                properties = [
+                    Property(name = "id", type = SERIAL),
+                ]
+            )
+        ]
+    )
     private object Table2Definition
 
     @Test

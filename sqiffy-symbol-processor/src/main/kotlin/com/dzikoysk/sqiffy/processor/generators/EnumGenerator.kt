@@ -12,11 +12,11 @@ import com.squareup.kotlinpoet.ksp.writeTo
 class EnumGenerator(private val context: KspContext) {
 
     internal fun generateEnum(enumReference: EnumReference, enumState: EnumState): String {
-        val enumQualifier = enumReference.type.packageName + "." + enumReference.enumData.mappedTo
+        val enumQualifier = enumReference.getEnumClassQualifier()
 
-        val enumClass = FileSpec.builder(enumReference.type.packageName!!, enumReference.enumData.mappedTo)
+        val enumClass = FileSpec.builder(enumQualifier.packageName!!, enumQualifier.simpleName)
             .addType(
-                TypeSpec.enumBuilder(enumReference.enumData.mappedTo)
+                TypeSpec.enumBuilder(enumQualifier.simpleName)
                     .also { typeBuilder ->
                         typeBuilder.addType(
                             TypeSpec.companionObjectBuilder()
@@ -37,7 +37,7 @@ class EnumGenerator(private val context: KspContext) {
             .build()
 
         enumClass.writeTo(context.codeGenerator, Dependencies(true))
-        return enumQualifier
+        return enumQualifier.qualifiedName
     }
 
 }
