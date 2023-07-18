@@ -99,6 +99,7 @@ internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
         assertThat(userFromDatabase.name).isEqualTo("Giant Panda")
         assertThat(userFromDatabase.role).isEqualTo(Role.ADMIN)
         assertThat(userFromDatabase.wallet).isEqualTo(101f)
+        assertThat(userFromDatabase.toUserDto().name).isEqualTo(userFromDatabase.name)
         println("Loaded user: $userFromDatabase")
 
         val guildToInsert = UnidentifiedGuild(

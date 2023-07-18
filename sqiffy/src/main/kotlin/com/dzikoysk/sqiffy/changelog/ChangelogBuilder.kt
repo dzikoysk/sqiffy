@@ -151,6 +151,7 @@ class ChangeLogGenerator(
 
         return ChangeLog(
             enums = latestEnumState,
+            tables = tableStates.mapValues { it.value.tableName },
             enumChanges =
                 enumChangelog.map { (version, changes) ->
                     SchemeChange(
@@ -158,7 +159,6 @@ class ChangeLogGenerator(
                         changes = changes.map { Change(it) }
                     )
                 },
-            tables = tableStates.mapValues { it.value.tableName },
             schemeChanges =
                 schemeChangelog.map { (version, changes) ->
                     SchemeChange(

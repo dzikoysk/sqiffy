@@ -16,9 +16,16 @@ import com.squareup.kotlinpoet.ksp.writeTo
 
 class EntityGenerator(private val context: KspContext) {
 
-    internal fun generateEntityClass(definitionEntry: DefinitionEntry, properties: List<PropertyData>) {
+    internal fun generateEntityClass(definitionEntry: DefinitionEntry, properties: List<PropertyData>, dtoMethods: List<Pair<FileSpec, List<PropertyData>>>) {
         val domainPackage = definitionEntry.getDomainPackage()
-        val entityClass = generateEntityClass(domainPackage, definitionEntry.name, properties).build()
+
+        val entityClass = generateEntityClass(
+            packageName = definitionEntry.getDomainPackage(),
+            name = definitionEntry.name,
+            properties = properties,
+            dtoMethods = dtoMethods
+        ).build()
+
         val entityClassName = ClassName(entityClass.packageName, entityClass.name)
         entityClass.writeTo(context.codeGenerator, Dependencies(true))
 
@@ -34,6 +41,7 @@ class EntityGenerator(private val context: KspContext) {
                 packageName = domainPackage,
                 name = "Unidentified" + definitionEntry.name,
                 properties = requiredProperties,
+                dtoMethods = dtoMethods,
                 extra = { typeSpec ->
                     typeSpec.addFunction(
                         FunSpec.builder("withId")
@@ -58,7 +66,13 @@ class EntityGenerator(private val context: KspContext) {
         }
     }
 
-    private fun generateEntityClass(packageName: String, name: String, properties: List<PropertyData>, extra: (TypeSpec.Builder) -> Unit = {}): FileSpec.Builder =
+    private fun generateEntityClass(
+        packageName: String,
+        name: String,
+        properties: List<PropertyData>,
+        dtoMethods: List<Pair<FileSpec, List<PropertyData>>>,
+        extra: (TypeSpec.Builder) -> Unit = {}
+    ): FileSpec.Builder =
         FileSpec.builder(packageName, name)
             .addType(
                 TypeSpec.classBuilder(name)
@@ -77,6 +91,22 @@ class EntityGenerator(private val context: KspContext) {
                             typeBuilder.addProperty(
                                 PropertySpec.builder(it.name, it.type!!.toTypeName(it))
                                     .initializer(it.name)
+                                    .build()
+                            )
+                        }
+                    }
+                    .also {
+                        dtoMethods.forEach { (dtoClass, selectedProperties) ->
+                            val dtoClassName = ClassName(dtoClass.packageName, dtoClass.name)
+
+                            it.addFunction(
+                                FunSpec.builder("to${dtoClass.name}")
+                                    .returns(dtoClassName)
+                                    .addStatement(
+                                        "return %T(%L)",
+                                        dtoClassName,
+                                        selectedProperties.joinToString(", ") { "${it.name} = ${it.name}" }
+                                    )
                                     .build()
                             )
                         }

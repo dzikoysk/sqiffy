@@ -16,6 +16,7 @@ import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
 import com.dzikoysk.sqiffy.definition.DataType.VARCHAR
 import com.dzikoysk.sqiffy.definition.Definition
 import com.dzikoysk.sqiffy.definition.DefinitionVersion
+import com.dzikoysk.sqiffy.definition.DtoDefinition
 import com.dzikoysk.sqiffy.definition.EnumDefinition
 import com.dzikoysk.sqiffy.definition.EnumOperation.ADD_VALUES
 import com.dzikoysk.sqiffy.definition.EnumVersion
@@ -27,6 +28,9 @@ import com.dzikoysk.sqiffy.definition.Property
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RENAME
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RETYPE
+import com.dzikoysk.sqiffy.definition.Variant
+import com.dzikoysk.sqiffy.infra.UserTableNames
+import java.io.Serializable
 
 object UserAndGuildScenarioVersions {
     const val V_1_0_0 = "1.0.0"
@@ -90,6 +94,19 @@ object RoleDefinition
     ]
 )
 object UserDefinition
+
+@DtoDefinition(
+    from = UserDefinition::class,
+    variants = [
+        Variant(
+            name = "UserDto",
+            properties = [ UserTableNames.NAME ],
+            implements = [ Serializable::class ]
+        ),
+
+    ]
+)
+object UserDtoDefinition
 
 @Definition([
     DefinitionVersion(
