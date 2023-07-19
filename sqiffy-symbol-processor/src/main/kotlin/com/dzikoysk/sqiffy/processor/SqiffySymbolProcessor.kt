@@ -184,7 +184,7 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
                     dtoGenerator.generateDtoClass(
                         definitionEntry = table,
                         variantData = variant,
-                        selectedProperties = properties.filter { it.name in variant.properties }
+                        selectedProperties = properties.filter { variant.allProperties || it.name in variant.properties }
                     )
                 }
                 ?: emptyList()

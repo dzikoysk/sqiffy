@@ -55,6 +55,7 @@ object RoleDefinition
 @Definition(
     domainPackage = "com.dzikoysk.sqiffy.domain",
     infrastructurePackage = "com.dzikoysk.sqiffy.infra",
+    apiPackage = "com.dzikoysk.sqiffy.api",
     versions = [
         DefinitionVersion(
             version = V_1_0_0,

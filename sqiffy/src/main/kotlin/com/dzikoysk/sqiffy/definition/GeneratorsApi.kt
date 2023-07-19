@@ -18,7 +18,12 @@ class DefinitionEntry(
     fun getInfrastructurePackage(): String =
         definition.infrastructurePackage
             .takeIf { it != NULL_STRING }
-            ?: packageName
+            ?: getDomainPackage()
+
+    fun getApiPackage(): String =
+        definition.apiPackage
+            .takeIf { it != NULL_STRING }
+            ?: getDomainPackage()
 
 }
 

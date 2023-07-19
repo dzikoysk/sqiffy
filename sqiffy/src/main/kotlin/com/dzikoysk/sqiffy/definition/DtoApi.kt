@@ -24,7 +24,8 @@ fun DtoDefinition.toDtoDefinitionData(typeFactory: TypeFactory): DtoGroupData =
 @Target(ANNOTATION_CLASS)
 annotation class Variant(
     val name: String,
-    val properties: Array<String>,
+    val properties: Array<String> = [],
+    val allProperties: Boolean = false,
     val implements: Array<KClass<*>> = []
 )
 
@@ -32,11 +33,13 @@ fun Variant.toVariantData(typeFactory: TypeFactory): VariantData =
     VariantData(
         name = name,
         properties = properties.toList(),
+        allProperties = allProperties,
         implements = implements.map { typeFactory.getTypeDefinition(this) { it } }
     )
 
 data class VariantData(
     val name: String,
     val properties: List<String>,
+    val allProperties: Boolean,
     val implements: List<TypeDefinition>
 )
