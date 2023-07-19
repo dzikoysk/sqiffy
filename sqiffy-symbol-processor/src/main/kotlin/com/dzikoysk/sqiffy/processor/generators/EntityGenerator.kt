@@ -37,11 +37,14 @@ class EntityGenerator(private val context: KspContext) {
                 .takeIf { it.isNotEmpty() }
                 ?: return
 
+            val matchedDtoMethods = dtoMethods
+                .filter { requiredProperties.containsAll(it.second) }
+
             val unidentifiedEntityBuilder = generateEntityClass(
                 packageName = domainPackage,
                 name = "Unidentified" + definitionEntry.name,
                 properties = requiredProperties,
-                dtoMethods = dtoMethods,
+                dtoMethods = matchedDtoMethods,
                 extra = { typeSpec ->
                     typeSpec.addFunction(
                         FunSpec.builder("withId")
