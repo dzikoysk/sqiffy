@@ -1,8 +1,5 @@
-package com.dzikoysk.sqiffy
+package com.dzikoysk.sqiffy.e2e
 
-import com.dzikoysk.sqiffy.UserAndGuildScenarioVersions.V_1_0_0
-import com.dzikoysk.sqiffy.UserAndGuildScenarioVersions.V_1_0_1
-import com.dzikoysk.sqiffy.UserAndGuildScenarioVersions.V_1_0_2
 import com.dzikoysk.sqiffy.definition.Constraint
 import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.REMOVE_CONSTRAINT
 import com.dzikoysk.sqiffy.definition.ConstraintType.FOREIGN_KEY
@@ -29,6 +26,9 @@ import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RENAME
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RETYPE
 import com.dzikoysk.sqiffy.definition.Variant
+import com.dzikoysk.sqiffy.e2e.UserAndGuildScenarioVersions.V_1_0_0
+import com.dzikoysk.sqiffy.e2e.UserAndGuildScenarioVersions.V_1_0_1
+import com.dzikoysk.sqiffy.e2e.UserAndGuildScenarioVersions.V_1_0_2
 import com.dzikoysk.sqiffy.infra.UserTableNames
 import java.io.Serializable
 
@@ -104,7 +104,11 @@ object UserDefinition
             properties = [ UserTableNames.NAME ],
             implements = [ Serializable::class ]
         ),
-
+        Variant(
+            name = "AllUserDto",
+            allProperties = true,
+            implements = [ Serializable::class ]
+        ),
     ]
 )
 object UserDtoDefinition
