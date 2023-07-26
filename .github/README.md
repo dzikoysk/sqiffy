@@ -161,8 +161,8 @@ database.close()
 
 You can also execute queries using generated DSL:
 
-```
- val userToInsert = UnidentifiedUser(
+```kotlin
+val userToInsert = UnidentifiedUser(
     name = "Panda",
     displayName = "Only Panda",
     uuid = UUID.randomUUID(),
