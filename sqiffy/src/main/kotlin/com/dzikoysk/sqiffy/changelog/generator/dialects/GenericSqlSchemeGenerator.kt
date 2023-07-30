@@ -2,15 +2,20 @@ package com.dzikoysk.sqiffy.changelog.generator.dialects
 
 import com.dzikoysk.sqiffy.changelog.Enums
 import com.dzikoysk.sqiffy.changelog.generator.SqlSchemeGenerator
+import com.dzikoysk.sqiffy.definition.DataType
+import com.dzikoysk.sqiffy.definition.DataType.BINARY
 import com.dzikoysk.sqiffy.definition.DataType.BOOLEAN
 import com.dzikoysk.sqiffy.definition.DataType.CHAR
 import com.dzikoysk.sqiffy.definition.DataType.DATE
+import com.dzikoysk.sqiffy.definition.DataType.DATETIME
 import com.dzikoysk.sqiffy.definition.DataType.DOUBLE
+import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.FLOAT
 import com.dzikoysk.sqiffy.definition.DataType.INT
 import com.dzikoysk.sqiffy.definition.DataType.LONG
 import com.dzikoysk.sqiffy.definition.DataType.TEXT
 import com.dzikoysk.sqiffy.definition.DataType.TIMESTAMP
+import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
 import com.dzikoysk.sqiffy.definition.DataType.VARCHAR
 import com.dzikoysk.sqiffy.definition.PropertyData
 
@@ -89,9 +94,21 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
 
     protected open fun createDataTypeWithAttributes(property: PropertyData, availableEnums: Enums): String =
         createDataType(property, availableEnums).let {
-            if (!property.nullable) "$it NOT NULL"
-            else it
+            var result: String = property.default?.let { default -> "$it DEFAULT ${default.toSqlDefault(property.type!!)}" } ?: it
+            result = if (!property.nullable) "$result NOT NULL" else it
+            result
         }
+
+    private fun String.toSqlDefault(dataType: DataType): String {
+        return when (dataType) {
+            CHAR, VARCHAR, TEXT, UUID_TYPE, ENUM -> "'$this'"
+            BINARY -> "BINARY('$this')"
+            DATE -> "DATE('$this')"
+            DATETIME -> "DATETIME('$this'})"
+            TIMESTAMP -> "TIMESTAMP('$this'})"
+            else -> this
+        }.toString()
+    }
 
     private fun createIndexColumns(columns: List<String>): String =
         columns.joinToString(separator = ", ") { it.toQuoted() }

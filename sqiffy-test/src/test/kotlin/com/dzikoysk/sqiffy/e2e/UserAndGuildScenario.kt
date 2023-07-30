@@ -64,8 +64,8 @@ object RoleDefinition
                 Property(name = "id", type = SERIAL),
                 Property(name = "uuid", type = UUID_TYPE),
                 Property(name = "name", type = VARCHAR, details = "12"),
-                Property(name = "wallet", type = FLOAT),
-                Property(name = "role", type = ENUM, enumDefinition = RoleDefinition::class)
+                Property(name = "wallet", type = FLOAT, default = "0.0"),
+                Property(name = "role", type = ENUM, enumDefinition = RoleDefinition::class, default = "USER"),
             ],
             constraints = [
                 Constraint(type = PRIMARY_KEY, name = "pk_id", on =["id"]),
