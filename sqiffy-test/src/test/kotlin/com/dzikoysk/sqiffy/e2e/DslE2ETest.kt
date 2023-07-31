@@ -38,6 +38,8 @@ import com.dzikoysk.sqiffy.shared.createSQLiteDataSource
 import com.zaxxer.hikari.HikariDataSource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.MariaDBContainer
 import org.testcontainers.containers.MySQLContainer
@@ -45,6 +47,8 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
+import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -192,7 +196,22 @@ internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
     @Test
     fun `should create table with all default values`() {
         database.generateChangeLog(TestDefaultDefinition::class)
-        TestDefault()
+
+        val testDefault = TestDefault()
+        assertEquals(UUID.fromString(DefaultConstants.UUID_DEFAULT), testDefault.uuid)
+        assertEquals(Role.valueOf(DefaultConstants.ENUM_DEFAULT), testDefault.enum)
+        assertEquals(DefaultConstants.CHAR_DEFAULT, testDefault.char)
+        assertEquals(DefaultConstants.VARCHAR_DEFAULT, testDefault.varchar)
+        assertArrayEquals(DefaultConstants.BINARY_DEFAULT.toByteArray(), testDefault.binary)
+        assertEquals(DefaultConstants.TEXT_DEFAULT, testDefault.text)
+        assertEquals(DefaultConstants.BOOLEAN_DEFAULT, testDefault.boolean)
+        assertEquals(DefaultConstants.INT_DEFAULT, testDefault.int)
+        assertEquals(DefaultConstants.LONG_DEFAULT, testDefault.long)
+        assertEquals(DefaultConstants.FLOAT_DEFAULT, testDefault.float)
+        assertEquals(DefaultConstants.DOUBLE_DEFAULT, testDefault.double)
+        assertEquals(LocalDate.parse(DefaultConstants.DATE_DEFAULT), testDefault.date)
+        assertEquals(LocalDateTime.parse(DefaultConstants.DATETIME_DEFAULT), testDefault.datetime)
+        assertEquals(Instant.parse(DefaultConstants.TIMESTAMP_DEFAULT), testDefault.timestamp)
     }
 
 }
