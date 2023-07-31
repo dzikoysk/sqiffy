@@ -2,8 +2,11 @@ package com.dzikoysk.sqiffy.changelog.generator.dialects
 
 import com.dzikoysk.sqiffy.changelog.EnumState
 import com.dzikoysk.sqiffy.changelog.Enums
+import com.dzikoysk.sqiffy.definition.DataType
+import com.dzikoysk.sqiffy.definition.DataType.BINARY
 import com.dzikoysk.sqiffy.definition.DataType.DATE
 import com.dzikoysk.sqiffy.definition.DataType.DATETIME
+import com.dzikoysk.sqiffy.definition.DataType.DOUBLE
 import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
 import com.dzikoysk.sqiffy.definition.DataType.TIMESTAMP
@@ -66,6 +69,8 @@ object SqliteSchemeGenerator : GenericSqlSchemeGenerator() {
             SERIAL -> "INTEGER PRIMARY KEY AUTOINCREMENT"
             UUID_TYPE -> "TEXT"
             ENUM -> "TEXT"
+            BINARY -> "TEXT"
+            DOUBLE -> "REAL"
             DATE -> "TEXT"
             DATETIME -> "TEXT"
             TIMESTAMP -> "TEXT"
@@ -77,5 +82,13 @@ object SqliteSchemeGenerator : GenericSqlSchemeGenerator() {
             if (!property.nullable && property.type != SERIAL) "$it NOT NULL"
             else it
         }
+
+    override fun createSqlDefault(rawDefault: String, property: PropertyData, dataType: DataType): String? {
+        return when (dataType) {
+            BINARY -> "'$rawDefault'"
+            DATE, DATETIME, TIMESTAMP -> "'$rawDefault'"
+            else -> null
+        }
+    }
 
 }

@@ -2,10 +2,14 @@ package com.dzikoysk.sqiffy.changelog.generator.dialects
 
 import com.dzikoysk.sqiffy.changelog.EnumState
 import com.dzikoysk.sqiffy.changelog.Enums
+import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.DataType.BINARY
+import com.dzikoysk.sqiffy.definition.DataType.DATE
 import com.dzikoysk.sqiffy.definition.DataType.DATETIME
+import com.dzikoysk.sqiffy.definition.DataType.DOUBLE
 import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
+import com.dzikoysk.sqiffy.definition.DataType.TIMESTAMP
 import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.shared.multiline
@@ -54,9 +58,20 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
                 ?.name
                 ?.toQuoted()
                 ?: throw IllegalStateException("Missing enum data for property '${property.name}'")
-            DATETIME -> "TIMESTAMPTZ"
             BINARY -> "BYTEA"
+            DOUBLE -> "DOUBLE PRECISION"
+            TIMESTAMP -> "TIMESTAMP WITH TIME ZONE"
+            DATETIME -> "TIMESTAMP WITHOUT TIME ZONE"
             else -> createRegularDataType(property)
         }
+
+    override fun createSqlDefault(rawDefault: String, property: PropertyData, dataType: DataType): String? {
+        return when (dataType) {
+            BINARY -> "BYTEA('$rawDefault')"
+            DATE -> "TO_DATE('$rawDefault','YYYY-MM-DD')"
+            DATETIME, TIMESTAMP -> "TO_TIMESTAMP('$rawDefault', 'YYYY-MM-DD HH24:MI:SS.MS')"
+            else -> null
+        }
+    }
 
 }

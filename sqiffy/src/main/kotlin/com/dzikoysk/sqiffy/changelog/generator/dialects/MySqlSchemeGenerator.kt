@@ -2,10 +2,15 @@ package com.dzikoysk.sqiffy.changelog.generator.dialects
 
 import com.dzikoysk.sqiffy.changelog.EnumState
 import com.dzikoysk.sqiffy.changelog.Enums
+import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.DataType.BINARY
+import com.dzikoysk.sqiffy.definition.DataType.BOOLEAN
+import com.dzikoysk.sqiffy.definition.DataType.DATE
 import com.dzikoysk.sqiffy.definition.DataType.DATETIME
 import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
+import com.dzikoysk.sqiffy.definition.DataType.TEXT
+import com.dzikoysk.sqiffy.definition.DataType.TIMESTAMP
 import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.shared.multiline
@@ -45,14 +50,25 @@ object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
                         ?.joinToString { "'$it'" }
                         ?.let { "ENUM($it)" }
                         ?: throw IllegalStateException("Missing enum data for property $name")
-                DATETIME -> "DATETIME"
                 BINARY -> {
                     require(details != null) { "Missing binary size in '$name' property" }
                     "BINARY($details)"
                 }
+                TIMESTAMP -> "TIMESTAMP"
+                DATETIME -> "DATETIME"
                 else -> createRegularDataType(property)
             }
         }
+
+    override fun createSqlDefault(rawDefault: String, property: PropertyData, dataType: DataType): String? {
+        return when (dataType) {
+            BINARY -> "'$rawDefault'"
+            DATE -> "STR_TO_DATE('$rawDefault','%Y-%m-%d')"
+            DATETIME -> "STR_TO_DATE('$rawDefault','%Y-%m-%d %H:%i:%s.%f')"
+            TIMESTAMP -> "STR_TO_DATE('$rawDefault','%Y-%m-%d %H:%i:%s.%f')"
+            else -> null
+        }
+    }
 
     override fun removeIndex(tableName: String, name: String): String =
         "DROP INDEX ${name.toQuoted()} ON ${tableName.toQuoted()}"
