@@ -2,15 +2,18 @@ package com.dzikoysk.sqiffy.changelog.generator.dialects
 
 import com.dzikoysk.sqiffy.changelog.Enums
 import com.dzikoysk.sqiffy.changelog.generator.SqlSchemeGenerator
+import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.DataType.BOOLEAN
 import com.dzikoysk.sqiffy.definition.DataType.CHAR
 import com.dzikoysk.sqiffy.definition.DataType.DATE
 import com.dzikoysk.sqiffy.definition.DataType.DOUBLE
+import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.FLOAT
 import com.dzikoysk.sqiffy.definition.DataType.INT
 import com.dzikoysk.sqiffy.definition.DataType.LONG
+import com.dzikoysk.sqiffy.definition.DataType.SERIAL
 import com.dzikoysk.sqiffy.definition.DataType.TEXT
-import com.dzikoysk.sqiffy.definition.DataType.TIMESTAMP
+import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
 import com.dzikoysk.sqiffy.definition.DataType.VARCHAR
 import com.dzikoysk.sqiffy.definition.PropertyData
 
@@ -65,7 +68,7 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
     abstract fun createDataType(property: PropertyData, availableEnums: Enums): String
 
     protected fun createRegularDataType(property: PropertyData): String =
-        with (property) {
+        with(property) {
             when (type) {
                 CHAR -> {
                     require(details != null) { "Missing char size in '${property.name}' property" }
@@ -82,15 +85,27 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
                 FLOAT -> "FLOAT"
                 DOUBLE -> "DOUBLE"
                 DATE -> "DATE"
-                TIMESTAMP -> "TIMESTAMP"
                 else -> throw UnsupportedOperationException("Cannot create data type based on $property")
             }
         }
 
     protected open fun createDataTypeWithAttributes(property: PropertyData, availableEnums: Enums): String =
-        createDataType(property, availableEnums).let {
-            if (!property.nullable) "$it NOT NULL"
-            else it
+        createDataType(property, availableEnums)
+            .let { dataType -> "$dataType ${property.default?.let { default -> " DEFAULT ${default.toSqlDefault(property)} " } ?: ""}" }
+            .let { if (!property.nullable) "$it NOT NULL" else it }
+
+    private fun String.toSqlDefault(property: PropertyData): String =
+        createSqlDefault(this, property)
+            ?: createRegularDefault(this, property)
+            ?: throw UnsupportedOperationException("Cannot create default value based on $this")
+
+    abstract fun createSqlDefault(rawDefault: String, property: PropertyData, dataType: DataType = property.type!!): String?
+
+    private fun createRegularDefault(rawDefault: String, property: PropertyData, dataType: DataType = property.type!!): String? =
+        when (dataType) {
+            SERIAL, BOOLEAN, INT, LONG, FLOAT, DOUBLE -> rawDefault
+            UUID_TYPE, ENUM, CHAR, VARCHAR, TEXT -> "'$rawDefault'"
+            else -> null
         }
 
     private fun createIndexColumns(columns: List<String>): String =

@@ -1,9 +1,9 @@
 package com.dzikoysk.sqiffy.e2e.specification
 
-import com.dzikoysk.sqiffy.e2e.GuildDefinition
 import com.dzikoysk.sqiffy.Slf4JSqiffyLogger
 import com.dzikoysk.sqiffy.Sqiffy
 import com.dzikoysk.sqiffy.SqiffyDatabase
+import com.dzikoysk.sqiffy.e2e.GuildDefinition
 import com.dzikoysk.sqiffy.e2e.UserDefinition
 import com.dzikoysk.sqiffy.shared.createHikariDataSource
 import com.zaxxer.hikari.HikariDataSource

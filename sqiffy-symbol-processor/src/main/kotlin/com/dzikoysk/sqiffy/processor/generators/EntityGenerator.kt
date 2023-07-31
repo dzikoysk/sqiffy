@@ -10,7 +10,9 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier.DATA
+import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.writeTo
 
@@ -84,7 +86,13 @@ class EntityGenerator(private val context: KspContext) {
                         FunSpec.constructorBuilder()
                             .also { constructorBuilder ->
                                 properties.forEach {
-                                    constructorBuilder.addParameter(it.name, it.type!!.toTypeName(it))
+                                    val dataType = it.type!!
+                                    val typeName = dataType.toTypeName(it)
+                                    var builder = ParameterSpec.builder(it.name, typeName)
+                                    it.default?.let { defaultValue ->
+                                        builder = builder.defaultValue(defaultValue.toKotlinCode(dataType, typeName))
+                                    }
+                                    constructorBuilder.addParameter(builder.build())
                                 }
                             }
                             .build()
@@ -117,5 +125,24 @@ class EntityGenerator(private val context: KspContext) {
                     .also { extra(it) }
                     .build()
             )
+
+    private fun String.toKotlinCode(dataType: DataType, typeName: TypeName): String =
+        when (dataType) {
+            /* Special types */
+            DataType.UUID_TYPE -> "UUID.fromString(\"$this\")"
+            DataType.ENUM -> "$typeName.$this"
+
+            /* Regular types */
+            DataType.CHAR -> "'$this'"
+            DataType.VARCHAR, DataType.TEXT -> "\"$this\""
+            DataType.BINARY -> "\"$this\".toByteArray()"
+            DataType.BOOLEAN -> this.toBoolean().toString()
+            DataType.LONG -> "${this}L"
+            DataType.FLOAT -> "${this}F"
+            DataType.DATE -> "LocalDate.parse(\"$this\")"
+            DataType.DATETIME -> "LocalDateTime.parse(\"$this\")"
+            DataType.TIMESTAMP -> "Instant.parse(\"$this\")"
+            else -> this
+        }
 
 }
