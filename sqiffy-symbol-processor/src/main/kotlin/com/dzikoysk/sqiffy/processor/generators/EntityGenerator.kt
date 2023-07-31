@@ -126,8 +126,8 @@ class EntityGenerator(private val context: KspContext) {
                     .build()
             )
 
-    private fun String.toKotlinCode(dataType: DataType, typeName: TypeName): String {
-        return when (dataType) {
+    private fun String.toKotlinCode(dataType: DataType, typeName: TypeName): String =
+        when (dataType) {
             /* Special types */
             DataType.UUID_TYPE -> "UUID.fromString(\"$this\")"
             DataType.ENUM -> "$typeName.$this"
@@ -136,14 +136,13 @@ class EntityGenerator(private val context: KspContext) {
             DataType.CHAR -> "'$this'"
             DataType.VARCHAR, DataType.TEXT -> "\"$this\""
             DataType.BINARY -> "\"$this\".toByteArray()"
-            DataType.BOOLEAN -> this.toBoolean()
+            DataType.BOOLEAN -> this.toBoolean().toString()
             DataType.LONG -> "${this}L"
             DataType.FLOAT -> "${this}F"
             DataType.DATE -> "LocalDate.parse(\"$this\")"
             DataType.DATETIME -> "LocalDateTime.parse(\"$this\")"
             DataType.TIMESTAMP -> "Instant.parse(\"$this\")"
             else -> this
-        }.toString()
-    }
+        }
 
 }

@@ -60,15 +60,14 @@ object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
             }
         }
 
-    override fun createSqlDefault(rawDefault: String, property: PropertyData, dataType: DataType): String? {
-        return when (dataType) {
+    override fun createSqlDefault(rawDefault: String, property: PropertyData, dataType: DataType): String? =
+        when (dataType) {
             BINARY -> "'$rawDefault'"
             DATE -> "STR_TO_DATE('$rawDefault','%Y-%m-%d')"
             DATETIME -> "STR_TO_DATE('$rawDefault','%Y-%m-%dT%H:%i:%s')"
             TIMESTAMP -> "STR_TO_DATE('$rawDefault','%Y-%m-%dT%H:%i:%s.%fZ')"
             else -> null
         }
-    }
 
     override fun removeIndex(tableName: String, name: String): String =
         "DROP INDEX ${name.toQuoted()} ON ${tableName.toQuoted()}"

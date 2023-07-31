@@ -65,14 +65,13 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
             else -> createRegularDataType(property)
         }
 
-    override fun createSqlDefault(rawDefault: String, property: PropertyData, dataType: DataType): String? {
-        return when (dataType) {
+    override fun createSqlDefault(rawDefault: String, property: PropertyData, dataType: DataType): String? =
+        when (dataType) {
             BINARY -> "BYTEA('$rawDefault')"
             DATE -> "TO_DATE('$rawDefault','YYYY-MM-DD')"
             DATETIME-> "TO_TIMESTAMP('$rawDefault', 'YYYY-MM-DDTHH24:MI:SS')"
             TIMESTAMP -> "TO_TIMESTAMP('$rawDefault', 'YYYY-MM-DDTHH24:MI:SS.MSZ')"
             else -> null
         }
-    }
 
 }

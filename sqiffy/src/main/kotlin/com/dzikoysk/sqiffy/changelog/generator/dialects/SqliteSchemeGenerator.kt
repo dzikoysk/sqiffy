@@ -83,12 +83,11 @@ object SqliteSchemeGenerator : GenericSqlSchemeGenerator() {
             else it
         }
 
-    override fun createSqlDefault(rawDefault: String, property: PropertyData, dataType: DataType): String? {
-        return when (dataType) {
+    override fun createSqlDefault(rawDefault: String, property: PropertyData, dataType: DataType): String? =
+        when (dataType) {
             BINARY -> "'$rawDefault'"
             DATE, DATETIME, TIMESTAMP -> "'$rawDefault'"
             else -> null
         }
-    }
 
 }
