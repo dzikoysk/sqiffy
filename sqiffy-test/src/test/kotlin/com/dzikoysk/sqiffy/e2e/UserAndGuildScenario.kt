@@ -163,8 +163,7 @@ object GuildDefinition
             version = "1.0.0",
             name = "test_default_table",
             properties = [
-                Property(name = "id", type = SERIAL),
-                Property(name = "uuid", type = UUID_TYPE),
+                Property(name = "uuid", type = UUID_TYPE, default = "00000000-0000-0000-0000-000000000000"),
                 Property(name = "enum", type = ENUM, enumDefinition = RoleDefinition::class, default = "USER"),
                 Property(name = "char", type = CHAR, details = "1", default = "a"),
                 Property(name = "varchar", type = VARCHAR, details = "26", default = "abcdefghijklmnopqrstuvwxyz"),
@@ -176,14 +175,8 @@ object GuildDefinition
                 Property(name = "float", type = FLOAT, default = "3.4028235E38"),
                 Property(name = "double", type = DOUBLE, default = "1.7976931348623157E308"),
                 Property(name = "date", type = DATE, default = "2020-01-01"),
-                Property(name = "datetime", type = DATETIME, default = "2020-01-01 00:00:00.0"),
-                Property(name = "timestamp", type = TIMESTAMP, default = "2023-01-01 00:00:00.0"),
-            ],
-            constraints = [
-                Constraint(type = PRIMARY_KEY, name = "pk_default_id", on = ["id"]),
-            ],
-            indices = [
-                Index(type = INDEX, name = "idx_default_id", columns = ["id"])
+                Property(name = "datetime", type = DATETIME, default = "2020-01-01T16:20:00"),
+                Property(name = "timestamp", type = TIMESTAMP, default = "2005-04-02T21:37:00.2137Z"),
             ]
         )
     ]

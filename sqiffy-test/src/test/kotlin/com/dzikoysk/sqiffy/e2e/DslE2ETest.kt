@@ -4,6 +4,7 @@ package com.dzikoysk.sqiffy.e2e
 
 import com.dzikoysk.sqiffy.api.Role
 import com.dzikoysk.sqiffy.api.Role.MODERATOR
+import com.dzikoysk.sqiffy.domain.TestDefault
 import com.dzikoysk.sqiffy.domain.UnidentifiedUser
 import com.dzikoysk.sqiffy.domain.User
 import com.dzikoysk.sqiffy.dsl.and
@@ -191,6 +192,7 @@ internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
     @Test
     fun `should create table with all default values`() {
         database.generateChangeLog(TestDefaultDefinition::class)
+        TestDefault()
     }
 
 }

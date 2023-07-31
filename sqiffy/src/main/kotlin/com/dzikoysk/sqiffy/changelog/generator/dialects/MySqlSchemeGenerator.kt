@@ -64,8 +64,8 @@ object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
         return when (dataType) {
             BINARY -> "'$rawDefault'"
             DATE -> "STR_TO_DATE('$rawDefault','%Y-%m-%d')"
-            DATETIME -> "STR_TO_DATE('$rawDefault','%Y-%m-%d %H:%i:%s.%f')"
-            TIMESTAMP -> "STR_TO_DATE('$rawDefault','%Y-%m-%d %H:%i:%s.%f')"
+            DATETIME -> "STR_TO_DATE('$rawDefault','%Y-%m-%dT%H:%i:%s')"
+            TIMESTAMP -> "STR_TO_DATE('$rawDefault','%Y-%m-%dT%H:%i:%s.%fZ')"
             else -> null
         }
     }

@@ -69,7 +69,8 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
         return when (dataType) {
             BINARY -> "BYTEA('$rawDefault')"
             DATE -> "TO_DATE('$rawDefault','YYYY-MM-DD')"
-            DATETIME, TIMESTAMP -> "TO_TIMESTAMP('$rawDefault', 'YYYY-MM-DD HH24:MI:SS.MS')"
+            DATETIME-> "TO_TIMESTAMP('$rawDefault', 'YYYY-MM-DDTHH24:MI:SS')"
+            TIMESTAMP -> "TO_TIMESTAMP('$rawDefault', 'YYYY-MM-DDTHH24:MI:SS.MSZ')"
             else -> null
         }
     }
