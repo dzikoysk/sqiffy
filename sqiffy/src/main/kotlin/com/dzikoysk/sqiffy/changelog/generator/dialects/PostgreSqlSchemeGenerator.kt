@@ -60,8 +60,8 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
                 ?: throw IllegalStateException("Missing enum data for property '${property.name}'")
             BINARY -> "BYTEA"
             DOUBLE -> "DOUBLE PRECISION"
-            TIMESTAMP -> "TIMESTAMP WITH TIME ZONE"
             DATETIME -> "TIMESTAMP WITHOUT TIME ZONE"
+            TIMESTAMP -> "TIMESTAMP WITH TIME ZONE"
             else -> createRegularDataType(property)
         }
 
