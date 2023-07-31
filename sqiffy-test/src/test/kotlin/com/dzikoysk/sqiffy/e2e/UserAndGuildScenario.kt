@@ -174,9 +174,9 @@ object GuildDefinition
                 Property(name = "long", type = LONG, default = "9223372036854775807"),
                 Property(name = "float", type = FLOAT, default = "3.4028235E38"),
                 Property(name = "double", type = DOUBLE, default = "1.7976931348623157E308"),
-                Property(name = "date", type = DATE, default = "2020-01-01"),
-                Property(name = "datetime", type = DATETIME, default = "2020-01-01T16:20:00"),
-                Property(name = "timestamp", type = TIMESTAMP, default = "2005-04-02T21:37:00.2137Z"),
+                Property(name = "date", type = DATE, default = "1975-12-05"),
+                Property(name = "datetime", type = DATETIME, default = "2016-12-03T16:01:51"),
+                Property(name = "timestamp", type = TIMESTAMP, default = "2005-04-02T21:37:21.37Z"),
             ]
         )
     ]
