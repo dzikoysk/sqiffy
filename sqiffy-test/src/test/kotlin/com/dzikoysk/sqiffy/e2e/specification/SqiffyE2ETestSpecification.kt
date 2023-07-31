@@ -1,10 +1,9 @@
 package com.dzikoysk.sqiffy.e2e.specification
 
-import com.dzikoysk.sqiffy.e2e.GuildDefinition
 import com.dzikoysk.sqiffy.Slf4JSqiffyLogger
 import com.dzikoysk.sqiffy.Sqiffy
 import com.dzikoysk.sqiffy.SqiffyDatabase
-import com.dzikoysk.sqiffy.e2e.TestDefaultDefinition
+import com.dzikoysk.sqiffy.e2e.GuildDefinition
 import com.dzikoysk.sqiffy.e2e.UserDefinition
 import com.dzikoysk.sqiffy.shared.createHikariDataSource
 import com.zaxxer.hikari.HikariDataSource
@@ -27,7 +26,7 @@ abstract class SqiffyE2ETestSpecification(private val runMigrations: Boolean = t
         )
 
         if (runMigrations) {
-            val changeLog = database.generateChangeLog(UserDefinition::class, GuildDefinition::class, TestDefaultDefinition::class)
+            val changeLog = database.generateChangeLog(UserDefinition::class, GuildDefinition::class)
             database.runMigrations(changeLog = changeLog)
         }
     }

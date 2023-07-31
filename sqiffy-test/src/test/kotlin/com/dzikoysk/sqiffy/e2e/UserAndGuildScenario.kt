@@ -48,20 +48,18 @@ object UserAndGuildScenarioVersions {
     const val V_1_0_2 = "1.0.2"
 }
 
-@EnumDefinition(
-    name = "role", mappedTo = "com.dzikoysk.sqiffy.api.Role", [
-        EnumVersion(
-            version = V_1_0_0,
-            operation = ADD_VALUES,
-            values = ["ADMIN", "USER"]
-        ),
-        EnumVersion(
-            version = V_1_0_1,
-            operation = ADD_VALUES,
-            values = ["MODERATOR", "SPECTATOR"]
-        )
-    ]
-)
+@EnumDefinition(name = "role", mappedTo = "com.dzikoysk.sqiffy.api.Role", [
+    EnumVersion(
+        version = V_1_0_0,
+        operation = ADD_VALUES,
+        values = ["ADMIN", "USER"]
+    ),
+    EnumVersion(
+        version = V_1_0_1,
+        operation = ADD_VALUES,
+        values = ["MODERATOR", "SPECTATOR"]
+    )
+])
 object RoleDefinition
 
 @Definition(
@@ -80,7 +78,7 @@ object RoleDefinition
                 Property(name = "role", type = ENUM, enumDefinition = RoleDefinition::class, default = "USER"),
             ],
             constraints = [
-                Constraint(type = PRIMARY_KEY, name = "pk_id", on = ["id"]),
+                Constraint(type = PRIMARY_KEY, name = "pk_id", on =["id"]),
             ],
             indices = [
                 Index(type = INDEX, name = "idx_id", columns = ["id"]),
@@ -113,60 +111,46 @@ object UserDefinition
     variants = [
         Variant(
             name = "UserDto",
-            properties = [UserTableNames.NAME],
-            implements = [Serializable::class]
+            properties = [ UserTableNames.NAME ],
+            implements = [ Serializable::class ]
         ),
         Variant(
             name = "AllUserDto",
             allProperties = true,
-            implements = [Serializable::class]
+            implements = [ Serializable::class ]
         ),
     ]
 )
 object UserDtoDefinition
 
-@Definition(
-    [
-        DefinitionVersion(
-            version = V_1_0_0,
-            name = "guilds_table",
-            properties = [
-                Property(name = "id", type = SERIAL),
-                Property(name = "name", type = VARCHAR, details = "24"),
-                Property(name = "owner", type = INT),
-                Property(name = "createdAt", type = DATETIME)
-            ],
-            constraints = [
-                Constraint(type = PRIMARY_KEY, name = "pk_guild_id", on = ["id"]),
-                Constraint(
-                    type = FOREIGN_KEY,
-                    name = "fk_guild_owner",
-                    on = ["owner"],
-                    referenced = UserDefinition::class,
-                    references = "id"
-                )
-            ]
-        ),
-        DefinitionVersion(
-            version = V_1_0_1,
-            constraints = [
-                Constraint(REMOVE_CONSTRAINT, type = FOREIGN_KEY, name = "fk_guild_owner")
-            ]
-        ),
-        DefinitionVersion(
-            version = V_1_0_2,
-            constraints = [
-                Constraint(
-                    type = FOREIGN_KEY,
-                    name = "fk_guild_owner",
-                    on = ["owner"],
-                    referenced = UserDefinition::class,
-                    references = "id"
-                )
-            ]
-        )
-    ]
-)
+@Definition([
+    DefinitionVersion(
+        version = V_1_0_0,
+        name = "guilds_table",
+        properties = [
+            Property(name = "id", type = SERIAL),
+            Property(name = "name", type = VARCHAR, details = "24"),
+            Property(name = "owner", type = INT),
+            Property(name = "createdAt", type = DATETIME)
+        ],
+        constraints = [
+            Constraint(type = PRIMARY_KEY, name = "pk_guild_id", on = ["id"]),
+            Constraint(type = FOREIGN_KEY, name = "fk_guild_owner", on = ["owner"], referenced = UserDefinition::class, references = "id")
+        ]
+    ),
+    DefinitionVersion(
+        version = V_1_0_1,
+        constraints = [
+            Constraint(REMOVE_CONSTRAINT, type = FOREIGN_KEY, name = "fk_guild_owner")
+        ]
+    ),
+    DefinitionVersion(
+        version = V_1_0_2,
+        constraints = [
+            Constraint(type = FOREIGN_KEY, name = "fk_guild_owner", on = ["owner"], referenced = UserDefinition::class, references = "id")
+        ]
+    )
+])
 object GuildDefinition
 
 //TODO: Move to standalone test

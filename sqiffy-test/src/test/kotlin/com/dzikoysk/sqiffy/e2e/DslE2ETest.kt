@@ -188,6 +188,11 @@ internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
         assertThat(deletedCount).isEqualTo(1)
     }
 
+    @Test
+    fun `should create table with all default values`() {
+        database.generateChangeLog(TestDefaultDefinition::class)
+    }
+
 }
 
 internal class H2MySQLModeDslE2ETest : DslE2ETest() {
