@@ -11,11 +11,11 @@ import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
 import com.dzikoysk.sqiffy.infra.UserTableNames
 import com.dzikoysk.sqiffy.shared.multiline
 import com.zaxxer.hikari.HikariDataSource
+import java.util.UUID
 import org.assertj.core.api.Assertions.assertThat
 import org.jdbi.v3.core.kotlin.mapTo
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
-import java.util.UUID
 
 internal class EmbeddedPostgresJdbiE2ETest : JdbiE2ETest() {
     private val postgres = postgresDataSource()
@@ -40,7 +40,7 @@ internal abstract class JdbiE2ETest : SqiffyE2ETestSpecification() {
                 .createUpdate(multiline("""
                     INSERT INTO "${UserTableNames.TABLE}" 
                     ("${UserTableNames.UUID}", "${UserTableNames.NAME}", "${UserTableNames.DISPLAYNAME}", "${UserTableNames.ROLE}", "${UserTableNames.WALLET}")
-                    VALUES (:0, :1, :2, :3${when (database.dialect) {
+                    VALUES (:0, :1, :2, :3${when (database.getDialect()) {
                         POSTGRESQL -> "::${Role.TYPE_NAME}" // jdbc requires explicit casts for enums in postgres
                         else -> ""
                     }}, :4)

@@ -9,6 +9,7 @@ import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.DefinitionEntry
 import com.dzikoysk.sqiffy.definition.DefinitionVersion
 import com.dzikoysk.sqiffy.definition.PropertyData
+import com.dzikoysk.sqiffy.definition.RuntimeTypeFactory
 import com.dzikoysk.sqiffy.definition.TypeFactory
 import java.util.ArrayDeque
 import kotlin.reflect.KClass
@@ -16,7 +17,7 @@ import kotlin.reflect.full.findAnnotation
 
 class ChangeLogGenerator(
     private val sqlSchemeGenerator: SqlSchemeGenerator,
-    private val typeFactory: TypeFactory
+    private val typeFactory: TypeFactory = RuntimeTypeFactory()
 ) {
 
     private val changeLogPropertiesBuilder = ChangelogPropertiesBuilder()

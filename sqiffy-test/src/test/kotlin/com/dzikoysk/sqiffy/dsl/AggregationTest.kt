@@ -1,5 +1,6 @@
 package com.dzikoysk.sqiffy.dsl
 
+import com.dzikoysk.sqiffy.MySqlDatabase
 import com.dzikoysk.sqiffy.Sqiffy
 import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.Definition
@@ -27,7 +28,7 @@ internal class AggregationTest {
 
     @Test
     fun `should count records`() {
-        val database = Sqiffy.createDatabase(dataSource = createH2DataSource(mode = H2Mode.MYSQL))
+        val database = Sqiffy.createDatabase<MySqlDatabase>(dataSource = createH2DataSource(mode = H2Mode.MYSQL))
         database.runMigrations(changeLog = database.generateChangeLog(TestCountDefinition::class))
         database.insert(TestCountTable).values().map {  }
         database.insert(TestCountTable).values().map {  }
