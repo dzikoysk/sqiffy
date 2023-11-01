@@ -1,4 +1,3 @@
-import org.gradle.api.JavaVersion.VERSION_1_8
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -25,8 +24,8 @@ allprojects {
     version = "1.0.0-alpha.29"
 
     java {
-        sourceCompatibility = VERSION_1_8
-        targetCompatibility = VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
 
         withJavadocJar()
         withSourcesJar()
@@ -34,8 +33,8 @@ allprojects {
 
     tasks.withType<KotlinCompile>().configureEach {
         kotlinOptions {
-            jvmTarget = VERSION_1_8.toString()
-            languageVersion = VERSION_1_8.toString()
+            jvmTarget = JavaVersion.VERSION_11.toString()
+            languageVersion = "1.9"
             freeCompilerArgs = listOf(
                 "-Xjvm-default=all", // For generating default methods in interfaces
                 "-Xcontext-receivers"
