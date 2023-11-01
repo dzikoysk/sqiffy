@@ -1,7 +1,7 @@
 import com.google.devtools.ksp.gradle.KspTask
 
 plugins {
-    id("com.google.devtools.ksp") version "1.9.0-1.0.11"
+    id("com.google.devtools.ksp") version "1.9.20-1.0.13"
 }
 
 dependencies {
@@ -27,7 +27,7 @@ dependencies {
 }
 
 sourceSets.configureEach {
-    kotlin.srcDir("$buildDir/generated/ksp/$name/kotlin/")
+    kotlin.srcDir("${layout.buildDirectory.get()}/generated/ksp/$name/kotlin/")
 }
 
 tasks.withType<KspTask> {

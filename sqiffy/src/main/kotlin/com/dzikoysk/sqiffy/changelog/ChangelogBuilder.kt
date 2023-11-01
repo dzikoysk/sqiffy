@@ -76,7 +76,10 @@ class ChangeLogGenerator(
             TableAnalysisState(
                 changesToApply = ArrayDeque(it.definition.versions.toList()),
                 source = it.source,
-                tableName = it.definition.versions.firstOrNull()?.name ?: throw IllegalStateException("Class ${it.source} has @Definition annotation without any scheme version"),
+                tableName = it.definition.versions
+                    .firstOrNull()
+                    ?.name
+                    ?: throw IllegalStateException("Class ${it.source} has @Definition annotation without any scheme version"),
             )
         }
 

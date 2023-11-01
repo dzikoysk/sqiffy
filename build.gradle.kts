@@ -1,7 +1,8 @@
+import org.gradle.api.JavaVersion.VERSION_1_8
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.9.0"
+    kotlin("jvm") version "1.9.20"
     `java-library`
 
     application
@@ -21,11 +22,11 @@ allprojects {
     apply(plugin = "signing")
 
     group = "com.dzikoysk.sqiffy"
-    version = "1.0.0-alpha.28"
+    version = "1.0.0-alpha.29"
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = VERSION_1_8
+        targetCompatibility = VERSION_1_8
 
         withJavadocJar()
         withSourcesJar()
@@ -33,8 +34,8 @@ allprojects {
 
     tasks.withType<KotlinCompile>().configureEach {
         kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_1_8.toString()
-            languageVersion = "1.8"
+            jvmTarget = VERSION_1_8.toString()
+            languageVersion = VERSION_1_8.toString()
             freeCompilerArgs = listOf(
                 "-Xjvm-default=all", // For generating default methods in interfaces
                 "-Xcontext-receivers"
