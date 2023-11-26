@@ -91,13 +91,18 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
 
     protected open fun createDataTypeWithAttributes(property: PropertyData, availableEnums: Enums): String =
         createDataType(property, availableEnums)
-            .let { dataType -> "$dataType ${property.default?.let { default -> " DEFAULT ${default.toSqlDefault(property)} " } ?: ""}" }
+            .let { dataType -> "$dataType ${property.default?.let { default -> "DEFAULT ${default.toSqlDefault(property)} " } ?: ""}" }
             .let { if (!property.nullable) "$it NOT NULL" else it }
 
     private fun String.toSqlDefault(property: PropertyData): String =
-        createSqlDefault(this, property)
-            ?: createRegularDefault(this, property)
-            ?: throw UnsupportedOperationException("Cannot create default value based on $this")
+        when (property.rawDefault) {
+            true -> property.default!!
+            else ->
+                createSqlDefault(this, property)
+                    ?: createRegularDefault(this, property)
+                    ?: throw UnsupportedOperationException("Cannot create default value based on $this")
+        }
+
 
     abstract fun createSqlDefault(rawDefault: String, property: PropertyData, dataType: DataType = property.type!!): String?
 

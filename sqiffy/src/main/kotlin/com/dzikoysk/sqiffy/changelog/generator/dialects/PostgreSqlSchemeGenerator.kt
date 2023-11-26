@@ -30,13 +30,7 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
         )
 
     override fun createEnum(name: String, values: List<String>): String =
-        multiline(
-            """
-            CREATE TYPE ${name.toQuoted()} AS ENUM (
-               ${values.joinToString(separator = ",\n") { "'$it'" }}
-            );
-        """
-        )
+        """CREATE TYPE ${name.toQuoted()} AS ENUM (${values.joinToString(separator = ", ") { "'$it'" }});"""
 
     override fun addEnumValues(enum: EnumState, values: List<String>, inUse: List<Pair<String, PropertyData>>): String =
         listOf(values.first()).joinToString(separator = "\n") {
@@ -49,12 +43,12 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
     override fun removeIndex(tableName: String, name: String): String =
         """DROP INDEX ${name.toQuoted()}"""
 
-    override fun createDataType(property: PropertyData, enums: Enums): String =
+    override fun createDataType(property: PropertyData, availableEnums: Enums): String =
         when (property.type) {
             SERIAL -> "SERIAL"
             UUID_TYPE -> "UUID"
             ENUM -> property.enumDefinition
-                ?.let { enums.getEnum(it.type) }
+                ?.let { availableEnums.getEnum(it.type) }
                 ?.name
                 ?.toQuoted()
                 ?: throw IllegalStateException("Missing enum data for property '${property.name}'")
@@ -73,5 +67,11 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
             TIMESTAMP -> "TO_TIMESTAMP('$rawDefault', 'YYYY-MM-DDTHH24:MI:SS.MSZ')"
             else -> null
         }
+
+    override fun createFunction(name: String, parameters: Array<String>, returnType: String, body: String): String =
+        """
+            CREATE OR REPLACE FUNCTION $name(${parameters.joinToString(separator = ", ")}) RETURNS $returnType AS
+            %s
+        """.trimIndent().format(body)
 
 }

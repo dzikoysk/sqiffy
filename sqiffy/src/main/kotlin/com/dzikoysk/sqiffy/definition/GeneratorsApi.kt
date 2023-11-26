@@ -3,7 +3,7 @@ package com.dzikoysk.sqiffy.definition
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotations
 
-class DefinitionEntry(
+class ParsedDefinition(
     val source: String,
     val packageName: String,
     val name: String,

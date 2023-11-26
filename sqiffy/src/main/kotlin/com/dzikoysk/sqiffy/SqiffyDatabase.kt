@@ -1,6 +1,6 @@
 package com.dzikoysk.sqiffy
 
-import com.dzikoysk.sqiffy.changelog.ChangeLog
+import com.dzikoysk.sqiffy.changelog.Changelog
 import com.dzikoysk.sqiffy.changelog.ChangelogBuilder
 import com.dzikoysk.sqiffy.changelog.generator.SqlSchemeGenerator
 import com.dzikoysk.sqiffy.changelog.generator.dialects.getSchemeGenerator
@@ -40,8 +40,8 @@ abstract class SqiffyDatabase(state: SqiffyDatabaseConfig) : Closeable {
     internal val localJdbi: Jdbi = state.localJdbi
     internal val changelogBuilder: ChangelogBuilder = state.changelogBuilder
 
-    fun generateChangeLog(vararg classes: KClass<*>): ChangeLog =
-        changelogBuilder.generateChangeLog(*classes)
+    fun generateChangeLog(vararg classes: KClass<*>): Changelog =
+        changelogBuilder.generateChangeLogAtRuntime(tables = classes.toList())
 
     fun <RESULT> runMigrations(migrator: Migrator<RESULT>): RESULT =
         migrator.runMigrations(this)

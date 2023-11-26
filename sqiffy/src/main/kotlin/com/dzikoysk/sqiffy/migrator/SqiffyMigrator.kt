@@ -1,7 +1,7 @@
 package com.dzikoysk.sqiffy.migrator
 
 import com.dzikoysk.sqiffy.SqiffyDatabase
-import com.dzikoysk.sqiffy.changelog.ChangeLog
+import com.dzikoysk.sqiffy.changelog.Changelog
 import com.dzikoysk.sqiffy.changelog.Enums
 import com.dzikoysk.sqiffy.changelog.Version
 import com.dzikoysk.sqiffy.dsl.Column
@@ -33,7 +33,7 @@ class VersionCallbacks {
 }
 
 class SqiffyMigrator(
-    private val changeLog: ChangeLog,
+    private val changeLog: Changelog,
     private val metadataTable: SqiffyMetadataTable = SqiffyMetadataTable(),
     private val versionCallbacks: VersionCallbacks = VersionCallbacks(),
 ) : Migrator<List<Version>> {

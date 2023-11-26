@@ -1,6 +1,6 @@
 package com.dzikoysk.sqiffy.processor.generators
 
-import com.dzikoysk.sqiffy.changelog.ChangeLog
+import com.dzikoysk.sqiffy.changelog.Changelog
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.google.devtools.ksp.processing.Dependencies
 
@@ -8,7 +8,7 @@ class LiquibaseGenerator(private val context: KspContext) {
 
     fun generateLiquibaseChangeLog(
         projectName: String,
-        changeLog: ChangeLog
+        changeLog: Changelog
     ) {
         createFile(
             path = "liquibase/changelog-master.xml",
@@ -36,9 +36,9 @@ class LiquibaseGenerator(private val context: KspContext) {
                     content = """
                         --liquibase formatted sql
                         --validCheckSum: 1:ANY
-                        --changeset $projectName:$currentId
-                        ${change.query}
-                    """.trimIndent()
+                        --changeset $projectName:$currentId splitStatements:false endDelimiter:;
+                        %s
+                    """.trimIndent().format(change.query)
                 )
             }
         }

@@ -1,6 +1,6 @@
 package com.dzikoysk.sqiffy.processor.generators
 
-import com.dzikoysk.sqiffy.definition.DefinitionEntry
+import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.definition.VariantData
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
@@ -15,7 +15,7 @@ import com.squareup.kotlinpoet.ksp.writeTo
 
 internal class DtoGenerator(private val context: KspContext) {
 
-    internal fun generateDtoClass(definition: DefinitionEntry, variantData: VariantData, selectedProperties: List<PropertyData>): Pair<FileSpec, List<PropertyData>> {
+    internal fun generateDtoClass(definition: ParsedDefinition, variantData: VariantData, selectedProperties: List<PropertyData>): Pair<FileSpec, List<PropertyData>> {
         val dtoClass = FileSpec.builder(definition.getApiPackage(), variantData.name)
             .addType(
                 TypeSpec.classBuilder(variantData.name)

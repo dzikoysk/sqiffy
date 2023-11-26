@@ -90,4 +90,8 @@ object SqliteSchemeGenerator : GenericSqlSchemeGenerator() {
             else -> null
         }
 
+    override fun createFunction(name: String, parameters: Array<String>, returnType: String, body: String): String {
+        throw UnsupportedOperationException("Sqlite does not support functions")
+    }
+
 }

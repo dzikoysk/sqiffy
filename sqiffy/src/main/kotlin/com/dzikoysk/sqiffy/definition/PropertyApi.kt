@@ -21,16 +21,18 @@ annotation class Property(
     val enumDefinition: KClass<*> = NULL_CLASS::class,
     val rename: String = NULL_STRING,
     val default: String = NULL_STRING,
+    val rawDefault: Boolean = false,
     val nullable: Boolean = false,
 )
 
 data class PropertyData(
     val name: String,
     val type: DataType?,
-    val details: String? = null,
-    val enumDefinition: EnumReference? = null,
-    val default: String? = null,
-    val nullable: Boolean = false,
+    val details: String?,
+    val enumDefinition: EnumReference?,
+    val default: String?,
+    val rawDefault: Boolean,
+    val nullable: Boolean,
 )
 
 fun Property.toPropertyData(typeFactory: TypeFactory): PropertyData =
@@ -52,6 +54,6 @@ fun Property.toPropertyData(typeFactory: TypeFactory): PropertyData =
                 else -> null
             },
         default = default.takeIf { it != NULL_STRING },
+        rawDefault = rawDefault,
         nullable = nullable,
     )
-

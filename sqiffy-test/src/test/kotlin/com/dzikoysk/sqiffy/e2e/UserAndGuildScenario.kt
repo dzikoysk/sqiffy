@@ -7,19 +7,11 @@ import com.dzikoysk.sqiffy.definition.Constraint
 import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.REMOVE_CONSTRAINT
 import com.dzikoysk.sqiffy.definition.ConstraintType.FOREIGN_KEY
 import com.dzikoysk.sqiffy.definition.ConstraintType.PRIMARY_KEY
-import com.dzikoysk.sqiffy.definition.DataType.BINARY
-import com.dzikoysk.sqiffy.definition.DataType.BOOLEAN
-import com.dzikoysk.sqiffy.definition.DataType.CHAR
-import com.dzikoysk.sqiffy.definition.DataType.DATE
 import com.dzikoysk.sqiffy.definition.DataType.DATETIME
-import com.dzikoysk.sqiffy.definition.DataType.DOUBLE
 import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.FLOAT
 import com.dzikoysk.sqiffy.definition.DataType.INT
-import com.dzikoysk.sqiffy.definition.DataType.LONG
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
-import com.dzikoysk.sqiffy.definition.DataType.TEXT
-import com.dzikoysk.sqiffy.definition.DataType.TIMESTAMP
 import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
 import com.dzikoysk.sqiffy.definition.DataType.VARCHAR
 import com.dzikoysk.sqiffy.definition.Definition
@@ -28,6 +20,8 @@ import com.dzikoysk.sqiffy.definition.DtoDefinition
 import com.dzikoysk.sqiffy.definition.EnumDefinition
 import com.dzikoysk.sqiffy.definition.EnumOperation.ADD_VALUES
 import com.dzikoysk.sqiffy.definition.EnumVersion
+import com.dzikoysk.sqiffy.definition.FunctionDefinition
+import com.dzikoysk.sqiffy.definition.FunctionVersion
 import com.dzikoysk.sqiffy.definition.Index
 import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.REMOVE_INDEX
 import com.dzikoysk.sqiffy.definition.IndexType.INDEX
@@ -54,20 +48,6 @@ object UserAndGuildScenarioVersions {
     const val V_1_0_2 = "1.0.2"
 }
 
-@EnumDefinition(name = "role", mappedTo = "com.dzikoysk.sqiffy.api.Role", [
-    EnumVersion(
-        version = V_1_0_0,
-        operation = ADD_VALUES,
-        values = ["ADMIN", "USER"]
-    ),
-    EnumVersion(
-        version = V_1_0_1,
-        operation = ADD_VALUES,
-        values = ["MODERATOR", "SPECTATOR"]
-    )
-])
-object RoleDefinition
-
 @Definition(
     domainPackage = "com.dzikoysk.sqiffy.domain",
     infrastructurePackage = "com.dzikoysk.sqiffy.infra",
@@ -79,7 +59,7 @@ object RoleDefinition
             properties = [
                 Property(name = "id", type = SERIAL),
                 Property(name = "uuid", type = UUID_TYPE),
-                Property(name = "name", type = VARCHAR, details = "12"),
+                Property(name = "name", type = VARCHAR, details = "12", default = "${RandomStringFunction}(12)", rawDefault = true),
                 Property(name = "wallet", type = FLOAT, default = "0.0"),
                 Property(name = "role", type = ENUM, enumDefinition = RoleDefinition::class, default = "USER"),
             ],
@@ -129,6 +109,20 @@ object UserDefinition
 )
 object UserDtoDefinition
 
+@EnumDefinition(name = "role", mappedTo = "com.dzikoysk.sqiffy.api.Role", [
+    EnumVersion(
+        version = V_1_0_0,
+        operation = ADD_VALUES,
+        values = ["ADMIN", "USER"]
+    ),
+    EnumVersion(
+        version = V_1_0_1,
+        operation = ADD_VALUES,
+        values = ["MODERATOR", "SPECTATOR"]
+    )
+])
+object RoleDefinition
+
 @Definition([
     DefinitionVersion(
         version = V_1_0_0,
@@ -159,50 +153,50 @@ object UserDtoDefinition
 ])
 object GuildDefinition
 
-//TODO: Move to standalone test
-object DefaultConstants {
-    const val UUID_DEFAULT = "00000000-0000-0000-0000-000000000000"
-    const val ENUM_DEFAULT = "USER"
-    const val CHAR_DEFAULT = 'a'
-    const val VARCHAR_DEFAULT = "abcdefghijklmnopqrstuvwxyz"
-    const val BINARY_DEFAULT = "abcdefghijklmnopqrstuvwxyz"
-    const val TEXT_DEFAULT = "Test text"
-    const val BOOLEAN_DEFAULT = true
-    const val INT_DEFAULT = 2147483647
-    const val LONG_DEFAULT = 9223372036854775807L
-    const val FLOAT_DEFAULT = 3.4028235E38F
-    const val DOUBLE_DEFAULT = 1.7976931348623157E308
-    const val DATE_DEFAULT = "1975-12-05"
-    const val DATETIME_DEFAULT = "2016-12-03T16:01:51"
-    const val TIMESTAMP_DEFAULT = "2005-04-02T21:37:21.37Z"
-}
-
-@Definition(
-    domainPackage = "com.dzikoysk.sqiffy.domain",
-    infrastructurePackage = "com.dzikoysk.sqiffy.infra",
-    apiPackage = "com.dzikoysk.sqiffy.api",
+@FunctionDefinition(
+    name = "gen_random_bytes",
     versions = [
-        DefinitionVersion(
-            version = "1.0.0",
-            name = "test_default_table",
-            properties = [
-                Property(name = "uuid", type = UUID_TYPE, default = DefaultConstants.UUID_DEFAULT),
-                Property(name = "enum", type = ENUM, enumDefinition = RoleDefinition::class, default = DefaultConstants.ENUM_DEFAULT),
-                Property(name = "char", type = CHAR, details = "1", default = DefaultConstants.CHAR_DEFAULT.toString()),
-                Property(name = "varchar", type = VARCHAR, details = "26", default = DefaultConstants.VARCHAR_DEFAULT),
-                Property(name = "binary", type = BINARY, details = "26", default = DefaultConstants.BINARY_DEFAULT),
-                Property(name = "text", type = TEXT, default = DefaultConstants.TEXT_DEFAULT),
-                Property(name = "boolean", type = BOOLEAN, default = DefaultConstants.BOOLEAN_DEFAULT.toString()),
-                Property(name = "int", type = INT, default = DefaultConstants.INT_DEFAULT.toString()),
-                Property(name = "long", type = LONG, default = DefaultConstants.LONG_DEFAULT.toString()),
-                Property(name = "float", type = FLOAT, default = DefaultConstants.FLOAT_DEFAULT.toString()),
-                Property(name = "double", type = DOUBLE, default = DefaultConstants.DOUBLE_DEFAULT.toString()),
-                Property(name = "date", type = DATE, default = DefaultConstants.DATE_DEFAULT),
-                Property(name = "datetime", type = DATETIME, default = DefaultConstants.DATETIME_DEFAULT),
-                Property(name = "timestamp", type = TIMESTAMP, default = DefaultConstants.TIMESTAMP_DEFAULT),
-            ]
+        FunctionVersion(
+            version = V_1_0_0,
+            parameters = ["int"],
+            returnType = "bytea",
+            body = """
+                '${'$'}libdir/pgcrypto',
+                'pg_random_bytes' language c strict;
+            """
         )
     ]
 )
-object TestDefaultDefinition
+const val GenRandomBytesFunction = "gen_random_bytes"
+
+@FunctionDefinition(
+    name = "random_string",
+    versions = [
+        FunctionVersion(
+            version = V_1_0_0,
+            parameters = ["len int"],
+            returnType = "text",
+            body = """
+                ${'$'}${'$'}
+                declare
+                    chars  text[] = '{0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z}';
+                    result text   = '';
+                    i      int    = 0;
+                    rand   bytea;
+                begin
+                    -- generate secure random bytes and convert them to a string of chars.
+                    rand = gen_random_bytes(${'$'}1);
+                    for i in 0..len - 1
+                        loop
+                            -- rand indexing is zero-based, chars is 1-based.
+                            result = result || chars[1 + (get_byte(rand, i) % array_length(chars, 1))];
+                        end loop;
+                    return result;
+                end;
+                ${'$'}${'$'} language plpgsql;
+            """
+        )
+    ]
+)
+const val RandomStringFunction = "random_string"
 

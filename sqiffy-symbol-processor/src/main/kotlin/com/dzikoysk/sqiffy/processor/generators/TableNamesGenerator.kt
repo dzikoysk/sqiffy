@@ -1,6 +1,6 @@
 package com.dzikoysk.sqiffy.processor.generators
 
-import com.dzikoysk.sqiffy.definition.DefinitionEntry
+import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.google.devtools.ksp.processing.Dependencies
@@ -13,12 +13,12 @@ import com.squareup.kotlinpoet.ksp.writeTo
 
 class TableNamesGenerator(private val context: KspContext) {
 
-    internal fun generateTableNamesClass(definitionEntry: DefinitionEntry, tableName: String, properties: List<PropertyData>) {
-        val infrastructurePackage = definitionEntry.getInfrastructurePackage()
+    internal fun generateTableNamesClass(parsedDefinition: ParsedDefinition, tableName: String, properties: List<PropertyData>) {
+        val infrastructurePackage = parsedDefinition.getInfrastructurePackage()
 
-        val namesClass = FileSpec.builder(infrastructurePackage, definitionEntry.name +  "TableNames")
+        val namesClass = FileSpec.builder(infrastructurePackage, parsedDefinition.name +  "TableNames")
             .addType(
-                TypeSpec.objectBuilder(definitionEntry.name + "TableNames")
+                TypeSpec.objectBuilder(parsedDefinition.name + "TableNames")
                     .also { typeBuilder ->
                         typeBuilder.addProperty(
                             PropertySpec.builder("TABLE", String::class.asTypeName())

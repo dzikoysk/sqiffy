@@ -1,7 +1,7 @@
 package com.dzikoysk.sqiffy.processor.generators
 
 import com.dzikoysk.sqiffy.definition.DataType
-import com.dzikoysk.sqiffy.definition.DefinitionEntry
+import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.dzikoysk.sqiffy.processor.toClassName
@@ -18,12 +18,12 @@ import com.squareup.kotlinpoet.ksp.writeTo
 
 class EntityGenerator(private val context: KspContext) {
 
-    internal fun generateEntityClass(definitionEntry: DefinitionEntry, properties: List<PropertyData>, dtoMethods: List<Pair<FileSpec, List<PropertyData>>>) {
-        val domainPackage = definitionEntry.getDomainPackage()
+    internal fun generateEntityClass(parsedDefinition: ParsedDefinition, properties: List<PropertyData>, dtoMethods: List<Pair<FileSpec, List<PropertyData>>>) {
+        val domainPackage = parsedDefinition.getDomainPackage()
 
         val entityClass = generateEntityClass(
-            packageName = definitionEntry.getDomainPackage(),
-            name = definitionEntry.name,
+            packageName = parsedDefinition.getDomainPackage(),
+            name = parsedDefinition.name,
             properties = properties,
             dtoMethods = dtoMethods
         ).build()
@@ -44,7 +44,7 @@ class EntityGenerator(private val context: KspContext) {
 
             val unidentifiedEntityBuilder = generateEntityClass(
                 packageName = domainPackage,
-                name = "Unidentified" + definitionEntry.name,
+                name = "Unidentified" + parsedDefinition.name,
                 properties = requiredProperties,
                 dtoMethods = matchedDtoMethods,
                 extra = { typeSpec ->
@@ -87,11 +87,13 @@ class EntityGenerator(private val context: KspContext) {
                             .also { constructorBuilder ->
                                 properties.forEach {
                                     val dataType = it.type!!
-                                    val typeName = dataType.toTypeName(it)
+                                    val typeName = dataType.toTypeName(it).copy()
                                     var builder = ParameterSpec.builder(it.name, typeName)
-                                    it.default?.let { defaultValue ->
-                                        builder = builder.defaultValue(defaultValue.toKotlinCode(dataType, typeName))
+
+                                    if (it.default != null && !it.rawDefault) {
+                                        builder = builder.defaultValue(it.default!!.toKotlinCode(dataType, typeName))
                                     }
+
                                     constructorBuilder.addParameter(builder.build())
                                 }
                             }

@@ -4,16 +4,22 @@ import com.dzikoysk.sqiffy.changelog.builders.ChangelogConstraintsBuilder
 import com.dzikoysk.sqiffy.changelog.builders.ChangelogEnumBuilder
 import com.dzikoysk.sqiffy.changelog.builders.ChangelogIndicesBuilder
 import com.dzikoysk.sqiffy.changelog.builders.ChangelogPropertiesBuilder
+import com.dzikoysk.sqiffy.changelog.builders.VersionedFunctionBuilder
 import com.dzikoysk.sqiffy.changelog.generator.SqlSchemeGenerator
 import com.dzikoysk.sqiffy.definition.DataType
-import com.dzikoysk.sqiffy.definition.DefinitionEntry
 import com.dzikoysk.sqiffy.definition.DefinitionVersion
+import com.dzikoysk.sqiffy.definition.FunctionDefinition
+import com.dzikoysk.sqiffy.definition.FunctionDefinitionData
+import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.definition.RuntimeTypeFactory
 import com.dzikoysk.sqiffy.definition.TypeFactory
+import com.dzikoysk.sqiffy.definition.toFunctionData
 import java.util.ArrayDeque
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty
 import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.findAnnotations
 
 class ChangelogBuilder(
     private val sqlSchemeGenerator: SqlSchemeGenerator,
@@ -58,12 +64,16 @@ class ChangelogBuilder(
                 }
     }
 
-    fun generateChangeLog(vararg classes: KClass<*>): ChangeLog =
+    fun generateChangeLogAtRuntime(functions: Collection<KProperty<*>> = emptyList(), tables: Collection<KClass<*>>): Changelog =
         generateChangeLog(
-            classes
+            functions = functions
+                .toSet()
+                .flatMap { it.findAnnotations<FunctionDefinition>() }
+                .map { it.toFunctionData() },
+            tables = tables
                 .toSet()
                 .map {
-                    DefinitionEntry(
+                    ParsedDefinition(
                         source = it.qualifiedName!!,
                         packageName = it.java.`package`.name,
                         name = it::class.simpleName!!.substringBeforeLast("Definition"),
@@ -72,7 +82,7 @@ class ChangelogBuilder(
                 }
         )
 
-    fun generateChangeLog(tables: List<DefinitionEntry>): ChangeLog {
+    fun generateChangeLog(functions: List<FunctionDefinitionData>, tables: List<ParsedDefinition>): Changelog {
         val propertiesState = mutableMapOf<Version, MutableMap<String, List<PropertyData>>>()
 
         val tableStates = tables.associateWith {
@@ -155,11 +165,23 @@ class ChangelogBuilder(
             propertiesState = propertiesState
         )
 
-        return ChangeLog(
+        val (latestFunctionState, functionChangelog) = VersionedFunctionBuilder(sqlSchemeGenerator).generateFunctionChangelog(
+            definitions = functions
+        )
+
+        return Changelog(
             enums = latestEnumState,
+            functions = latestFunctionState,
             tables = tableStates.mapValues { it.value.tableName },
             enumChanges =
                 enumChangelog.map { (version, changes) ->
+                    SchemeChange(
+                        version = version,
+                        changes = changes
+                    )
+                },
+            functionChanges =
+                functionChangelog.map { (version, changes) ->
                     SchemeChange(
                         version = version,
                         changes = changes

@@ -46,6 +46,10 @@ interface SqlSchemeGenerator {
 
     fun removeIndex(tableName: String, name: String): String
 
+    /* Functions */
+
+    fun createFunction(name: String, parameters: Array<String>, returnType: String, body: String): String
+
 }
 
 

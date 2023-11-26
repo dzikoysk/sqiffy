@@ -4,18 +4,18 @@ import com.dzikoysk.sqiffy.changelog.EnumState
 import com.dzikoysk.sqiffy.changelog.Enums
 import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.DataType.BINARY
-import com.dzikoysk.sqiffy.definition.DataType.BOOLEAN
 import com.dzikoysk.sqiffy.definition.DataType.DATE
 import com.dzikoysk.sqiffy.definition.DataType.DATETIME
 import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
-import com.dzikoysk.sqiffy.definition.DataType.TEXT
 import com.dzikoysk.sqiffy.definition.DataType.TIMESTAMP
 import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.shared.multiline
 
 object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
+
+    override fun String.toQuoted(): String = "`$this`"
 
     override fun createTable(name: String, properties: List<PropertyData>, enums: Enums): String {
         val types = properties.joinToString(separator = ", ") { propertyData ->
@@ -72,6 +72,14 @@ object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
     override fun removeIndex(tableName: String, name: String): String =
         "DROP INDEX ${name.toQuoted()} ON ${tableName.toQuoted()}"
 
-    override fun String.toQuoted(): String = "`$this`"
+    override fun createFunction(name: String, parameters: Array<String>, returnType: String, body: String): String =
+        """
+            DELIMITER $$
+            CREATE PROCEDURE $name(${parameters.joinToString(separator = ", ") { "IN $it" }})
+            BEGIN
+                $body
+            END$$
+            DELIMITER ;
+        """.trimIndent()
 
 }

@@ -76,6 +76,10 @@ data class Column<T>(
             name = name,
             type = dataType,
             nullable = nullable,
+            enumDefinition = null,
+            default = null,
+            rawDefault = false,
+            details = null
         )
 
 }

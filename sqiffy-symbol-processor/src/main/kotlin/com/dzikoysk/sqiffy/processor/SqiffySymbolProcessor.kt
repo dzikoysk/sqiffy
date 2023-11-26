@@ -1,16 +1,17 @@
 package com.dzikoysk.sqiffy.processor
 
 import com.dzikoysk.sqiffy.Dialect
-import com.dzikoysk.sqiffy.changelog.ChangeLog
+import com.dzikoysk.sqiffy.changelog.Changelog
 import com.dzikoysk.sqiffy.changelog.ChangelogBuilder
 import com.dzikoysk.sqiffy.changelog.generator.dialects.getSchemeGenerator
 import com.dzikoysk.sqiffy.definition.ChangelogDefinition
 import com.dzikoysk.sqiffy.definition.ChangelogProvider.LIQUIBASE
 import com.dzikoysk.sqiffy.definition.ChangelogProvider.SQIFFY
 import com.dzikoysk.sqiffy.definition.Definition
-import com.dzikoysk.sqiffy.definition.DefinitionEntry
 import com.dzikoysk.sqiffy.definition.DtoDefinition
 import com.dzikoysk.sqiffy.definition.DtoGroupData
+import com.dzikoysk.sqiffy.definition.FunctionDefinition
+import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.REMOVE
@@ -19,12 +20,14 @@ import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RETYPE
 import com.dzikoysk.sqiffy.definition.TypeDefinition
 import com.dzikoysk.sqiffy.definition.TypeFactory
 import com.dzikoysk.sqiffy.definition.toDtoDefinitionData
+import com.dzikoysk.sqiffy.definition.toFunctionData
 import com.dzikoysk.sqiffy.definition.toPropertyData
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.dzikoysk.sqiffy.processor.generators.DslTableGenerator
 import com.dzikoysk.sqiffy.processor.generators.DtoGenerator
 import com.dzikoysk.sqiffy.processor.generators.EntityGenerator
 import com.dzikoysk.sqiffy.processor.generators.EnumGenerator
+import com.dzikoysk.sqiffy.processor.generators.FunctionGenerator
 import com.dzikoysk.sqiffy.processor.generators.LiquibaseGenerator
 import com.dzikoysk.sqiffy.processor.generators.TableNamesGenerator
 import com.dzikoysk.sqiffy.shared.replaceFirst
@@ -38,6 +41,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.ClassName
 import java.util.LinkedList
@@ -68,6 +72,7 @@ class SqiffySymbolProcessorProvider : SymbolProcessorProvider {
 internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolProcessor {
 
     private val enumGenerator = EnumGenerator(context)
+    private val functionGenerator = FunctionGenerator(context)
     private val dtoGenerator = DtoGenerator(context)
     private val entityGenerator = EntityGenerator(context)
     private val tableNamesGenerator = TableNamesGenerator(context)
@@ -77,9 +82,6 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val typeFactory = KspTypeFactory(resolver)
 
-        val tableDefinitions = resolver.getSymbolsWithAnnotation(Definition::class.qualifiedName!!)
-            .filterIsInstance<KSClassDeclaration>()
-
         val changelogDefinition = resolver.getSymbolsWithAnnotation(ChangelogDefinition::class.qualifiedName!!)
             .filterIsInstance<KSClassDeclaration>()
             .flatMap { it.getAnnotationsByType(ChangelogDefinition::class) }
@@ -87,12 +89,22 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
             .also { require(it.size <= 1) { "Only one ChangelogDefinition is allowed per project" } }
             .firstOrNull()
 
-        val schemaGenerator = (changelogDefinition?.dialect ?: Dialect.POSTGRESQL).getSchemeGenerator()
+        val schemaGenerator = (changelogDefinition?.dialect ?: Dialect.POSTGRESQL)
+            .getSchemeGenerator()
+
+        val functions = resolver.getSymbolsWithAnnotation(FunctionDefinition::class.qualifiedName!!)
+            .filterIsInstance<KSPropertyDeclaration>()
+            .flatMap { it.getAnnotationsByType(FunctionDefinition::class) }
+            .map { it.toFunctionData() }
+            .toList()
+
+        val tableDefinitions = resolver.getSymbolsWithAnnotation(Definition::class.qualifiedName!!)
+            .filterIsInstance<KSClassDeclaration>()
 
         val tables = tableDefinitions
             .flatMap { it.getAnnotationsByType(Definition::class).map { annotation -> it to annotation } }
             .map { (clazz, annotation) ->
-                DefinitionEntry(
+                ParsedDefinition(
                     source = clazz.qualifiedName!!.asString(),
                     packageName = clazz.packageName.asString(),
                     name = clazz.simpleName.asString().substringBeforeLast("Definition"),
@@ -106,7 +118,10 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
             typeFactory = typeFactory
         )
 
-        val changelog = baseSchemeGenerator.generateChangeLog(tables)
+        val changelog = baseSchemeGenerator.generateChangeLog(
+            functions = functions,
+            tables = tables
+        )
 
         if (changelogDefinition != null) {
             when (changelogDefinition.provider) {
@@ -147,7 +162,7 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
         return emptyList()
     }
 
-    private fun generateTableDls(typeFactory: TypeFactory, changeLog: ChangeLog) {
+    private fun generateTableDls(typeFactory: TypeFactory, changeLog: Changelog) {
         changeLog.enums.forEach { (reference, state) ->
             enumGenerator.generateEnum(reference, state)
         }
@@ -159,19 +174,19 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
             )
 
             dslTableGenerator.generateTableClass(
-                definitionEntry = definition,
+                parsedDefinition = definition,
                 properties = properties
             )
 
             tableNamesGenerator.generateTableNamesClass(
-                definitionEntry = definition,
+                parsedDefinition = definition,
                 tableName = name,
                 properties = properties
             )
         }
     }
 
-    private fun generateEntityDsl(typeFactory: TypeFactory, changeLog: ChangeLog, dtoGroups: List<DtoGroupData>) {
+    private fun generateEntityDsl(typeFactory: TypeFactory, changeLog: Changelog, dtoGroups: List<DtoGroupData>) {
         changeLog.tables.forEach { (definition, _) ->
             val properties = generateProperties(typeFactory, definition)
 
@@ -187,14 +202,14 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
                 ?: emptyList()
 
             entityGenerator.generateEntityClass(
-                definitionEntry = definition,
+                parsedDefinition = definition,
                 properties = properties,
                 dtoMethods = dtoMethodsToAdd
             )
         }
     }
 
-    private fun generateProperties(typeFactory: TypeFactory, table: DefinitionEntry): LinkedList<PropertyData> {
+    private fun generateProperties(typeFactory: TypeFactory, table: ParsedDefinition): LinkedList<PropertyData> {
         val properties = LinkedList<PropertyData>()
 
         for (definitionVersion in table.definition.versions) {

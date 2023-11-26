@@ -1,21 +1,25 @@
 package com.dzikoysk.sqiffy.changelog
 
-import com.dzikoysk.sqiffy.definition.DefinitionEntry
 import com.dzikoysk.sqiffy.definition.EnumReference
+import com.dzikoysk.sqiffy.definition.FunctionDefinitionData
+import com.dzikoysk.sqiffy.definition.FunctionVersionData
+import com.dzikoysk.sqiffy.definition.ParsedDefinition
 
 typealias TableName = String
 typealias Version = String
 typealias Query = String
 
-data class ChangeLog(
+data class Changelog(
     val enums: Map<EnumReference, EnumState>,
-    val tables: Map<DefinitionEntry, TableName>,
+    val functions: Map<FunctionDefinitionData, FunctionVersionData>,
+    val tables: Map<ParsedDefinition, TableName>,
     private val enumChanges: List<SchemeChange>,
+    private val functionChanges: List<SchemeChange>,
     private val schemeChanges: List<SchemeChange>
 ) {
 
     fun getAllChanges(): List<SchemeChange> =
-        (enumChanges + schemeChanges)
+        (enumChanges + functionChanges + schemeChanges)
             .groupBy { it.version }
             .mapValues { (version, schemeChanges) ->
                 SchemeChange(
