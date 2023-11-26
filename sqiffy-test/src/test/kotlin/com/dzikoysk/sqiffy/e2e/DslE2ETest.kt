@@ -4,6 +4,9 @@ package com.dzikoysk.sqiffy.e2e
 
 import com.dzikoysk.sqiffy.api.Role
 import com.dzikoysk.sqiffy.api.Role.MODERATOR
+import com.dzikoysk.sqiffy.definition.ChangelogProvider
+import com.dzikoysk.sqiffy.definition.ChangelogProvider.LIQUIBASE
+import com.dzikoysk.sqiffy.definition.ChangelogProvider.SQIFFY
 import com.dzikoysk.sqiffy.domain.TestDefault
 import com.dzikoysk.sqiffy.domain.UnidentifiedUser
 import com.dzikoysk.sqiffy.domain.User
@@ -36,6 +39,10 @@ import com.dzikoysk.sqiffy.shared.createH2DataSource
 import com.dzikoysk.sqiffy.shared.createHikariDataSource
 import com.dzikoysk.sqiffy.shared.createSQLiteDataSource
 import com.zaxxer.hikari.HikariDataSource
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.util.UUID
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertArrayEquals
@@ -47,12 +54,10 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.util.UUID
 
-internal abstract class DslE2ETest : SqiffyE2ETestSpecification() {
+internal abstract class DslE2ETest(
+    migrationProvider: ChangelogProvider = SQIFFY
+) : SqiffyE2ETestSpecification(migrationProvider = migrationProvider) {
 
     @Test
     fun `should insert and select entity`() {
@@ -221,6 +226,12 @@ internal class H2MySQLModeDslE2ETest : DslE2ETest() {
 }
 
 internal class EmbeddedPostgresDslE2ETest : DslE2ETest() {
+    private val postgres = postgresDataSource()
+    override fun createDataSource(): HikariDataSource = postgres.dataSource
+    @AfterEach fun stop() { postgres.embeddedPostgres.close() }
+}
+
+internal class EmbeddedPostgresWithLiquibaseDslE2ETest : DslE2ETest(migrationProvider = LIQUIBASE) {
     private val postgres = postgresDataSource()
     override fun createDataSource(): HikariDataSource = postgres.dataSource
     @AfterEach fun stop() { postgres.embeddedPostgres.close() }

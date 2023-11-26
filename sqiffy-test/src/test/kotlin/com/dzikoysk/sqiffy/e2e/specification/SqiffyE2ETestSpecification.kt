@@ -3,8 +3,11 @@ package com.dzikoysk.sqiffy.e2e.specification
 import com.dzikoysk.sqiffy.Slf4JSqiffyLogger
 import com.dzikoysk.sqiffy.Sqiffy
 import com.dzikoysk.sqiffy.SqiffyDatabase
+import com.dzikoysk.sqiffy.definition.ChangelogProvider
 import com.dzikoysk.sqiffy.e2e.GuildDefinition
 import com.dzikoysk.sqiffy.e2e.UserDefinition
+import com.dzikoysk.sqiffy.migrator.LiquibaseMigrator
+import com.dzikoysk.sqiffy.migrator.SqiffyMigrator
 import com.dzikoysk.sqiffy.shared.createHikariDataSource
 import com.zaxxer.hikari.HikariDataSource
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
@@ -12,7 +15,10 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.slf4j.LoggerFactory
 
-abstract class SqiffyE2ETestSpecification(private val runMigrations: Boolean = true) {
+abstract class SqiffyE2ETestSpecification(
+    private val runMigrations: Boolean = true,
+    private val migrationProvider: ChangelogProvider = ChangelogProvider.SQIFFY
+) {
 
     lateinit var database: SqiffyDatabase
 
@@ -26,8 +32,12 @@ abstract class SqiffyE2ETestSpecification(private val runMigrations: Boolean = t
         )
 
         if (runMigrations) {
-            val changeLog = database.generateChangeLog(UserDefinition::class, GuildDefinition::class)
-            database.runMigrations(changeLog = changeLog)
+            when (migrationProvider) {
+                ChangelogProvider.SQIFFY -> database.runMigrations(SqiffyMigrator(
+                    changeLog = database.generateChangeLog(UserDefinition::class, GuildDefinition::class)
+                ))
+                ChangelogProvider.LIQUIBASE -> database.runMigrations(LiquibaseMigrator())
+            }
         }
     }
 

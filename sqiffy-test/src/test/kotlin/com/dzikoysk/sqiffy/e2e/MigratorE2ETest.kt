@@ -1,12 +1,13 @@
 package com.dzikoysk.sqiffy.e2e
 
-import com.dzikoysk.sqiffy.changelog.VersionCallbacks
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
 import com.dzikoysk.sqiffy.definition.Definition
 import com.dzikoysk.sqiffy.definition.DefinitionVersion
 import com.dzikoysk.sqiffy.definition.Property
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
+import com.dzikoysk.sqiffy.migrator.SqiffyMigrator
+import com.dzikoysk.sqiffy.migrator.VersionCallbacks
 import com.zaxxer.hikari.HikariDataSource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -60,12 +61,12 @@ internal abstract class MigratorE2ETest : SqiffyE2ETestSpecification(runMigratio
         assertThat(changeLog.getAllChanges()).hasSize(2)
 
         // when: migrations are run against empty database
-        val appliedVersionsV1 = assertDoesNotThrow { database.runMigrations(changeLog) }
+        val appliedVersionsV1 = assertDoesNotThrow { database.runMigrations(SqiffyMigrator(changeLog)) }
         // then: all migrations are applied
         assertThat(appliedVersionsV1).isEqualTo(listOf("1.0.0", "1.0.1"))
 
         // when: migrations are run again
-        val appliedVersionsV2 = assertDoesNotThrow { database.runMigrations(changeLog) }
+        val appliedVersionsV2 = assertDoesNotThrow { database.runMigrations(SqiffyMigrator(changeLog)) }
         // then: no migrations are applied
         assertThat(appliedVersionsV2).isEmpty()
     }
@@ -79,14 +80,14 @@ internal abstract class MigratorE2ETest : SqiffyE2ETestSpecification(runMigratio
         // when: migrations are run against empty database
         val values = mutableListOf<Int>()
         val appliedVersionsV1 = assertDoesNotThrow {
-            database.runMigrations(
+            database.runMigrations(SqiffyMigrator(
                 changeLog = changeLog,
                 versionCallbacks = VersionCallbacks()
                     .before(SchemeVersion.V_1_0_0) { values.add(1) }
                     .after(SchemeVersion.V_1_0_0) { values.add(2) }
                     .before(SchemeVersion.V_1_0_1) { values.add(3) }
                     .after(SchemeVersion.V_1_0_1) { values.add(4) }
-            )
+            ))
         }
         // then: all migrations are applied
         assertThat(appliedVersionsV1).isEqualTo(listOf("1.0.0", "1.0.1"))

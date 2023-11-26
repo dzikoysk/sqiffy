@@ -7,11 +7,11 @@ import com.dzikoysk.sqiffy.definition.RuntimeTypeFactory
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 
-class ChangeLogGeneratorTest {
+class ChangelogBuilderTest {
 
     @Test
     fun testBaseSchemeGenerator() {
-        val baseSchemeGenerator = ChangeLogGenerator(MySqlSchemeGenerator, RuntimeTypeFactory())
+        val baseSchemeGenerator = ChangelogBuilder(MySqlSchemeGenerator, RuntimeTypeFactory())
         val changeLog = baseSchemeGenerator.generateChangeLog(UserDefinition::class, GuildDefinition::class)
 
         changeLog.getAllChanges().forEach { (version, changes) ->
@@ -23,7 +23,7 @@ class ChangeLogGeneratorTest {
     @Test
     fun `should ignore duplicated classes`() {
         assertDoesNotThrow {
-            ChangeLogGenerator(MySqlSchemeGenerator, RuntimeTypeFactory()).generateChangeLog(UserDefinition::class, UserDefinition::class)
+            ChangelogBuilder(MySqlSchemeGenerator, RuntimeTypeFactory()).generateChangeLog(UserDefinition::class, UserDefinition::class)
         }
     }
 

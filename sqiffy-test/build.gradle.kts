@@ -18,6 +18,9 @@ dependencies {
     testImplementation("mysql:mysql-connector-java:8.0.28")
     testImplementation("org.xerial:sqlite-jdbc:3.42.0.0")
 
+    val liquibase = "4.25.0"
+    testImplementation("org.liquibase:liquibase-core:$liquibase")
+
     val testcontainers = "1.18.1"
     testImplementation("org.testcontainers:postgresql:$testcontainers")
     testImplementation("org.testcontainers:mysql:$testcontainers")

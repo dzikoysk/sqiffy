@@ -10,4 +10,7 @@ dependencies {
     api("org.jdbi:jdbi3-kotlin:$jdbi")
     api("org.jdbi:jdbi3-kotlin-sqlobject:$jdbi")
     api("org.jdbi:jdbi3-jackson2:$jdbi")
+
+    val liquibase = "4.25.0"
+    compileOnly("org.liquibase:liquibase-core:$liquibase")
 }

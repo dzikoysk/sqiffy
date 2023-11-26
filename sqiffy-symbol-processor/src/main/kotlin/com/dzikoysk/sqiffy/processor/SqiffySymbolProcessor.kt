@@ -1,8 +1,12 @@
 package com.dzikoysk.sqiffy.processor
 
+import com.dzikoysk.sqiffy.Dialect
 import com.dzikoysk.sqiffy.changelog.ChangeLog
-import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator
-import com.dzikoysk.sqiffy.changelog.generator.dialects.PostgreSqlSchemeGenerator
+import com.dzikoysk.sqiffy.changelog.ChangelogBuilder
+import com.dzikoysk.sqiffy.changelog.generator.dialects.getSchemeGenerator
+import com.dzikoysk.sqiffy.definition.ChangelogDefinition
+import com.dzikoysk.sqiffy.definition.ChangelogProvider.LIQUIBASE
+import com.dzikoysk.sqiffy.definition.ChangelogProvider.SQIFFY
 import com.dzikoysk.sqiffy.definition.Definition
 import com.dzikoysk.sqiffy.definition.DefinitionEntry
 import com.dzikoysk.sqiffy.definition.DtoDefinition
@@ -21,27 +25,22 @@ import com.dzikoysk.sqiffy.processor.generators.DslTableGenerator
 import com.dzikoysk.sqiffy.processor.generators.DtoGenerator
 import com.dzikoysk.sqiffy.processor.generators.EntityGenerator
 import com.dzikoysk.sqiffy.processor.generators.EnumGenerator
+import com.dzikoysk.sqiffy.processor.generators.LiquibaseGenerator
 import com.dzikoysk.sqiffy.processor.generators.TableNamesGenerator
 import com.dzikoysk.sqiffy.shared.replaceFirst
-import com.google.devtools.ksp.KSTypeNotPresentException
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
-import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
-import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSType
-import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.ClassName
 import java.util.LinkedList
-import kotlin.reflect.KClass
 
 class SqiffySymbolProcessorProvider : SymbolProcessorProvider {
 
@@ -80,25 +79,45 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
 
         val tableDefinitions = resolver.getSymbolsWithAnnotation(Definition::class.qualifiedName!!)
             .filterIsInstance<KSClassDeclaration>()
+
+        val changelogDefinition = resolver.getSymbolsWithAnnotation(ChangelogDefinition::class.qualifiedName!!)
+            .filterIsInstance<KSClassDeclaration>()
+            .flatMap { it.getAnnotationsByType(ChangelogDefinition::class) }
             .toList()
+            .also { require(it.size <= 1) { "Only one ChangelogDefinition is allowed per project" } }
+            .firstOrNull()
+
+        val schemaGenerator = (changelogDefinition?.dialect ?: Dialect.POSTGRESQL).getSchemeGenerator()
 
         val tables = tableDefinitions
-            .map {
+            .flatMap { it.getAnnotationsByType(Definition::class).map { annotation -> it to annotation } }
+            .map { (clazz, annotation) ->
                 DefinitionEntry(
-                    source = it.qualifiedName!!.asString(),
-                    packageName = it.packageName.asString(),
-                    name = it.simpleName.asString().substringBeforeLast("Definition"),
-                    definition = it.getAnnotationsByType(Definition::class).first(),
+                    source = clazz.qualifiedName!!.asString(),
+                    packageName = clazz.packageName.asString(),
+                    name = clazz.simpleName.asString().substringBeforeLast("Definition"),
+                    definition = annotation
                 )
             }
             .toList()
 
-        if (tables.isNotEmpty()) {
-            val baseSchemeGenerator = ChangeLogGenerator(
-                sqlSchemeGenerator = PostgreSqlSchemeGenerator, // dialect doesn't matter
-                typeFactory = typeFactory
-            )
+        val baseSchemeGenerator = ChangelogBuilder(
+            sqlSchemeGenerator = schemaGenerator,
+            typeFactory = typeFactory
+        )
 
+        val changelog = baseSchemeGenerator.generateChangeLog(tables)
+
+        if (changelogDefinition != null) {
+            when (changelogDefinition.provider) {
+                SQIFFY -> { /* currently only supported at runtime */ }
+                LIQUIBASE -> LiquibaseGenerator(context).generateLiquibaseChangeLog(
+                    changeLog = changelog
+                )
+            }
+        }
+
+        if (tables.isNotEmpty()) {
             val dtoDefinitions = resolver.getSymbolsWithAnnotation(DtoDefinition::class.qualifiedName!!)
                 .filterIsInstance<KSClassDeclaration>()
                 .toList()
@@ -107,14 +126,14 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
                 resolver.getAllFiles().none { it.fileName == "${tables.first().name}Table.kt" } -> {
                     generateTableDls(
                         typeFactory = typeFactory,
-                        changeLog = baseSchemeGenerator.generateChangeLog(tables),
+                        changeLog = changelog,
                     )
                     return dtoDefinitions + tableDefinitions
                 }
                 else -> {
                     generateEntityDsl(
                         typeFactory = typeFactory,
-                        changeLog = baseSchemeGenerator.generateChangeLog(tables),
+                        changeLog = changelog,
                         dtoGroups = dtoDefinitions
                             .filter { it.validate() }
                             .flatMap { it.getAnnotationsByType(DtoDefinition::class) }
@@ -132,29 +151,19 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
             enumGenerator.generateEnum(reference, state)
         }
 
-        changeLog.tables.forEach { (table, name) ->
-            val properties = LinkedList<PropertyData>()
-
-            for (definitionVersion in table.definition.versions) {
-                for (property in definitionVersion.properties) {
-                    val convertedProperty = property.toPropertyData(typeFactory)
-
-                    when (property.operation) {
-                        ADD -> properties.add(convertedProperty)
-                        RENAME -> require(properties.replaceFirst({ it.name == property.name }, { it.copy(name = property.rename) }))
-                        RETYPE -> require(properties.replaceFirst({ it.name == property.name }, { it.copy(type = property.type, details = property.details) }))
-                        REMOVE -> properties.removeIf { it.name == property.name }
-                    }
-                }
-            }
+        changeLog.tables.forEach { (definition, name) ->
+            val properties = generateProperties(
+                typeFactory = typeFactory,
+                table = definition
+            )
 
             dslTableGenerator.generateTableClass(
-                definitionEntry = table,
+                definitionEntry = definition,
                 properties = properties
             )
 
             tableNamesGenerator.generateTableNamesClass(
-                definitionEntry = table,
+                definitionEntry = definition,
                 tableName = name,
                 properties = properties
             )
@@ -162,27 +171,14 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
     }
 
     private fun generateEntityDsl(typeFactory: TypeFactory, changeLog: ChangeLog, dtoGroups: List<DtoGroupData>) {
-        changeLog.tables.forEach { (table, _) ->
-            val properties = LinkedList<PropertyData>()
+        changeLog.tables.forEach { (definition, _) ->
+            val properties = generateProperties(typeFactory, definition)
 
-            for (definitionVersion in table.definition.versions) {
-                for (property in definitionVersion.properties) {
-                    val convertedProperty = property.toPropertyData(typeFactory)
-
-                    when (property.operation) {
-                        ADD -> properties.add(convertedProperty)
-                        RENAME -> require(properties.replaceFirst({ it.name == property.name }, { it.copy(name = property.rename) }))
-                        RETYPE -> require(properties.replaceFirst({ it.name == property.name }, { it.copy(type = property.type, details = property.details) }))
-                        REMOVE -> properties.removeIf { it.name == property.name }
-                    }
-                }
-            }
-
-            val dtoMethodsToAdd = dtoGroups.firstOrNull { it.from.qualifiedName == table.source }
+            val dtoMethodsToAdd = dtoGroups.firstOrNull { it.from.qualifiedName == definition.source }
                 ?.variants
                 ?.map { variant ->
                     dtoGenerator.generateDtoClass(
-                        definitionEntry = table,
+                        definition = definition,
                         variantData = variant,
                         selectedProperties = properties.filter { variant.allProperties || it.name in variant.properties }
                     )
@@ -190,54 +186,31 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
                 ?: emptyList()
 
             entityGenerator.generateEntityClass(
-                definitionEntry = table,
+                definitionEntry = definition,
                 properties = properties,
                 dtoMethods = dtoMethodsToAdd
             )
         }
     }
 
-}
+    private fun generateProperties(typeFactory: TypeFactory, table: DefinitionEntry): LinkedList<PropertyData> {
+        val properties = LinkedList<PropertyData>()
 
-private class KspTypeFactory(private val resolver: Resolver) : TypeFactory {
+        for (definitionVersion in table.definition.versions) {
+            for (property in definitionVersion.properties) {
+                val convertedProperty = property.toPropertyData(typeFactory)
 
-    @OptIn(KspExperimental::class)
-    private fun <A : Annotation> getKSType(annotation: A, supplier: A.() -> KClass<*>): KSType =
-        try {
-            val type = supplier(annotation)
-            resolver.getClassDeclarationByName(type.qualifiedName!!)!!.asStarProjectedType()
-        } catch (exception: KSTypeNotPresentException) {
-            exception.ksType
+                when (property.operation) {
+                    ADD -> properties.add(convertedProperty)
+                    RENAME -> require(properties.replaceFirst({ it.name == property.name }, { it.copy(name = property.rename) }))
+                    RETYPE -> require(properties.replaceFirst({ it.name == property.name }, { it.copy(type = property.type, details = property.details) }))
+                    REMOVE -> properties.removeIf { it.name == property.name }
+                }
+            }
         }
 
-    override fun <A : Annotation> getTypeDefinition(annotation: A, supplier: A.() -> KClass<*>): TypeDefinition =
-        getKSType(annotation, supplier).let {
-            TypeDefinition(
-                packageName = it.declaration.packageName.asString(),
-                simpleName = it.declaration.simpleName.asString()
-            )
-        }
-
-    @OptIn(KspExperimental::class)
-    override fun <A : Annotation, R : Annotation> getTypeAnnotation(annotation: A, annotationType: KClass<R>, supplier: A.() -> KClass<*>): R? =
-        getKSType(annotation, supplier).let { type ->
-            type
-                .let { it.declaration as? KSClassDeclaration }
-                ?.getAnnotationsByType(annotationType)
-                ?.firstOrNull()
-        }
-
-    override fun <A : Annotation> getEnumValues(annotation: A, supplier: A.() -> KClass<*>): List<String>? =
-        getKSType(annotation, supplier).let { type ->
-            type
-                .takeIf { it.declaration.modifiers.contains(Modifier.ENUM) }
-                .let { it?.declaration as? KSClassDeclaration }
-                ?.declarations
-                ?.filterIsInstance<KSClassDeclaration>()
-                ?.filter { it.classKind == ClassKind.ENUM_ENTRY }
-                ?.map { it.simpleName.asString() }
-                ?.toList()
-        }
+        return properties
+    }
 
 }
 

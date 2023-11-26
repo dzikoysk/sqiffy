@@ -1,8 +1,10 @@
 package com.dzikoysk.sqiffy.e2e
 
+import com.dzikoysk.sqiffy.Dialect.POSTGRESQL
+import com.dzikoysk.sqiffy.definition.ChangelogDefinition
+import com.dzikoysk.sqiffy.definition.ChangelogProvider.LIQUIBASE
 import com.dzikoysk.sqiffy.definition.Constraint
 import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.REMOVE_CONSTRAINT
-import com.dzikoysk.sqiffy.definition.ConstraintType
 import com.dzikoysk.sqiffy.definition.ConstraintType.FOREIGN_KEY
 import com.dzikoysk.sqiffy.definition.ConstraintType.PRIMARY_KEY
 import com.dzikoysk.sqiffy.definition.DataType.BINARY
@@ -28,7 +30,6 @@ import com.dzikoysk.sqiffy.definition.EnumOperation.ADD_VALUES
 import com.dzikoysk.sqiffy.definition.EnumVersion
 import com.dzikoysk.sqiffy.definition.Index
 import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.REMOVE_INDEX
-import com.dzikoysk.sqiffy.definition.IndexType
 import com.dzikoysk.sqiffy.definition.IndexType.INDEX
 import com.dzikoysk.sqiffy.definition.IndexType.UNIQUE_INDEX
 import com.dzikoysk.sqiffy.definition.Property
@@ -41,8 +42,11 @@ import com.dzikoysk.sqiffy.e2e.UserAndGuildScenarioVersions.V_1_0_1
 import com.dzikoysk.sqiffy.e2e.UserAndGuildScenarioVersions.V_1_0_2
 import com.dzikoysk.sqiffy.infra.UserTableNames
 import java.io.Serializable
-import java.util.UUID
 
+@ChangelogDefinition(
+    dialect = POSTGRESQL,
+    provider = LIQUIBASE
+)
 object UserAndGuildScenarioVersions {
     const val V_1_0_0 = "1.0.0"
     const val V_1_0_1 = "1.0.1"

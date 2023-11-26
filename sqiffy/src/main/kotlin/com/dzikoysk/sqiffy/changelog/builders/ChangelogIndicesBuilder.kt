@@ -1,6 +1,6 @@
 package com.dzikoysk.sqiffy.changelog.builders
 
-import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator.ChangeLogGeneratorContext
+import com.dzikoysk.sqiffy.changelog.ChangelogBuilder.ChangeLogGeneratorContext
 import com.dzikoysk.sqiffy.definition.IndexData
 import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.ADD_INDEX
 import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.REMOVE_INDEX

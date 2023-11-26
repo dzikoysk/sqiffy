@@ -1,6 +1,9 @@
-package com.dzikoysk.sqiffy.changelog
+package com.dzikoysk.sqiffy.migrator
 
 import com.dzikoysk.sqiffy.SqiffyDatabase
+import com.dzikoysk.sqiffy.changelog.ChangeLog
+import com.dzikoysk.sqiffy.changelog.Enums
+import com.dzikoysk.sqiffy.changelog.Version
 import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.Table
 import com.dzikoysk.sqiffy.dsl.Values
@@ -29,14 +32,13 @@ class VersionCallbacks {
     fun after(version: Version, callback: () -> Unit): VersionCallbacks = also { versionCallbacks.merge(version, VersionCallback(after = callback)) { old, new -> old.copy(after = new.after) } }
 }
 
-class Migrator(
-    private val database: SqiffyDatabase,
-    private val metadataTable: SqiffyMetadataTable,
+class SqiffyMigrator(
     private val changeLog: ChangeLog,
-    private val versionCallbacks: VersionCallbacks,
-) {
+    private val metadataTable: SqiffyMetadataTable = SqiffyMetadataTable(),
+    private val versionCallbacks: VersionCallbacks = VersionCallbacks(),
+) : Migrator<List<Version>> {
 
-    fun runMigrations(): List<Version> {
+    override fun runMigrations(database: SqiffyDatabase): List<Version> {
         val tableName = metadataTable.getName()
 
         database.getJdbi().useHandle<Exception> { handle ->

@@ -1,6 +1,6 @@
 package com.dzikoysk.sqiffy.changelog.builders
 
-import com.dzikoysk.sqiffy.changelog.ChangeLogGenerator.ChangeLogGeneratorContext
+import com.dzikoysk.sqiffy.changelog.ChangelogBuilder.ChangeLogGeneratorContext
 import com.dzikoysk.sqiffy.definition.Constraint
 import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.ADD_CONSTRAINT
 import com.dzikoysk.sqiffy.definition.ConstraintDefinitionType.REMOVE_CONSTRAINT

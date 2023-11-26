@@ -15,14 +15,14 @@ import java.util.ArrayDeque
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 
-class ChangeLogGenerator(
+class ChangelogBuilder(
     private val sqlSchemeGenerator: SqlSchemeGenerator,
     private val typeFactory: TypeFactory = RuntimeTypeFactory()
 ) {
 
-    private val changeLogPropertiesBuilder = ChangelogPropertiesBuilder()
-    private val changeLogConstraintsBuilder = ChangelogConstraintsBuilder()
-    private val changeLogIndicesBuilder = ChangelogIndicesBuilder()
+    private val propertiesBuilder = ChangelogPropertiesBuilder()
+    private val constraintsBuilder = ChangelogConstraintsBuilder()
+    private val indicesBuilder = ChangelogIndicesBuilder()
 
     internal data class ChangeLogGeneratorContext(
         val typeFactory: TypeFactory,
@@ -123,7 +123,7 @@ class ChangeLogGenerator(
                 )
 
                 val propertiesContext = baseContext.copy(changes = mutableListOf())
-                changeLogPropertiesBuilder.generateProperties(propertiesContext)
+                propertiesBuilder.generateProperties(propertiesContext)
                 contexts.add(propertiesContext)
                 propertiesState.computeIfAbsent(version) { mutableMapOf() }[state.tableName] = propertiesContext.state.properties.toList()
 
@@ -133,13 +133,13 @@ class ChangeLogGenerator(
 
                 constraints.add {
                     val constraintsContext = baseContext.copy(changes = mutableListOf())
-                    changeLogConstraintsBuilder.generateConstraints(constraintsContext)
+                    constraintsBuilder.generateConstraints(constraintsContext)
                     contexts.add(constraintsContext)
                 }
 
                 indices.add {
                     val indicesContext = baseContext.copy(changes = mutableListOf())
-                    changeLogIndicesBuilder.generateIndices(indicesContext)
+                    indicesBuilder.generateIndices(indicesContext)
                     contexts.add(indicesContext)
                 }
             }

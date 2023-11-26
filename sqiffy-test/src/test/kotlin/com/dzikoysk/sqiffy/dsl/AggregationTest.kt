@@ -6,6 +6,7 @@ import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.Definition
 import com.dzikoysk.sqiffy.definition.DefinitionVersion
 import com.dzikoysk.sqiffy.definition.Property
+import com.dzikoysk.sqiffy.migrator.SqiffyMigrator
 import com.dzikoysk.sqiffy.shared.H2Mode
 import com.dzikoysk.sqiffy.shared.createH2DataSource
 import org.assertj.core.api.Assertions.assertThat
@@ -29,7 +30,7 @@ internal class AggregationTest {
     @Test
     fun `should count records`() {
         val database = Sqiffy.createDatabase<MySqlDatabase>(dataSource = createH2DataSource(mode = H2Mode.MYSQL))
-        database.runMigrations(changeLog = database.generateChangeLog(TestCountDefinition::class))
+        database.runMigrations(SqiffyMigrator(changeLog = database.generateChangeLog(TestCountDefinition::class)))
         database.insert(TestCountTable).values().map {  }
         database.insert(TestCountTable).values().map {  }
         database.insert(TestCountTable).values().map {  }

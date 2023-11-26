@@ -12,6 +12,7 @@ import com.dzikoysk.sqiffy.dsl.statements.InsertStatement
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.dzikoysk.sqiffy.processor.toClassName
 import com.google.devtools.ksp.processing.Dependencies
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
@@ -79,7 +80,14 @@ class DslTableGenerator(private val context: KspContext) {
             .also { typeBuilder ->
                 typeBuilder.addFunction(FunSpec.builder("insert")
                     .receiver(SqiffyDatabase::class)
-                    .addParameter("table", ClassName.bestGuess(objectName))
+                    .addParameter(
+                        ParameterSpec.builder("table", ClassName.bestGuess(objectName))
+                            .addAnnotation(AnnotationSpec.builder(Suppress::class)
+                                .addMember("%S", "UNUSED_PARAMETER")
+                                .build()
+                            )
+                            .build()
+                    )
                     .addStatement("return ${objectName}InsertValues(this)")
                     .returns(ClassName(infrastructurePackage, "${objectName}InsertValues"))
                     .build()
