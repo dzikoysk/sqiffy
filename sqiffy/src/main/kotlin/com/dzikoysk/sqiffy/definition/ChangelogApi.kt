@@ -11,5 +11,6 @@ enum class ChangelogProvider {
 @Retention(RUNTIME)
 annotation class ChangelogDefinition(
     val dialect: Dialect,
-    val provider: ChangelogProvider = ChangelogProvider.SQIFFY
+    val provider: ChangelogProvider = ChangelogProvider.SQIFFY,
+    val projectName: String = "sqiffy",
 )

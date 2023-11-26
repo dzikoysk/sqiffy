@@ -19,7 +19,7 @@ class ChangelogPropertiesBuilder {
                 /* rename table */
                 changeToApply.name != NULL_STRING && state.tableName != changeToApply.name -> {
                     registerChange {
-                        renameTable(state.tableName, changeToApply.name)
+                        "rename-table-${state.tableName}-to-${changeToApply.name}" to renameTable(state.tableName, changeToApply.name)
                     }
                     state.tableName = changeToApply.name
                 }
@@ -48,7 +48,7 @@ class ChangelogPropertiesBuilder {
                 }
                 .let { propertyDataList ->
                     registerChange {
-                        createTable(
+                        "create-table-${state.tableName}" to createTable(
                             name = state.tableName,
                             properties = propertyDataList,
                             enums = currentEnums
@@ -80,7 +80,7 @@ class ChangelogPropertiesBuilder {
                         properties.add(property)
 
                         registerChange {
-                            createColumn(
+                            "create-column-${state.tableName}.${property.name}" to createColumn(
                                 tableName = state.tableName,
                                 property = property,
                                 enums = currentEnums
@@ -102,7 +102,11 @@ class ChangelogPropertiesBuilder {
                         require(replaced) { "Cannot rename property ${propertyChange.name} to ${propertyChange.rename} in ${state.tableName} because it does not exist" }
 
                         registerChange {
-                            renameColumn(state.tableName, propertyChange.name, propertyChange.rename)
+                            "rename-column-${state.tableName}.${propertyChange.name}-to-${state.tableName}.${propertyChange.name}" to renameColumn(
+                                tableName = state.tableName,
+                                currentName = propertyChange.name,
+                                renameTo = propertyChange.rename
+                            )
                         }
                     }
                     // <!> SQLite may not support this
@@ -126,7 +130,7 @@ class ChangelogPropertiesBuilder {
                         )
 
                         registerChange {
-                            retypeColumn(
+                            "retype-column-${state.tableName}.${newProperty.name}" to retypeColumn(
                                 tableName = state.tableName,
                                 oldProperty = currentProperty,
                                 newProperty = newProperty,
@@ -139,7 +143,7 @@ class ChangelogPropertiesBuilder {
                         require(removed) { "Cannot remove property ${propertyChange.name} from ${state.tableName} because it does not exist" }
 
                         registerChange {
-                            removeColumn(state.tableName, propertyChange.name)
+                            "remove-column-${state.tableName}.${propertyChange.name}" to removeColumn(state.tableName, propertyChange.name)
                         }
                     }
                 }

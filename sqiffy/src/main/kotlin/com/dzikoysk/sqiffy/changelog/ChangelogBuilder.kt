@@ -30,18 +30,20 @@ class ChangelogBuilder(
         val currentEnums: Enums,
         val currentScheme: MutableList<TableAnalysisState>,
         val changeToApply: DefinitionVersion,
-        val changes: MutableList<String> = mutableListOf(),
+        val changes: MutableList<Change> = mutableListOf(),
         val state: TableAnalysisState
     ) {
 
-        fun registerChange(change: String) =
-            change
+        fun registerChange(description: String, query: String) =
+            query
                 .trim()
                 .takeIf { it.isNotEmpty() }
-                ?.let { changes.add(it) }
+                ?.let { changes.add(Change(description = description, query = query)) }
 
-        fun registerChange(supplier: SqlSchemeGenerator.() -> String) =
-            registerChange(supplier.invoke(sqlSchemeGenerator))
+        fun registerChange(supplier: SqlSchemeGenerator.() -> Pair<String, String>) =
+            supplier.invoke(sqlSchemeGenerator).let {
+                registerChange(description = it.first, query = it.second)
+            }
 
         fun checkIfConstraintOrIndexNameAlreadyUsed(name: String) =
             currentScheme
@@ -95,7 +97,7 @@ class ChangelogBuilder(
             allVersions = allVersions.toList()
         )
 
-        val schemeChangelog = linkedMapOf<Version, MutableList<Query>>()
+        val schemeChangelog = linkedMapOf<Version, MutableList<Change>>()
         val currentScheme = mutableListOf<TableAnalysisState>()
 
         for (version in allVersions) {
@@ -160,14 +162,14 @@ class ChangelogBuilder(
                 enumChangelog.map { (version, changes) ->
                     SchemeChange(
                         version = version,
-                        changes = changes.map { Change(it) }
+                        changes = changes
                     )
                 },
             schemeChanges =
                 schemeChangelog.map { (version, changes) ->
                     SchemeChange(
                         version = version,
-                        changes = changes.map { Change(it) }
+                        changes = changes
                     )
                 }
         )

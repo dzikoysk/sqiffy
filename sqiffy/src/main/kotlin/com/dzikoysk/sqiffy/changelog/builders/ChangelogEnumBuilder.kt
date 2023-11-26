@@ -1,9 +1,9 @@
 package com.dzikoysk.sqiffy.changelog.builders
 
+import com.dzikoysk.sqiffy.changelog.Change
 import com.dzikoysk.sqiffy.changelog.EnumState
-import com.dzikoysk.sqiffy.changelog.Query
-import com.dzikoysk.sqiffy.changelog.generator.SqlSchemeGenerator
 import com.dzikoysk.sqiffy.changelog.Version
+import com.dzikoysk.sqiffy.changelog.generator.SqlSchemeGenerator
 import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.EnumOperation.ADD_VALUES
 import com.dzikoysk.sqiffy.definition.EnumReference
@@ -46,11 +46,11 @@ class ChangelogEnumBuilder(
 
     data class EnumChangelog(
         val finalEnumStates: Map<EnumReference, EnumState>,
-        val enumChangelog: Map<Version, List<Query>>
+        val enumChangelog: Map<Version, List<Change>>
     )
 
     fun generateChangelog(propertiesState: Map<Version, Map<String, List<PropertyData>>>): EnumChangelog {
-        val enumChangelog = linkedMapOf<Version, MutableList<Query>>()
+        val enumChangelog = linkedMapOf<Version, MutableList<Change>>()
         val latestState = mutableMapOf<EnumReference, EnumState>()
 
         for (enum in enums) {
@@ -68,7 +68,10 @@ class ChangelogEnumBuilder(
                         )
 
                         if (createEnumQuery != null) {
-                            currentChangelog.add(createEnumQuery)
+                            currentChangelog.add(Change(
+                                description = "create-enum-${enum.enumData.name}",
+                                query = createEnumQuery
+                            ))
                         }
                     }
                     enumVersion.operation == ADD_VALUES -> {
@@ -82,7 +85,10 @@ class ChangelogEnumBuilder(
                         )
 
                         if (addEnumQuery != null) {
-                            currentChangelog.add(addEnumQuery)
+                            currentChangelog.add(Change(
+                                description = "add-enum-values-${enum.enumData.name}",
+                                query = addEnumQuery
+                            ))
                         }
                     }
                     else -> throw IllegalStateException("Unsupported operation ${enumVersion.operation}")

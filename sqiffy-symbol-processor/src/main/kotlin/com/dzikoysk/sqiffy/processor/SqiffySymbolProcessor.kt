@@ -112,6 +112,7 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
             when (changelogDefinition.provider) {
                 SQIFFY -> { /* currently only supported at runtime */ }
                 LIQUIBASE -> LiquibaseGenerator(context).generateLiquibaseChangeLog(
+                    projectName = changelogDefinition.projectName,
                     changeLog = changelog
                 )
             }

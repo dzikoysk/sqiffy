@@ -6,7 +6,10 @@ import com.google.devtools.ksp.processing.Dependencies
 
 class LiquibaseGenerator(private val context: KspContext) {
 
-    fun generateLiquibaseChangeLog(changeLog: ChangeLog) {
+    fun generateLiquibaseChangeLog(
+        projectName: String,
+        changeLog: ChangeLog
+    ) {
         createFile(
             path = "liquibase/changelog-master.xml",
             content =
@@ -26,12 +29,14 @@ class LiquibaseGenerator(private val context: KspContext) {
             var changeId = 0
 
             schemaChange.changes.forEach { change ->
+                val currentId = ++changeId
+
                 createFile(
-                    path = "liquibase/${schemaChange.version}/${"%04d".format(changeId++)}.sql",
+                    path = "liquibase/${schemaChange.version}/${"%04d".format(currentId)}-${change.description}.sql",
                     content = """
                         --liquibase formatted sql
                         --validCheckSum: 1:ANY
-                        --changeset sqiffy:$changeId
+                        --changeset $projectName:$currentId
                         ${change.query}
                     """.trimIndent()
                 )

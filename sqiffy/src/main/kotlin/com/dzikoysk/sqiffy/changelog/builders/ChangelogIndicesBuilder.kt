@@ -37,8 +37,8 @@ internal class ChangelogIndicesBuilder {
 
                         registerChange {
                             when (indexData.type) {
-                                INDEX -> createIndex(state.tableName, indexData.name, indexData.columns)
-                                UNIQUE_INDEX -> createUniqueIndex(state.tableName, indexData.name, indexData.columns)
+                                INDEX -> "create-index-${indexData.name}" to createIndex(state.tableName, indexData.name, indexData.columns)
+                                UNIQUE_INDEX -> "create-unique-index-${indexData.name}" to createUniqueIndex(state.tableName, indexData.name, indexData.columns)
                             }
                         }
 
@@ -49,7 +49,7 @@ internal class ChangelogIndicesBuilder {
                         require(removed) { "Table ${state.tableName} doesn't have index to remove" }
 
                         registerChange {
-                            removeIndex(state.tableName, index.name)
+                            "remove-index-${index.name}" to removeIndex(state.tableName, index.name)
                         }
                     }
                 }

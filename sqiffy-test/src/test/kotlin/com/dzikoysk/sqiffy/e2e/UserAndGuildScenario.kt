@@ -44,6 +44,7 @@ import com.dzikoysk.sqiffy.infra.UserTableNames
 import java.io.Serializable
 
 @ChangelogDefinition(
+    projectName = "GuildService",
     dialect = POSTGRESQL,
     provider = LIQUIBASE
 )
@@ -74,7 +75,7 @@ object RoleDefinition
     versions = [
         DefinitionVersion(
             version = V_1_0_0,
-            name = "users_table",
+            name = "users",
             properties = [
                 Property(name = "id", type = SERIAL),
                 Property(name = "uuid", type = UUID_TYPE),
@@ -131,7 +132,7 @@ object UserDtoDefinition
 @Definition([
     DefinitionVersion(
         version = V_1_0_0,
-        name = "guilds_table",
+        name = "guilds",
         properties = [
             Property(name = "id", type = SERIAL),
             Property(name = "name", type = VARCHAR, details = "24"),

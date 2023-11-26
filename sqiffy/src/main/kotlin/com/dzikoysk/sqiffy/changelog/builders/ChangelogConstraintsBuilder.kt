@@ -48,7 +48,7 @@ internal class ChangelogConstraintsBuilder {
                     checkIfConstraintOrIndexNameAlreadyUsed(primaryKey.name)
 
                     registerChange {
-                        createPrimaryKey(
+                        "create-primary-key-${primaryKey.name}" to createPrimaryKey(
                             tableName = state.tableName,
                             name = primaryKey.name,
                             on = primaryKeyProperties
@@ -62,7 +62,7 @@ internal class ChangelogConstraintsBuilder {
                     require(removed) { "Table ${state.tableName} doesn't have primary key to remove" }
 
                     registerChange {
-                        removePrimaryKey(state.tableName, constraint.name)
+                        "remove-primary-key-${constraint.name}" to removePrimaryKey(state.tableName, constraint.name)
                     }
                 }
             }
@@ -106,7 +106,7 @@ internal class ChangelogConstraintsBuilder {
                         ?: throw IllegalStateException("Foreign table ${foreignKey.referenced} does not have column ${constraint.references}")
 
                     registerChange {
-                        createForeignKey(
+                        "create-foreign-key-${foreignKey.name}" to createForeignKey(
                             tableName = state.tableName,
                             name = foreignKey.name,
                             on = onColumn,
@@ -122,7 +122,7 @@ internal class ChangelogConstraintsBuilder {
                     require(removed) { "Cannot remove foreign key, constraint ${constraint.name} not found" }
 
                     registerChange {
-                        removeForeignKey(
+                        "remove-foreign-key-${constraint.name}" to removeForeignKey(
                             tableName = state.tableName,
                             name = constraint.name
                         )

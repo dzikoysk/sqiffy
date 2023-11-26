@@ -34,5 +34,6 @@ data class SchemeChange(
 )
 
 data class Change(
-    val query: Query
+    val description: String,
+    val query: Query,
 )
