@@ -34,7 +34,9 @@ abstract class SqiffyE2ETestSpecification(
         if (runMigrations) {
             when (migrationProvider) {
                 ChangelogProvider.SQIFFY -> database.runMigrations(SqiffyMigrator(
-                    changeLog = database.generateChangeLog(UserDefinition::class, GuildDefinition::class)
+                    changeLog = database.generateChangeLog(
+                        tables = listOf(UserDefinition::class, GuildDefinition::class),
+                    )
                 ))
                 ChangelogProvider.LIQUIBASE -> database.runMigrations(LiquibaseMigrator())
             }

@@ -18,6 +18,7 @@ import com.dzikoysk.sqiffy.migrator.Migrator
 import com.zaxxer.hikari.HikariDataSource
 import java.io.Closeable
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty
 import org.jdbi.v3.core.Jdbi
 
 data class SqiffyDatabaseConfig(
@@ -40,8 +41,8 @@ abstract class SqiffyDatabase(state: SqiffyDatabaseConfig) : Closeable {
     internal val localJdbi: Jdbi = state.localJdbi
     internal val changelogBuilder: ChangelogBuilder = state.changelogBuilder
 
-    fun generateChangeLog(vararg classes: KClass<*>): Changelog =
-        changelogBuilder.generateChangeLogAtRuntime(tables = classes.toList())
+    fun generateChangeLog(tables: List<KClass<*>>, functions: List<KProperty<*>> = emptyList()): Changelog =
+        changelogBuilder.generateChangeLogAtRuntime(tables = tables, functions = functions)
 
     fun <RESULT> runMigrations(migrator: Migrator<RESULT>): RESULT =
         migrator.runMigrations(this)

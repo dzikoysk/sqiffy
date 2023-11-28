@@ -57,7 +57,7 @@ internal abstract class MigratorE2ETest : SqiffyE2ETestSpecification(runMigratio
     @Test
     fun `should run all migrations if migration table does not exist`() {
         // given: database scheme with two versions
-        val changeLog = database.generateChangeLog(Table1Definition::class, Table2Definition::class)
+        val changeLog = database.generateChangeLog(listOf(Table1Definition::class, Table2Definition::class))
         assertThat(changeLog.getAllChanges()).hasSize(2)
 
         // when: migrations are run against empty database
@@ -74,7 +74,7 @@ internal abstract class MigratorE2ETest : SqiffyE2ETestSpecification(runMigratio
     @Test
     fun `should run version callback`() {
         // given: database scheme with two versions
-        val changeLog = database.generateChangeLog(Table1Definition::class, Table2Definition::class)
+        val changeLog = database.generateChangeLog(listOf(Table1Definition::class, Table2Definition::class))
         assertThat(changeLog.getAllChanges()).hasSize(2)
 
         // when: migrations are run against empty database

@@ -200,7 +200,9 @@ internal abstract class DslE2ETest(
 
     @Test
     fun `should create table with all default values`() {
-        database.generateChangeLog(TestDefaultDefinition::class)
+        database.generateChangeLog(
+            tables = listOf(TestDefaultDefinition::class)
+        )
 
         val testDefault = TestDefault()
         assertEquals(UUID.fromString(DefaultConstants.UUID_DEFAULT), testDefault.uuid)

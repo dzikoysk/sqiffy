@@ -30,7 +30,7 @@ internal class AggregationTest {
     @Test
     fun `should count records`() {
         val database = Sqiffy.createDatabase<MySqlDatabase>(dataSource = createH2DataSource(mode = H2Mode.MYSQL))
-        database.runMigrations(SqiffyMigrator(changeLog = database.generateChangeLog(TestCountDefinition::class)))
+        database.runMigrations(SqiffyMigrator(database.generateChangeLog(tables = listOf(TestCountDefinition::class))))
         database.insert(TestCountTable).values().map {  }
         database.insert(TestCountTable).values().map {  }
         database.insert(TestCountTable).values().map {  }
