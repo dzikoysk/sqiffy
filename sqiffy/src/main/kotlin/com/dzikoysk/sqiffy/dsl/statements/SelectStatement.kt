@@ -4,6 +4,7 @@ import com.dzikoysk.sqiffy.SqiffyDatabase
 import com.dzikoysk.sqiffy.dsl.Aggregation
 import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.Expression
+import com.dzikoysk.sqiffy.transaction.HandleAccessor
 import com.dzikoysk.sqiffy.dsl.Row
 import com.dzikoysk.sqiffy.dsl.RowException
 import com.dzikoysk.sqiffy.dsl.Selectable
@@ -38,6 +39,7 @@ data class OrderBy(
 
 open class SelectStatement(
     protected val database: SqiffyDatabase,
+    protected val handleAccessor: HandleAccessor,
     protected val from: Table,
 ) : Statement {
 
@@ -104,39 +106,39 @@ open class SelectStatement(
                 }
         }
 
-        return database.getJdbi().withHandle<Sequence<R>, Exception> { handle ->
-            val allocator = ParameterAllocator()
+        val allocator = ParameterAllocator()
 
-            val whereResult = where?.let {
-                database.sqlQueryGenerator.createExpression(
-                    allocator = allocator,
-                    expression = it
-                )
-            }
-
-            val havingResult = having?.let {
-                database.sqlQueryGenerator.createExpression(
-                    allocator = allocator,
-                    expression = it
-                )
-            }
-
-            val query = database.sqlQueryGenerator.createSelectQuery(
-                tableName = from.getName(),
-                distinct = distinct,
-                selected = slice,
-                joins = joins,
-                where = whereResult?.query,
-                groupBy = groupBy,
-                having = havingResult?.query,
-                orderBy = orderBy,
-                limit = limit,
-                offset = offset,
+        val whereResult = where?.let {
+            database.sqlQueryGenerator.createExpression(
+                allocator = allocator,
+                expression = it
             )
+        }
 
-            val arguments = query.arguments + whereResult?.arguments + havingResult?.arguments
-            database.logger.log(Level.DEBUG, "Executing query: ${query.query} with arguments: $arguments")
+        val havingResult = having?.let {
+            database.sqlQueryGenerator.createExpression(
+                allocator = allocator,
+                expression = it
+            )
+        }
 
+        val query = database.sqlQueryGenerator.createSelectQuery(
+            tableName = from.getName(),
+            distinct = distinct,
+            selected = slice,
+            joins = joins,
+            where = whereResult?.query,
+            groupBy = groupBy,
+            having = havingResult?.query,
+            orderBy = orderBy,
+            limit = limit,
+            offset = offset,
+        )
+
+        val arguments = query.arguments + whereResult?.arguments + havingResult?.arguments
+        database.logger.log(Level.DEBUG, "Executing query: ${query.query} with arguments: $arguments")
+
+        return handleAccessor.inHandle { handle ->
             handle
                 .select(query.query)
                 .bindArguments(arguments)

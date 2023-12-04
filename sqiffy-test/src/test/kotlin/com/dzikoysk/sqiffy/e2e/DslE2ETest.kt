@@ -38,6 +38,8 @@ import com.dzikoysk.sqiffy.shared.H2Mode.MYSQL
 import com.dzikoysk.sqiffy.shared.createH2DataSource
 import com.dzikoysk.sqiffy.shared.createHikariDataSource
 import com.dzikoysk.sqiffy.shared.createSQLiteDataSource
+import com.dzikoysk.sqiffy.transaction.NoTransaction
+import com.dzikoysk.sqiffy.transaction.Transaction
 import com.zaxxer.hikari.HikariDataSource
 import java.time.Instant
 import java.time.LocalDate
@@ -83,7 +85,6 @@ internal abstract class DslE2ETest(
             }
             .where { UserTable.id eq insertedUser.id }
             .execute()
-
         assertThat(insertedUser).isNotNull
         assertThat(updatedRecords).isEqualTo(1)
         println("Inserted user: $insertedUser")
@@ -101,7 +102,6 @@ internal abstract class DslE2ETest(
                 )
             }
             .first()
-
         assertThat(userFromDatabase).isNotNull
         assertThat(userFromDatabase.name).isEqualTo("Giant Panda")
         assertThat(userFromDatabase.role).isEqualTo(Role.ADMIN)
@@ -120,7 +120,6 @@ internal abstract class DslE2ETest(
             .values(guildToInsert)
             .map { guildToInsert.withId(id = it[GuildTable.id]) }
             .first()
-
         assertThat(insertedGuild).isNotNull
         println("Inserted guild: $insertedGuild")
 
@@ -133,7 +132,6 @@ internal abstract class DslE2ETest(
             .orderBy(UserTable.name to ASC)
             .map { it[UserTable.name] to it[GuildTable.name] }
             .first()
-
         println(joinedData)
         assertThat(joinedData).isEqualTo("Giant Panda" to "GLORIOUS MONKE")
 
@@ -161,7 +159,6 @@ internal abstract class DslE2ETest(
             }
             .map { it[GuildTable.name] }
             .firstOrNull()
-
         assertThat(matchedGuild).isNotNull
         println(matchedGuild)
 
@@ -187,16 +184,21 @@ internal abstract class DslE2ETest(
                 )
             }
             .first()
-
         assertThat(aggregatedData).isNotNull
         println(aggregatedData)
 
-        val deletedCount = database.delete(GuildTable)
-            .where { GuildTable.id eq insertedGuild.id }
-            .execute()
-
+        val deletedCount = database.transaction { deleteGuild(insertedGuild.id, it) }
         assertThat(deletedCount).isEqualTo(1)
+
+        val deletedCountTwo = deleteGuild(insertedGuild.id)
+        assertThat(deletedCountTwo).isEqualTo(0)
     }
+
+    private fun deleteGuild(id: Int, transaction: Transaction = NoTransaction): Int =
+        transaction(database)
+            .delete(GuildTable)
+            .where { GuildTable.id eq id }
+            .execute()
 
     @Test
     fun `should create table with all default values`() {

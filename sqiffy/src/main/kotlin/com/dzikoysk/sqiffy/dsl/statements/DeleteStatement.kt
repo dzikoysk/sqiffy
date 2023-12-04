@@ -7,9 +7,12 @@ import com.dzikoysk.sqiffy.dsl.Statement
 import com.dzikoysk.sqiffy.dsl.Table
 import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
 import com.dzikoysk.sqiffy.dsl.generator.bindArguments
+import com.dzikoysk.sqiffy.transaction.HandleAccessor
+import org.slf4j.event.Level
 
 open class DeleteStatement(
     protected val database: SqiffyDatabase,
+    protected val handleAccessor: HandleAccessor,
     protected val table: Table,
 ) : Statement {
 
@@ -20,23 +23,24 @@ open class DeleteStatement(
     }
 
     fun execute(): Int {
-        return database.getJdbi().withHandle<Int, Exception> { handle ->
-            val allocator = ParameterAllocator()
+        val allocator = ParameterAllocator()
 
-            val expression = where?.let {
-                database.sqlQueryGenerator.createExpression(
-                    allocator = allocator,
-                    expression = where!!
-                )
-            }
-
-            val (query, queryArguments) = database.sqlQueryGenerator.createDeleteQuery(
-                tableName = table.getName(),
-                where = expression?.query
+        val expression = where?.let {
+            database.sqlQueryGenerator.createExpression(
+                allocator = allocator,
+                expression = where!!
             )
+        }
 
-            val arguments = queryArguments + expression?.arguments
+        val (query, queryArguments) = database.sqlQueryGenerator.createDeleteQuery(
+            tableName = table.getName(),
+            where = expression?.query
+        )
 
+        val arguments = queryArguments + expression?.arguments
+        database.logger.log(Level.DEBUG, "Executing query: $query with arguments: $arguments")
+
+        return handleAccessor.inHandle { handle ->
             handle
                 .createUpdate(query)
                 .bindArguments(arguments)
