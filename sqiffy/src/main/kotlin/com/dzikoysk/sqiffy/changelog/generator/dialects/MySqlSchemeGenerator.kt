@@ -45,7 +45,7 @@ object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
                 UUID_TYPE -> "VARCHAR(36)"
                 ENUM ->
                     enumDefinition
-                        ?.let { availableEnums.getEnum(it.type) }
+                        ?.let { availableEnums.getEnum(it.getMappedTypeDefinition()) }
                         ?.values
                         ?.joinToString { "'$it'" }
                         ?.let { "ENUM($it)" }

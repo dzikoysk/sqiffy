@@ -201,7 +201,7 @@ class DslTableGenerator(private val context: KspContext) {
                 DataType.DATE -> "date(${q(name)}, $defaultDbType)"
                 DataType.DATETIME -> "datetime(${q(name)}, $defaultDbType)"
                 DataType.TIMESTAMP -> "timestamp(${q(name)}, $defaultDbType)"
-                DataType.ENUM -> "enumeration(${q(name)}, ${q(property.enumDefinition!!.enumData.name)}, ${property.enumDefinition?.enumData?.mappedTo}::class)"
+                DataType.ENUM -> "enumeration(${q(name)}, ${q(property.enumDefinition!!.name)}, ${property.enumDefinition?.mappedTo}::class)"
                 else -> throw UnsupportedOperationException("Unsupported property type used as column ($property)")
             }
         }

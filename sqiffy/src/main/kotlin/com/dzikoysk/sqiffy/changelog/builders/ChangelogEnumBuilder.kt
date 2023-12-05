@@ -5,26 +5,27 @@ import com.dzikoysk.sqiffy.changelog.EnumState
 import com.dzikoysk.sqiffy.changelog.Version
 import com.dzikoysk.sqiffy.changelog.generator.SqlSchemeGenerator
 import com.dzikoysk.sqiffy.definition.DataType
+import com.dzikoysk.sqiffy.definition.EnumDefinitionData
 import com.dzikoysk.sqiffy.definition.EnumOperation.ADD_VALUES
-import com.dzikoysk.sqiffy.definition.EnumReference
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.definition.TypeDefinition
 
 class ChangelogEnumBuilder(
     private val sqlSchemeGenerator: SqlSchemeGenerator,
-    private val allVersions: List<Version>
+    private val allVersions: List<Version> = emptyList()
 ) {
 
-    val enums = mutableListOf<EnumReference>()
+    val enums = mutableListOf<EnumDefinitionData>()
     val enumStates = mutableMapOf<Version, MutableMap<TypeDefinition, EnumState>>()
 
-    fun defineEnum(enumReference: EnumReference) {
-        if (enumStates.values.any { it.containsKey(enumReference.type) }) {
+    fun defineEnum(enumData: EnumDefinitionData) {
+        val enumType = enumData.getMappedTypeDefinition()
+
+        if (enumStates.values.any { it.containsKey(enumType) }) {
             return // already defined
         }
 
-        enums.add(enumReference)
-        val enumData = enumReference.enumData
+        enums.add(enumData)
         var currentEnumState: EnumState? = null
 
         val allVersionsWithEnums = (allVersions + enumData.versions.map { it.version })
@@ -36,40 +37,41 @@ class ChangelogEnumBuilder(
 
         for (currentVersion in allVersionsWithEnums) {
             val enumVersion = enumVersions[currentVersion] ?: run {
-                enumStates.computeIfAbsent(currentVersion) { mutableMapOf() }[enumReference.type] = currentEnumState ?: return
+                enumStates.computeIfAbsent(currentVersion) { mutableMapOf() }[enumType] = currentEnumState ?: return
                 return
             }
             currentEnumState = currentEnumState?.copy(values = currentEnumState.values + enumVersion.values) ?: EnumState(enumData.name, enumVersion.values)
-            enumStates.computeIfAbsent(enumVersion.version) { mutableMapOf() }[enumReference.type] = currentEnumState
+            enumStates.computeIfAbsent(enumVersion.version) { mutableMapOf() }[enumType] = currentEnumState
         }
     }
 
     data class EnumChangelog(
-        val finalEnumStates: Map<EnumReference, EnumState>,
+        val finalEnumStates: Map<EnumDefinitionData, EnumState>,
         val enumChangelog: Map<Version, List<Change>>
     )
 
     fun generateChangelog(propertiesState: Map<Version, Map<String, List<PropertyData>>>): EnumChangelog {
         val enumChangelog = linkedMapOf<Version, MutableList<Change>>()
-        val latestState = mutableMapOf<EnumReference, EnumState>()
+        val latestState = mutableMapOf<EnumDefinitionData, EnumState>()
 
-        for (enum in enums) {
+        for (enumData in enums) {
             var previousState: EnumState? = null
+            val enumType = enumData.getMappedTypeDefinition()
 
-            for (enumVersion in enum.enumData.versions) {
-                val currentState = enumStates[enumVersion.version]?.get(enum.type) ?: continue
+            for (enumVersion in enumData.versions) {
+                val currentState = enumStates[enumVersion.version]?.get(enumType) ?: continue
                 val currentChangelog = enumChangelog.computeIfAbsent(enumVersion.version) { mutableListOf() }
 
                 when {
                     previousState == null -> {
                         val createEnumQuery = sqlSchemeGenerator.createEnum(
-                            name = enum.enumData.name,
+                            name = enumData.name,
                             values = enumVersion.values.toList()
                         )
 
                         if (createEnumQuery != null) {
                             currentChangelog.add(Change(
-                                description = "create-enum-${enum.enumData.name}",
+                                description = "create-enum-${enumData.name}",
                                 query = createEnumQuery
                             ))
                         }
@@ -86,7 +88,7 @@ class ChangelogEnumBuilder(
 
                         if (addEnumQuery != null) {
                             currentChangelog.add(Change(
-                                description = "add-enum-values-${enum.enumData.name}",
+                                description = "add-enum-values-${enumData.name}",
                                 query = addEnumQuery
                             ))
                         }
@@ -97,7 +99,7 @@ class ChangelogEnumBuilder(
                 previousState = currentState
             }
 
-            latestState[enum] = previousState ?: continue
+            latestState[enumData] = previousState ?: continue
         }
 
         return EnumChangelog(

@@ -29,7 +29,7 @@ data class PropertyData(
     val name: String,
     val type: DataType?,
     val details: String?,
-    val enumDefinition: EnumReference?,
+    val enumDefinition: EnumDefinitionData?,
     val default: String?,
     val rawDefault: Boolean,
     val nullable: Boolean,
@@ -43,14 +43,19 @@ fun Property.toPropertyData(typeFactory: TypeFactory): PropertyData =
         enumDefinition =
             when (type) {
                 ENUM ->
-                    EnumReference(
-                        type = typeFactory.getTypeDefinition(this) { enumDefinition }
-                            .takeIf { it.qualifiedName != NULL_CLASS::class.qualifiedName }
-                            ?: throw IllegalStateException("Enum definition class is not defined for $name"),
-                        enumData = typeFactory.getTypeAnnotation(this, EnumDefinition::class) { enumDefinition }
-                            ?.toEnumData()
-                            ?: throw IllegalStateException("@EnumDefinition is not defined for $name")
-                    )
+                    typeFactory.getTypeAnnotation(this, EnumDefinition::class) { enumDefinition }
+                        ?.toEnumData()
+                        ?: run {
+                            when {
+                                typeFactory.getTypeAnnotation(this, RawEnum::class) { enumDefinition } != null ->
+                                    EnumDefinitionData(
+                                        name = name,
+                                        mappedTo = typeFactory.getTypeDefinition(this) { enumDefinition }.qualifiedName,
+                                        versions = emptyList()
+                                    )
+                                else -> throw IllegalStateException("@EnumDefinition is not defined for $name")
+                            }
+                        }
                 else -> null
             },
         default = default.takeIf { it != NULL_STRING },

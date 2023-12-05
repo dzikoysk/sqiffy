@@ -1,6 +1,6 @@
 package com.dzikoysk.sqiffy.changelog
 
-import com.dzikoysk.sqiffy.definition.EnumReference
+import com.dzikoysk.sqiffy.definition.EnumDefinitionData
 import com.dzikoysk.sqiffy.definition.FunctionDefinitionData
 import com.dzikoysk.sqiffy.definition.FunctionVersionData
 import com.dzikoysk.sqiffy.definition.ParsedDefinition
@@ -10,7 +10,7 @@ typealias Version = String
 typealias Query = String
 
 data class Changelog(
-    val enums: Map<EnumReference, EnumState>,
+    val enums: Map<EnumDefinitionData, EnumState>,
     val functions: Map<FunctionDefinitionData, FunctionVersionData>,
     val tables: Map<ParsedDefinition, TableName>,
     private val enumChanges: List<SchemeChange>,

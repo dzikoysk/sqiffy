@@ -1,7 +1,7 @@
 package com.dzikoysk.sqiffy.processor.generators
 
 import com.dzikoysk.sqiffy.changelog.EnumState
-import com.dzikoysk.sqiffy.definition.EnumReference
+import com.dzikoysk.sqiffy.definition.TypeDefinition
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.google.devtools.ksp.processing.Dependencies
 import com.squareup.kotlinpoet.FileSpec
@@ -11,18 +11,16 @@ import com.squareup.kotlinpoet.ksp.writeTo
 
 class EnumGenerator(private val context: KspContext) {
 
-    internal fun generateEnum(enumReference: EnumReference, enumState: EnumState): String {
-        val enumQualifier = enumReference.getEnumClassQualifier()
-
-        val enumClass = FileSpec.builder(enumQualifier.packageName!!, enumQualifier.simpleName)
+    internal fun generateEnum(enumState: EnumState, mappedTo: TypeDefinition): String {
+        val enumClass = FileSpec.builder(mappedTo.packageName!!, mappedTo.simpleName)
             .addType(
-                TypeSpec.enumBuilder(enumQualifier.simpleName)
+                TypeSpec.enumBuilder(mappedTo.simpleName)
                     .also { typeBuilder ->
                         typeBuilder.addType(
                             TypeSpec.companionObjectBuilder()
                                 .addProperty(
                                     PropertySpec.builder("TYPE_NAME", String::class)
-                                        .initializer("%S", enumReference.enumData.name)
+                                        .initializer("%S", enumState.name)
                                         .build()
                                 )
                                 .build()
@@ -37,7 +35,7 @@ class EnumGenerator(private val context: KspContext) {
             .build()
 
         enumClass.writeTo(context.codeGenerator, Dependencies(true))
-        return enumQualifier.qualifiedName
+        return mappedTo.qualifiedName
     }
 
 }

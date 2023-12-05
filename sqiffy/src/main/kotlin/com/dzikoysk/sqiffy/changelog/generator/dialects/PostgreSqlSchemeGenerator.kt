@@ -48,7 +48,7 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
             SERIAL -> "SERIAL"
             UUID_TYPE -> "UUID"
             ENUM -> property.enumDefinition
-                ?.let { availableEnums.getEnum(it.type) }
+                ?.let { availableEnums.getEnum(it.getMappedTypeDefinition()) }
                 ?.name
                 ?.toQuoted()
                 ?: throw IllegalStateException("Missing enum data for property '${property.name}'")

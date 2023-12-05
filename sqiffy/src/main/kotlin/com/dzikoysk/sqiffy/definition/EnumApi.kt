@@ -9,6 +9,9 @@ annotation class EnumDefinition(
     val value: Array<EnumVersion>
 )
 
+@Target(CLASS)
+annotation class RawEnum
+
 enum class EnumOperation {
     ADD_VALUES
 }
@@ -40,24 +43,19 @@ fun EnumDefinition.toEnumData(): EnumDefinitionData =
             }
     )
 
-data class EnumReference(
-    val type: TypeDefinition,
-    val enumData: EnumDefinitionData
-) {
-
-    fun getEnumClassQualifier(): TypeDefinition =
-        when {
-            enumData.mappedTo.contains(".") -> TypeDefinition(enumData.mappedTo.substringBeforeLast("."), enumData.mappedTo.substringAfterLast("."))
-            else -> TypeDefinition(type.packageName, enumData.mappedTo)
-        }
-
-}
-
 data class EnumDefinitionData(
     val name: String,
     val mappedTo: String,
     val versions: List<EnumVersionData>
-)
+) {
+
+    fun getMappedTypeDefinition(): TypeDefinition =
+        TypeDefinition(
+            packageName = mappedTo.substringBeforeLast("."),
+            simpleName = mappedTo.substringAfterLast(".")
+        )
+
+}
 
 data class EnumVersionData(
     val version: String,

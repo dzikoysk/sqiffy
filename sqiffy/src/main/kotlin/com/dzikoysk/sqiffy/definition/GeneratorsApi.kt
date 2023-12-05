@@ -45,23 +45,23 @@ fun KClass<*>.toTypeDefinition(): TypeDefinition =
 
 interface TypeFactory {
 
-    fun <A : Annotation> getTypeDefinition(annotation: A, supplier: A.() -> KClass<*>): TypeDefinition
+    fun <A : Annotation?> getTypeDefinition(annotation: A, supplier: A.() -> KClass<*>): TypeDefinition
 
-    fun <A : Annotation, R : Annotation> getTypeAnnotation(annotation: A, annotationType: KClass<R>, supplier: A.() -> KClass<*>): R?
+    fun <A : Annotation?, R : Annotation> getTypeAnnotation(annotation: A, annotationType: KClass<R>, supplier: A.() -> KClass<*>): R?
 
-    fun <A : Annotation> getEnumValues(annotation: A, supplier: A.() -> KClass<*>): List<String>?
+    fun <A : Annotation?> getEnumValues(annotation: A, supplier: A.() -> KClass<*>): List<String>?
 
 }
 
 class RuntimeTypeFactory : TypeFactory {
 
-    override fun <A : Annotation> getTypeDefinition(annotation: A, supplier: A.() -> KClass<*>): TypeDefinition =
+    override fun <A : Annotation?> getTypeDefinition(annotation: A, supplier: A.() -> KClass<*>): TypeDefinition =
         supplier.invoke(annotation).toTypeDefinition()
 
-    override fun <A : Annotation, R : Annotation> getTypeAnnotation(annotation: A, annotationType: KClass<R>, supplier: A.() -> KClass<*>): R? =
+    override fun <A : Annotation?, R : Annotation> getTypeAnnotation(annotation: A, annotationType: KClass<R>, supplier: A.() -> KClass<*>): R? =
         supplier.invoke(annotation).findAnnotations(annotationType).firstOrNull()
 
-    override fun <A : Annotation> getEnumValues(annotation: A, supplier: A.() -> KClass<*>): List<String>? =
+    override fun <A : Annotation?> getEnumValues(annotation: A, supplier: A.() -> KClass<*>): List<String>? =
         supplier.invoke(annotation)
             .takeIf { it.java.isEnum }
             ?.java

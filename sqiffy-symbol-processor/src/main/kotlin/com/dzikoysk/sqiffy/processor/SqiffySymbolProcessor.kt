@@ -3,6 +3,7 @@ package com.dzikoysk.sqiffy.processor
 import com.dzikoysk.sqiffy.Dialect
 import com.dzikoysk.sqiffy.changelog.Changelog
 import com.dzikoysk.sqiffy.changelog.ChangelogBuilder
+import com.dzikoysk.sqiffy.changelog.builders.ChangelogEnumBuilder
 import com.dzikoysk.sqiffy.changelog.generator.dialects.getSchemeGenerator
 import com.dzikoysk.sqiffy.definition.ChangelogDefinition
 import com.dzikoysk.sqiffy.definition.ChangelogProvider.LIQUIBASE
@@ -10,6 +11,7 @@ import com.dzikoysk.sqiffy.definition.ChangelogProvider.SQIFFY
 import com.dzikoysk.sqiffy.definition.Definition
 import com.dzikoysk.sqiffy.definition.DtoDefinition
 import com.dzikoysk.sqiffy.definition.DtoGroupData
+import com.dzikoysk.sqiffy.definition.EnumDefinition
 import com.dzikoysk.sqiffy.definition.FunctionDefinition
 import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
@@ -20,6 +22,7 @@ import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RETYPE
 import com.dzikoysk.sqiffy.definition.TypeDefinition
 import com.dzikoysk.sqiffy.definition.TypeFactory
 import com.dzikoysk.sqiffy.definition.toDtoDefinitionData
+import com.dzikoysk.sqiffy.definition.toEnumData
 import com.dzikoysk.sqiffy.definition.toFunctionData
 import com.dzikoysk.sqiffy.definition.toPropertyData
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
@@ -92,6 +95,10 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
         val schemaGenerator = (changelogDefinition?.dialect ?: Dialect.POSTGRESQL)
             .getSchemeGenerator()
 
+        val enums = resolver.getSymbolsWithAnnotation(EnumDefinition::class.qualifiedName!!)
+            .filterIsInstance<KSClassDeclaration>()
+            .flatMap { it.getAnnotationsByType(EnumDefinition::class) }
+
         val functions = resolver.getSymbolsWithAnnotation(FunctionDefinition::class.qualifiedName!!)
             .filterIsInstance<KSPropertyDeclaration>()
             .flatMap { it.getAnnotationsByType(FunctionDefinition::class) }
@@ -113,11 +120,23 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
             }
             .toList()
 
+        val enumChangelogGenerator = ChangelogEnumBuilder(schemaGenerator)
+        enums.forEach { enumChangelogGenerator.defineEnum(it.toEnumData()) }
+
+        enumChangelogGenerator.generateChangelog(emptyMap())
+            .finalEnumStates
+            .entries
+            .forEach { (enumData, finalState) ->
+                enumGenerator.generateEnum(
+                    enumState = finalState,
+                    mappedTo = enumData.getMappedTypeDefinition()
+                )
+            }
+
         val baseSchemeGenerator = ChangelogBuilder(
             sqlSchemeGenerator = schemaGenerator,
             typeFactory = typeFactory
         )
-
         val changelog = baseSchemeGenerator.generateChangeLog(
             functions = functions,
             tables = tables
@@ -163,10 +182,6 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
     }
 
     private fun generateTableDls(typeFactory: TypeFactory, changeLog: Changelog) {
-        changeLog.enums.forEach { (reference, state) ->
-            enumGenerator.generateEnum(reference, state)
-        }
-
         changeLog.tables.forEach { (definition, name) ->
             val properties = generateProperties(
                 typeFactory = typeFactory,

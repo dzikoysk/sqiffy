@@ -16,7 +16,7 @@ import kotlin.reflect.KClass
 class KspTypeFactory(private val resolver: Resolver) : TypeFactory {
 
     @OptIn(KspExperimental::class)
-    private fun <A : Annotation> getKSType(annotation: A, supplier: A.() -> KClass<*>): KSType =
+    private fun <A : Annotation?> getKSType(annotation: A, supplier: A.() -> KClass<*>): KSType =
         try {
             val type = supplier(annotation)
             resolver.getClassDeclarationByName(type.qualifiedName!!)!!.asStarProjectedType()
@@ -24,7 +24,7 @@ class KspTypeFactory(private val resolver: Resolver) : TypeFactory {
             exception.ksType
         }
 
-    override fun <A : Annotation> getTypeDefinition(annotation: A, supplier: A.() -> KClass<*>): TypeDefinition =
+    override fun <A : Annotation?> getTypeDefinition(annotation: A, supplier: A.() -> KClass<*>): TypeDefinition =
         getKSType(annotation, supplier).let {
             TypeDefinition(
                 packageName = it.declaration.packageName.asString(),
@@ -33,7 +33,7 @@ class KspTypeFactory(private val resolver: Resolver) : TypeFactory {
         }
 
     @OptIn(KspExperimental::class)
-    override fun <A : Annotation, R : Annotation> getTypeAnnotation(annotation: A, annotationType: KClass<R>, supplier: A.() -> KClass<*>): R? =
+    override fun <A : Annotation?, R : Annotation> getTypeAnnotation(annotation: A, annotationType: KClass<R>, supplier: A.() -> KClass<*>): R? =
         getKSType(annotation, supplier).let { type ->
             type
                 .let { it.declaration as? KSClassDeclaration }
@@ -41,7 +41,7 @@ class KspTypeFactory(private val resolver: Resolver) : TypeFactory {
                 ?.firstOrNull()
         }
 
-    override fun <A : Annotation> getEnumValues(annotation: A, supplier: A.() -> KClass<*>): List<String>? =
+    override fun <A : Annotation?> getEnumValues(annotation: A, supplier: A.() -> KClass<*>): List<String>? =
         getKSType(annotation, supplier).let { type ->
             type
                 .takeIf { it.declaration.modifiers.contains(ENUM) }

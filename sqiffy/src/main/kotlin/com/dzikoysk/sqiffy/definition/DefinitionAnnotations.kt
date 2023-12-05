@@ -26,7 +26,7 @@ enum class DataType(
     NULL_TYPE(INDIRECT, NULL_CLASS::class),
     UUID_TYPE(INDIRECT, UUID::class),
     SERIAL(INDIRECT, Int::class),
-    ENUM(DIRECT, Enum::class, { it.enumDefinition?.getEnumClassQualifier() ?: throw IllegalStateException("Enum definition class is not defined for ${it}") }),
+    ENUM(DIRECT, Enum::class, { it.enumDefinition?.getMappedTypeDefinition() ?: throw IllegalStateException("Enum definition class is not defined for $it") }),
 
     /* Regular types */
     CHAR(DIRECT, Char::class),

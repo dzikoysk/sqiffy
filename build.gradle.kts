@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.9.20"
+    kotlin("jvm") version "1.9.21"
     `java-library`
 
     application
@@ -21,7 +21,7 @@ allprojects {
     apply(plugin = "signing")
 
     group = "com.dzikoysk.sqiffy"
-    version = "1.0.0-alpha.32"
+    version = "1.0.0-alpha.35"
 
     java {
         sourceCompatibility = JavaVersion.VERSION_11

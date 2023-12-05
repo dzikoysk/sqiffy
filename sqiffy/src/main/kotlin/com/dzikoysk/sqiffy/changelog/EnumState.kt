@@ -1,11 +1,11 @@
 package com.dzikoysk.sqiffy.changelog
 
-import com.dzikoysk.sqiffy.definition.EnumReference
+import com.dzikoysk.sqiffy.definition.EnumDefinitionData
 import com.dzikoysk.sqiffy.definition.TypeDefinition
 
 class Enums(
     private val availableEnums: () -> Map<TypeDefinition, EnumState> = { emptyMap() },
-    val defineEnum: (EnumReference) -> Unit = {}
+    val defineEnum: (EnumDefinitionData) -> Unit = {}
 ) {
     fun getEnum(enumType: TypeDefinition): EnumState? = availableEnums()[enumType]
 }
