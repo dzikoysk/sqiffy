@@ -84,7 +84,7 @@ class ChangelogEnumBuilder(
                             values = enumVersion.values.toList(),
                             inUse = propertiesState[enumVersion.version]
                                 ?.flatMap { (table, properties) -> properties.map { table to it } }
-                                ?.filter { (_, property) -> property.type == DataType.ENUM }
+                                ?.filter { (_, property) -> property.type == DataType.ENUM && property.enumDefinition!!.mappedTo == enumData.mappedTo }
                                 ?: emptyList()
                         )
 
