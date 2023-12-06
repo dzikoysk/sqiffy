@@ -29,6 +29,8 @@ fun EnumDefinition.toEnumData(): EnumDefinitionData =
             name
                 .takeIf { it != NULL_STRING }
                 ?: throw IllegalStateException("Enum name cannot be null"),
+        raw =
+            false,
         mappedTo =
             mappedTo
                 .takeIf { it != NULL_STRING }
@@ -45,6 +47,7 @@ fun EnumDefinition.toEnumData(): EnumDefinitionData =
 
 data class EnumDefinitionData(
     val name: String,
+    val raw: Boolean,
     val mappedTo: String,
     val versions: List<EnumVersionData>
 ) {

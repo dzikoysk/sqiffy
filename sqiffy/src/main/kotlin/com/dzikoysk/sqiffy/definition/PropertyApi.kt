@@ -50,8 +50,15 @@ fun Property.toPropertyData(typeFactory: TypeFactory): PropertyData =
                                 typeFactory.getTypeAnnotation(this, RawEnum::class) { enumDefinition } != null ->
                                     EnumDefinitionData(
                                         name = name,
+                                        raw = true,
                                         mappedTo = typeFactory.getTypeDefinition(this) { enumDefinition }.qualifiedName,
-                                        versions = emptyList()
+                                        versions = listOf(
+                                            EnumVersionData(
+                                                version = "0.0.0",
+                                                operation = EnumOperation.ADD_VALUES,
+                                                values = typeFactory.getEnumValues(this) { enumDefinition }?.toList() ?: emptyList()
+                                            )
+                                        )
                                     )
                                 else -> throw IllegalStateException("@EnumDefinition is not defined for $name")
                             }

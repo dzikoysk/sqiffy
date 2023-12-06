@@ -8,6 +8,7 @@ class Enums(
     val defineEnum: (EnumDefinitionData) -> Unit = {}
 ) {
     fun getEnum(enumType: TypeDefinition): EnumState? = availableEnums()[enumType]
+    override fun toString(): String = availableEnums().toString()
 }
 
 data class EnumState(

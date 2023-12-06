@@ -36,12 +36,14 @@ class ChangelogEnumBuilder(
             .associateBy { it.version }
 
         for (currentVersion in allVersionsWithEnums) {
-            val enumVersion = enumVersions[currentVersion] ?: run {
-                enumStates.computeIfAbsent(currentVersion) { mutableMapOf() }[enumType] = currentEnumState ?: return
-                return
+            val enumVersion = enumVersions[currentVersion]
+
+            if (enumVersion == null) {
+                enumStates.computeIfAbsent(currentVersion) { mutableMapOf() }[enumType] = currentEnumState ?: continue
+            } else {
+                currentEnumState = currentEnumState?.copy(values = currentEnumState.values + enumVersion.values) ?: EnumState(enumData.name, enumVersion.values)
+                enumStates.computeIfAbsent(enumVersion.version) { mutableMapOf() }[enumType] = currentEnumState
             }
-            currentEnumState = currentEnumState?.copy(values = currentEnumState.values + enumVersion.values) ?: EnumState(enumData.name, enumVersion.values)
-            enumStates.computeIfAbsent(enumVersion.version) { mutableMapOf() }[enumType] = currentEnumState
         }
     }
 

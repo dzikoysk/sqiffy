@@ -28,6 +28,7 @@ import com.dzikoysk.sqiffy.definition.Property
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RENAME
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RETYPE
+import com.dzikoysk.sqiffy.definition.RawEnum
 import com.dzikoysk.sqiffy.definition.Variant
 import com.dzikoysk.sqiffy.e2e.UserAndGuildScenarioVersions.V_1_0_0
 import com.dzikoysk.sqiffy.e2e.UserAndGuildScenarioVersions.V_1_0_1
@@ -129,7 +130,8 @@ object RoleDefinition
             Property(name = "id", type = SERIAL),
             Property(name = "name", type = VARCHAR, details = "24"),
             Property(name = "owner", type = INT),
-            Property(name = "createdAt", type = DATETIME)
+            Property(name = "createdAt", type = DATETIME),
+            Property(name = "type", type = ENUM, enumDefinition = GuildType::class, default = "DEFAULT"),
         ],
         constraints = [
             Constraint(type = PRIMARY_KEY, name = "pk_guild_id", on = ["id"]),
@@ -150,3 +152,8 @@ object RoleDefinition
     )
 ])
 object GuildDefinition
+
+@RawEnum
+enum class GuildType {
+    DEFAULT
+}
