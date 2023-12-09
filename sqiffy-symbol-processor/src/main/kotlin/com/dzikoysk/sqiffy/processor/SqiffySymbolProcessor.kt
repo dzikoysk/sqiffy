@@ -13,6 +13,7 @@ import com.dzikoysk.sqiffy.definition.DtoDefinition
 import com.dzikoysk.sqiffy.definition.DtoGroupData
 import com.dzikoysk.sqiffy.definition.EnumDefinition
 import com.dzikoysk.sqiffy.definition.FunctionDefinition
+import com.dzikoysk.sqiffy.definition.Mode
 import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
@@ -211,7 +212,12 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
                     dtoGenerator.generateDtoClass(
                         definition = definition,
                         variantData = variant,
-                        selectedProperties = properties.filter { variant.allProperties || it.name in variant.properties }
+                        selectedProperties = when {
+                            variant.properties.isEmpty() -> properties
+                            variant.mode == Mode.INCLUDE -> properties.filter { variant.properties.contains(it.name) }
+                            variant.mode == Mode.EXCLUDE -> properties.filterNot { variant.properties.contains(it.name) }
+                            else -> throw IllegalStateException("Unsupported mode ${variant.mode}")
+                        }
                     )
                 }
                 ?: emptyList()

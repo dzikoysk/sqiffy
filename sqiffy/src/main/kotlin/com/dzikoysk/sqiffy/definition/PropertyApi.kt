@@ -17,6 +17,7 @@ annotation class Property(
     val operation: PropertyDefinitionOperation = ADD,
     val name: String,
     val type: DataType = NULL_TYPE,
+    val mappedTo: KClass<*> = NULL_CLASS::class,
     val details: String = NULL_STRING,
     val enumDefinition: KClass<*> = NULL_CLASS::class,
     val rename: String = NULL_STRING,
@@ -28,6 +29,7 @@ annotation class Property(
 data class PropertyData(
     val name: String,
     val type: DataType?,
+    val mappedTo: TypeDefinition?,
     val details: String?,
     val enumDefinition: EnumDefinitionData?,
     val default: String?,
@@ -39,6 +41,7 @@ fun Property.toPropertyData(typeFactory: TypeFactory): PropertyData =
     PropertyData(
         name = name,
         type = type.takeIf { it != NULL_TYPE },
+        mappedTo = typeFactory.getTypeDefinition(this) { mappedTo }.takeIf { it.qualifiedName != NULL_CLASS::class.qualifiedName },
         details = details.takeIf { it != NULL_STRING },
         enumDefinition =
             when (type) {

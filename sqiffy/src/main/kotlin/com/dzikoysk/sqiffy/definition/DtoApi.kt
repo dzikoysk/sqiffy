@@ -21,25 +21,30 @@ fun DtoDefinition.toDtoDefinitionData(typeFactory: TypeFactory): DtoGroupData =
         variants = variants.map { it.toVariantData(typeFactory) }
     )
 
+enum class Mode {
+    INCLUDE,
+    EXCLUDE
+}
+
 @Target(ANNOTATION_CLASS)
 annotation class Variant(
     val name: String,
+    val mode: Mode = Mode.INCLUDE,
     val properties: Array<String> = [],
-    val allProperties: Boolean = false,
     val implements: Array<KClass<*>> = []
 )
 
 fun Variant.toVariantData(typeFactory: TypeFactory): VariantData =
     VariantData(
         name = name,
+        mode = mode,
         properties = properties.toList(),
-        allProperties = allProperties,
         implements = implements.map { typeFactory.getTypeDefinition(this) { it } }
     )
 
 data class VariantData(
     val name: String,
+    val mode: Mode,
     val properties: List<String>,
-    val allProperties: Boolean,
     val implements: List<TypeDefinition>
 )

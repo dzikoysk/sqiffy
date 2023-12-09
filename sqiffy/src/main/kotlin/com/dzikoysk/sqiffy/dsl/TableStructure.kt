@@ -2,10 +2,12 @@ package com.dzikoysk.sqiffy.dsl
 
 import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.PropertyData
+import com.dzikoysk.sqiffy.definition.toTypeDefinition
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
+import kotlin.jvm.internal.Reflection
 import kotlin.reflect.KClass
 
 abstract class Table(name: String) {
@@ -75,6 +77,7 @@ data class Column<T>(
         PropertyData(
             name = name,
             type = dataType,
+            mappedTo = Reflection.getOrCreateKotlinClass(type).toTypeDefinition(),
             nullable = nullable,
             enumDefinition = null,
             default = null,

@@ -186,7 +186,10 @@ class DslTableGenerator(private val context: KspContext) {
         var baseColumn = with(property) {
             val defaultDbType = q(type!!.name)
 
-            when (property.type) {
+            if (property.mappedTo != null) {
+                "column(${q(name)}, ${DataType::class.qualifiedName}.${property.type?.name}, $defaultDbType, ${property.mappedTo!!.qualifiedName}::class)"
+            }
+            else when (property.type) {
                 DataType.SERIAL -> "serial(${q(name)}, $defaultDbType)"
                 DataType.CHAR -> "char(${q(name)}, $defaultDbType)"
                 DataType.VARCHAR -> "varchar(${q(name)}, $defaultDbType)"

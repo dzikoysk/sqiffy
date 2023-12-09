@@ -19,8 +19,8 @@ enum class Kind {
 
 enum class DataType(
     val kind: Kind,
-    val javaType: KClass<*>,
-    val contextualType: (PropertyData) -> TypeDefinition = { javaType.toTypeDefinition() }
+    val mappedTo: KClass<*>,
+    val contextualType: (PropertyData) -> TypeDefinition = { it.mappedTo ?: mappedTo.toTypeDefinition() }
 ) {
     /* Special types */
     NULL_TYPE(INDIRECT, NULL_CLASS::class),

@@ -47,6 +47,8 @@ object UserAndGuildScenarioVersions {
     const val V_1_0_2 = "1.0.2"
 }
 
+typealias UserId = Int
+
 @Definition(
     domainPackage = "com.dzikoysk.sqiffy.domain",
     infrastructurePackage = "com.dzikoysk.sqiffy.infra",
@@ -56,7 +58,7 @@ object UserAndGuildScenarioVersions {
             version = V_1_0_0,
             name = "users",
             properties = [
-                Property(name = "id", type = SERIAL),
+                Property(name = "id", type = SERIAL, mappedTo = UserId::class),
                 Property(name = "uuid", type = UUID_TYPE),
                 Property(name = "name", type = VARCHAR, details = "12"),
                 Property(name = "wallet", type = FLOAT, default = "0.0"),
@@ -101,7 +103,6 @@ object UserDefinition
         ),
         Variant(
             name = "AllUserDto",
-            allProperties = true,
             implements = [ Serializable::class ]
         ),
     ]
