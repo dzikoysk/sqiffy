@@ -153,7 +153,7 @@ class DslTableGenerator(private val context: KspContext) {
                             |}
                             """.trimMargin(),
                             ClassName(infrastructurePackage, objectName),
-                            insertionProperties.joinToString("; ") { "it[${objectName}.${it.name}] = ${it.name}" }
+                            insertionProperties.joinToString("") { "it[${objectName}.${it.name}] = ${it.name};\n" }
                         )
                         .returns(insertStatementReturnType)
                         .build()
