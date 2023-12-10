@@ -1,5 +1,6 @@
 package com.dzikoysk.sqiffy.definition
 
+import com.dzikoysk.sqiffy.definition.EnumOperation.ADD_VALUES
 import kotlin.annotation.AnnotationTarget.CLASS
 
 @Target(CLASS)
@@ -19,7 +20,7 @@ enum class EnumOperation {
 @Target()
 annotation class EnumVersion(
     val version: String,
-    val operation: EnumOperation,
+    val operation: EnumOperation = ADD_VALUES,
     val values: Array<String>,
 )
 
