@@ -229,10 +229,6 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
                 table = definition
             )
 
-            if (properties.any { it.formattedName.contains("_") }) {
-                throw IllegalStateException("Property names cannot contain underscores: $properties")
-            }
-
             val dtoMethodsToAdd = dtoGroups
                 .firstOrNull { it.from.qualifiedName == definition.source }
                 ?.variants
