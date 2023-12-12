@@ -28,6 +28,7 @@ annotation class Property(
 
 data class PropertyData(
     val name: String,
+    val formattedName: String,
     val type: DataType?,
     val mappedTo: TypeDefinition?,
     val details: String?,
@@ -37,9 +38,10 @@ data class PropertyData(
     val nullable: Boolean,
 )
 
-fun Property.toPropertyData(typeFactory: TypeFactory): PropertyData =
+fun Property.toPropertyData(typeFactory: TypeFactory, namingStrategy: NamingStrategy): PropertyData =
     PropertyData(
         name = name,
+        formattedName = NamingStrategyFormatter.format(namingStrategy, name).also { if (it.contains("_")) { throw IllegalStateException("$it $namingStrategy")} },
         type = type.takeIf { it != NULL_TYPE },
         mappedTo = typeFactory.getTypeDefinition(this) { mappedTo }.takeIf { it.qualifiedName != NULL_CLASS::class.qualifiedName },
         details = details.takeIf { it != NULL_STRING },

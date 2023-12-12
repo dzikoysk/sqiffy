@@ -4,6 +4,7 @@ import com.dzikoysk.sqiffy.changelog.ChangelogBuilder
 import com.dzikoysk.sqiffy.changelog.generator.dialects.MySqlSchemeGenerator
 import com.dzikoysk.sqiffy.changelog.generator.dialects.PostgreSqlSchemeGenerator
 import com.dzikoysk.sqiffy.changelog.generator.dialects.SqliteSchemeGenerator
+import com.dzikoysk.sqiffy.definition.NamingStrategy.RAW
 import com.dzikoysk.sqiffy.dsl.generator.dialects.MySqlQueryGenerator
 import com.dzikoysk.sqiffy.dsl.generator.dialects.PostgreSqlQueryGenerator
 import com.dzikoysk.sqiffy.dsl.generator.dialects.SqliteQueryGenerator
@@ -35,7 +36,7 @@ class PostgresDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase(state) {
                     localJdbi = createGenericJdbi(dataSource),
                     dialect = Dialect.POSTGRESQL,
                     sqlQueryGenerator = PostgreSqlQueryGenerator,
-                    changelogBuilder = ChangelogBuilder(PostgreSqlSchemeGenerator)
+                    changelogBuilder = ChangelogBuilder(PostgreSqlSchemeGenerator, RAW)
                 )
             )
         }
@@ -55,7 +56,7 @@ class MySqlDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase(state) {
                     localJdbi = createGenericJdbi(dataSource).also { it.registerArgument(UUIDArgumentFactory()) },
                     dialect = Dialect.MYSQL,
                     sqlQueryGenerator = MySqlQueryGenerator,
-                    changelogBuilder = ChangelogBuilder(MySqlSchemeGenerator)
+                    changelogBuilder = ChangelogBuilder(MySqlSchemeGenerator, RAW)
                 )
             )
         }
@@ -75,7 +76,7 @@ class SqliteDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase(state) {
                     localJdbi = createGenericJdbi(dataSource).also { it.registerArgument(UUIDArgumentFactory()) },
                     dialect = Dialect.SQLITE,
                     sqlQueryGenerator = SqliteQueryGenerator,
-                    changelogBuilder = ChangelogBuilder(SqliteSchemeGenerator)
+                    changelogBuilder = ChangelogBuilder(SqliteSchemeGenerator, RAW)
                 )
             )
         }

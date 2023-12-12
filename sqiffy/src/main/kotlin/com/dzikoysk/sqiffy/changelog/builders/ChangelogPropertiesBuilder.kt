@@ -4,6 +4,7 @@ import com.dzikoysk.sqiffy.changelog.ChangelogBuilder.ChangeLogGeneratorContext
 import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.NULL_TYPE
 import com.dzikoysk.sqiffy.definition.NULL_STRING
+import com.dzikoysk.sqiffy.definition.NamingStrategy
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.REMOVE
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RENAME
@@ -13,7 +14,7 @@ import com.dzikoysk.sqiffy.shared.replaceFirst
 
 class ChangelogPropertiesBuilder {
 
-    internal fun generateProperties(context: ChangeLogGeneratorContext) {
+    internal fun generateProperties(context: ChangeLogGeneratorContext, namingStrategy: NamingStrategy) {
         with(context) {
             when {
                 /* rename table */
@@ -24,22 +25,22 @@ class ChangelogPropertiesBuilder {
                     state.tableName = changeToApply.name
                 }
                 currentScheme.none { it.tableName == state.tableName } -> {
-                    generateNewTable(context)
+                    generateNewTable(context, namingStrategy)
                     return // properties are up-to-date
                 }
             }
-            generateChangesForProperties(context)
+            generateChangesForProperties(context, namingStrategy)
         }
     }
 
-    private fun generateNewTable(context: ChangeLogGeneratorContext) {
+    private fun generateNewTable(context: ChangeLogGeneratorContext, namingStrategy: NamingStrategy) {
         with(context) {
             if (changeToApply.properties.any { it.operation != ADD }) {
                 throw IllegalStateException("You can only add properties to a new table scheme")
             }
 
             changeToApply.properties
-                .map { it.toPropertyData(context.typeFactory) }
+                .map { it.toPropertyData(context.typeFactory, namingStrategy = namingStrategy) }
                 .onEach {
                     if (it.type == ENUM) {
                         val enumDefinition = it.enumDefinition ?: throw IllegalStateException("Enum definition cannot be null for ${it.name} in ${state.tableName}")
@@ -61,7 +62,7 @@ class ChangelogPropertiesBuilder {
         }
     }
 
-    private fun generateChangesForProperties(context: ChangeLogGeneratorContext) {
+    private fun generateChangesForProperties(context: ChangeLogGeneratorContext, namingStrategy: NamingStrategy) {
         with(context) {
             val properties = context.state.properties
 
@@ -69,7 +70,7 @@ class ChangelogPropertiesBuilder {
             for (propertyChange in changeToApply.properties) {
                 when (propertyChange.operation) {
                     ADD -> {
-                        val property = propertyChange.toPropertyData(context.typeFactory)
+                        val property = propertyChange.toPropertyData(context.typeFactory, namingStrategy)
                         require(properties.none { it.name == property.name }) { "Cannot add property ${property.name} to ${state.tableName} because it already exists" }
 
                         if (property.type == ENUM) {

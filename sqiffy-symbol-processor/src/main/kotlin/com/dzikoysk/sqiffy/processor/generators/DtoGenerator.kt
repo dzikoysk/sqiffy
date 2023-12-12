@@ -29,7 +29,7 @@ internal class DtoGenerator(private val context: KspContext) {
                         FunSpec.constructorBuilder()
                             .also { constructorBuilder ->
                                 selectedProperties.forEach {
-                                    constructorBuilder.addParameter(it.name, it.type!!.contextualType(it).toClassName().copy(nullable = it.nullable))
+                                    constructorBuilder.addParameter(it.formattedName, it.type!!.contextualType(it).toClassName().copy(nullable = it.nullable))
                                 }
                             }
                             .build()
@@ -37,8 +37,8 @@ internal class DtoGenerator(private val context: KspContext) {
                     .also { typeBuilder ->
                         selectedProperties.forEach {
                             typeBuilder.addProperty(
-                                PropertySpec.builder(it.name, it.type!!.contextualType(it).toClassName().copy(nullable = it.nullable))
-                                    .initializer(it.name)
+                                PropertySpec.builder(it.formattedName, it.type!!.contextualType(it).toClassName().copy(nullable = it.nullable))
+                                    .initializer(it.formattedName)
                                     .build()
                             )
                         }

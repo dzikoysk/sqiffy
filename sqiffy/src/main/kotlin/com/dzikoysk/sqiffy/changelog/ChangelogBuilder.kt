@@ -10,6 +10,7 @@ import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.DefinitionVersion
 import com.dzikoysk.sqiffy.definition.FunctionDefinition
 import com.dzikoysk.sqiffy.definition.FunctionDefinitionData
+import com.dzikoysk.sqiffy.definition.NamingStrategy
 import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.definition.RuntimeTypeFactory
@@ -23,7 +24,8 @@ import kotlin.reflect.full.findAnnotations
 
 class ChangelogBuilder(
     private val sqlSchemeGenerator: SqlSchemeGenerator,
-    private val typeFactory: TypeFactory = RuntimeTypeFactory()
+    private val namingStrategy: NamingStrategy,
+    private val typeFactory: TypeFactory = RuntimeTypeFactory(),
 ) {
 
     private val propertiesBuilder = ChangelogPropertiesBuilder()
@@ -135,7 +137,7 @@ class ChangelogBuilder(
                 )
 
                 val propertiesContext = baseContext.copy(changes = mutableListOf())
-                propertiesBuilder.generateProperties(propertiesContext)
+                propertiesBuilder.generateProperties(propertiesContext, namingStrategy)
                 contexts.add(propertiesContext)
                 propertiesState.computeIfAbsent(version) { mutableMapOf() }[state.tableName] = propertiesContext.state.properties.toList()
 

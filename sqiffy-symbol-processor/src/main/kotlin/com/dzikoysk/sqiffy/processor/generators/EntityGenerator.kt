@@ -52,15 +52,15 @@ class EntityGenerator(private val context: KspContext) {
                         FunSpec.builder("withId")
                             .also { functionBuilder ->
                                 serialProperties.forEach {
-                                    functionBuilder.addParameter(it.name, it.type!!.contextualType(it).toClassName())
+                                    functionBuilder.addParameter(it.formattedName, it.type!!.contextualType(it).toClassName())
                                 }
                             }
                             .returns(entityClassName)
                             .addStatement(
                                 "return %T(%L, %L)",
                                 entityClassName,
-                                serialProperties.joinToString(", ") { it.name + " = " + it.name },
-                                requiredProperties.joinToString(", ") { it.name + " = " + it.name }
+                                serialProperties.joinToString(", ") { it.formattedName + " = " + it.formattedName },
+                                requiredProperties.joinToString(", ") { it.formattedName + " = " + it.formattedName }
                             )
                             .build()
                     )
@@ -88,7 +88,7 @@ class EntityGenerator(private val context: KspContext) {
                                 properties.forEach {
                                     val dataType = it.type!!
                                     val typeName = dataType.toTypeName(it).copy()
-                                    var builder = ParameterSpec.builder(it.name, typeName)
+                                    var builder = ParameterSpec.builder(it.formattedName, typeName)
 
                                     if (it.default != null && !it.rawDefault) {
                                         builder = builder.defaultValue(it.default!!.toKotlinCode(dataType, typeName))
@@ -102,8 +102,8 @@ class EntityGenerator(private val context: KspContext) {
                     .also { typeBuilder ->
                         properties.forEach {
                             typeBuilder.addProperty(
-                                PropertySpec.builder(it.name, it.type!!.toTypeName(it))
-                                    .initializer(it.name)
+                                PropertySpec.builder(it.formattedName, it.type!!.toTypeName(it))
+                                    .initializer(it.formattedName)
                                     .build()
                             )
                         }
@@ -118,7 +118,7 @@ class EntityGenerator(private val context: KspContext) {
                                     .addStatement(
                                         "return %T(%L)",
                                         dtoClassName,
-                                        selectedProperties.joinToString(", ") { "${it.name} = ${it.name}" }
+                                        selectedProperties.joinToString(", ") { "${it.formattedName} = ${it.formattedName}" }
                                     )
                                     .build()
                             )

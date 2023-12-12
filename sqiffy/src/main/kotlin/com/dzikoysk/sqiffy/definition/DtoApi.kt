@@ -15,10 +15,10 @@ data class DtoGroupData(
     val variants: List<VariantData>
 )
 
-fun DtoDefinition.toDtoDefinitionData(typeFactory: TypeFactory): DtoGroupData =
+fun DtoDefinition.toDtoDefinitionData(typeFactory: TypeFactory, namingStrategy: NamingStrategy): DtoGroupData =
     DtoGroupData(
         from = typeFactory.getTypeDefinition(this) { from },
-        variants = variants.map { it.toVariantData(typeFactory) }
+        variants = variants.map { it.toVariantData(typeFactory, namingStrategy) }
     )
 
 enum class Mode {
@@ -34,17 +34,27 @@ annotation class Variant(
     val implements: Array<KClass<*>> = []
 )
 
-fun Variant.toVariantData(typeFactory: TypeFactory): VariantData =
+fun Variant.toVariantData(typeFactory: TypeFactory, namingStrategy: NamingStrategy): VariantData =
     VariantData(
         name = name,
         mode = mode,
-        properties = properties.toList(),
+        properties = properties.map {
+            PropertyReference(
+                name = it,
+                formattedProperty = NamingStrategyFormatter.format(namingStrategy, it)
+            )
+        },
         implements = implements.map { typeFactory.getTypeDefinition(this) { it } }
     )
 
 data class VariantData(
     val name: String,
     val mode: Mode,
-    val properties: List<String>,
+    val properties: List<PropertyReference>,
     val implements: List<TypeDefinition>
+)
+
+data class PropertyReference(
+    val name: String,
+    val formattedProperty: String
 )

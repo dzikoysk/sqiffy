@@ -76,6 +76,7 @@ data class Column<T>(
     fun getPropertyData(): PropertyData =
         PropertyData(
             name = name,
+            formattedName = name,
             type = dataType,
             mappedTo = Reflection.getOrCreateKotlinClass(type).toTypeDefinition(),
             nullable = nullable,

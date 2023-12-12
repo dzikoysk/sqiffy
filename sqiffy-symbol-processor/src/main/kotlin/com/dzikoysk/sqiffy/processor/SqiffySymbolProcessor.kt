@@ -9,11 +9,14 @@ import com.dzikoysk.sqiffy.definition.ChangelogDefinition
 import com.dzikoysk.sqiffy.definition.ChangelogProvider.LIQUIBASE
 import com.dzikoysk.sqiffy.definition.ChangelogProvider.SQIFFY
 import com.dzikoysk.sqiffy.definition.Definition
+import com.dzikoysk.sqiffy.definition.DslDefinition
 import com.dzikoysk.sqiffy.definition.DtoDefinition
 import com.dzikoysk.sqiffy.definition.DtoGroupData
 import com.dzikoysk.sqiffy.definition.EnumDefinition
 import com.dzikoysk.sqiffy.definition.FunctionDefinition
 import com.dzikoysk.sqiffy.definition.Mode
+import com.dzikoysk.sqiffy.definition.NamingStrategy
+import com.dzikoysk.sqiffy.definition.NamingStrategyFormatter
 import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
@@ -106,6 +109,18 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
             .map { it.toFunctionData() }
             .toList()
 
+        val dslDefinition = resolver.getSymbolsWithAnnotation(DslDefinition::class.qualifiedName!!)
+            .filterIsInstance<KSClassDeclaration>()
+            .toList()
+
+        require(dslDefinition.size <= 1) { "Only one DslDefinition is allowed per project" }
+
+        val namingStrategy = dslDefinition
+            .flatMap { it.getAnnotationsByType(DslDefinition::class) }
+            .firstOrNull()
+            ?.namingStrategy
+            ?: NamingStrategy.RAW
+
         val tableDefinitions = resolver.getSymbolsWithAnnotation(Definition::class.qualifiedName!!)
             .filterIsInstance<KSClassDeclaration>()
 
@@ -136,14 +151,15 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
 
         val baseSchemeGenerator = ChangelogBuilder(
             sqlSchemeGenerator = schemaGenerator,
-            typeFactory = typeFactory
+            typeFactory = typeFactory,
+            namingStrategy = namingStrategy,
         )
         val changelog = baseSchemeGenerator.generateChangeLog(
             functions = functions,
             tables = tables
         )
 
-        if (changelogDefinition != null) {
+        if (changelogDefinition != null && resolver.getNewFiles().none { it.fileName.contains("Table.kt")}) {
             when (changelogDefinition.provider) {
                 SQIFFY -> { /* currently only supported at runtime */ }
                 LIQUIBASE -> LiquibaseGenerator(context).generateLiquibaseChangeLog(
@@ -162,18 +178,20 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
                 resolver.getAllFiles().none { it.fileName == "${tables.first().name}Table.kt" } -> {
                     generateTableDls(
                         typeFactory = typeFactory,
+                        namingStrategy = namingStrategy,
                         changeLog = changelog,
                     )
-                    return dtoDefinitions + tableDefinitions
+                    return dslDefinition + dtoDefinitions + tableDefinitions
                 }
                 else -> {
                     generateEntityDsl(
                         typeFactory = typeFactory,
+                        namingStrategy = namingStrategy,
                         changeLog = changelog,
                         dtoGroups = dtoDefinitions
                             .filter { it.validate() }
                             .flatMap { it.getAnnotationsByType(DtoDefinition::class) }
-                            .map { it.toDtoDefinitionData(typeFactory) }
+                            .map { it.toDtoDefinitionData(typeFactory, namingStrategy) }
                     )
                 }
             }
@@ -182,10 +200,11 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
         return emptyList()
     }
 
-    private fun generateTableDls(typeFactory: TypeFactory, changeLog: Changelog) {
+    private fun generateTableDls(typeFactory: TypeFactory, namingStrategy: NamingStrategy, changeLog: Changelog) {
         changeLog.tables.forEach { (definition, name) ->
             val properties = generateProperties(
                 typeFactory = typeFactory,
+                namingStrategy = namingStrategy,
                 table = definition
             )
 
@@ -202,11 +221,20 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
         }
     }
 
-    private fun generateEntityDsl(typeFactory: TypeFactory, changeLog: Changelog, dtoGroups: List<DtoGroupData>) {
+    private fun generateEntityDsl(typeFactory: TypeFactory, namingStrategy: NamingStrategy, changeLog: Changelog, dtoGroups: List<DtoGroupData>) {
         changeLog.tables.forEach { (definition, _) ->
-            val properties = generateProperties(typeFactory, definition)
+            val properties = generateProperties(
+                typeFactory = typeFactory,
+                namingStrategy = namingStrategy,
+                table = definition
+            )
 
-            val dtoMethodsToAdd = dtoGroups.firstOrNull { it.from.qualifiedName == definition.source }
+            if (properties.any { it.formattedName.contains("_") }) {
+                throw IllegalStateException("Property names cannot contain underscores: $properties")
+            }
+
+            val dtoMethodsToAdd = dtoGroups
+                .firstOrNull { it.from.qualifiedName == definition.source }
                 ?.variants
                 ?.map { variant ->
                     dtoGenerator.generateDtoClass(
@@ -214,8 +242,8 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
                         variantData = variant,
                         selectedProperties = when {
                             variant.properties.isEmpty() -> properties
-                            variant.mode == Mode.INCLUDE -> properties.filter { variant.properties.contains(it.name) }
-                            variant.mode == Mode.EXCLUDE -> properties.filterNot { variant.properties.contains(it.name) }
+                            variant.mode == Mode.INCLUDE -> properties.filter { property -> variant.properties.any { property.name == it.name } }
+                            variant.mode == Mode.EXCLUDE -> properties.filterNot { property -> variant.properties.any { property.name == it.name } }
                             else -> throw IllegalStateException("Unsupported mode ${variant.mode}")
                         }
                     )
@@ -230,18 +258,28 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
         }
     }
 
-    private fun generateProperties(typeFactory: TypeFactory, table: ParsedDefinition): LinkedList<PropertyData> {
+    private fun generateProperties(typeFactory: TypeFactory, namingStrategy: NamingStrategy, table: ParsedDefinition): LinkedList<PropertyData> {
         val properties = LinkedList<PropertyData>()
 
         for (definitionVersion in table.definition.versions) {
             for (property in definitionVersion.properties) {
-                val convertedProperty = property.toPropertyData(typeFactory)
+                val convertedProperty = property.toPropertyData(typeFactory, namingStrategy)
 
                 when (property.operation) {
                     ADD -> properties.add(convertedProperty)
-                    RENAME -> require(properties.replaceFirst({ it.name == property.name }, { it.copy(name = property.rename) }))
-                    RETYPE -> require(properties.replaceFirst({ it.name == property.name }, { it.copy(type = property.type, details = property.details) }))
                     REMOVE -> properties.removeIf { it.name == property.name }
+                    RETYPE -> require(properties.replaceFirst({ it.name == property.name }, {
+                        it.copy(
+                            type = property.type,
+                            details = property.details
+                        )
+                    }))
+                    RENAME -> require(properties.replaceFirst({ it.name == property.name }, {
+                        it.copy(
+                            name = property.rename,
+                            formattedName = NamingStrategyFormatter.format(namingStrategy, property.rename)
+                        )
+                    }))
                 }
             }
         }

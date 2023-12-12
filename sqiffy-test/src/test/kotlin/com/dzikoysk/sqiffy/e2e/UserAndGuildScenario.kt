@@ -16,6 +16,7 @@ import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
 import com.dzikoysk.sqiffy.definition.DataType.VARCHAR
 import com.dzikoysk.sqiffy.definition.Definition
 import com.dzikoysk.sqiffy.definition.DefinitionVersion
+import com.dzikoysk.sqiffy.definition.DslDefinition
 import com.dzikoysk.sqiffy.definition.DtoDefinition
 import com.dzikoysk.sqiffy.definition.EnumDefinition
 import com.dzikoysk.sqiffy.definition.EnumOperation.ADD_VALUES
@@ -24,6 +25,7 @@ import com.dzikoysk.sqiffy.definition.Index
 import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.REMOVE_INDEX
 import com.dzikoysk.sqiffy.definition.IndexType.INDEX
 import com.dzikoysk.sqiffy.definition.IndexType.UNIQUE_INDEX
+import com.dzikoysk.sqiffy.definition.NamingStrategy.CAMEL_CASE
 import com.dzikoysk.sqiffy.definition.Property
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RENAME
@@ -36,6 +38,9 @@ import com.dzikoysk.sqiffy.e2e.UserAndGuildScenarioVersions.V_1_0_2
 import com.dzikoysk.sqiffy.infra.UserTableNames
 import java.io.Serializable
 
+@DslDefinition(
+    namingStrategy = CAMEL_CASE
+)
 @ChangelogDefinition(
     projectName = "GuildService",
     dialect = POSTGRESQL,
@@ -131,7 +136,7 @@ object RoleDefinition
             Property(name = "id", type = SERIAL),
             Property(name = "name", type = VARCHAR, details = "24"),
             Property(name = "owner", type = INT),
-            Property(name = "createdAt", type = DATETIME),
+            Property(name = "created_at", type = DATETIME),
             Property(name = "type", type = ENUM, enumDefinition = GuildType::class, default = "DEFAULT"),
         ],
         constraints = [
