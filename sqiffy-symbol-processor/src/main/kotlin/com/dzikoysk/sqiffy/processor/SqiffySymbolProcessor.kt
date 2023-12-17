@@ -1,6 +1,5 @@
 package com.dzikoysk.sqiffy.processor
 
-import com.dzikoysk.sqiffy.Dialect
 import com.dzikoysk.sqiffy.changelog.Changelog
 import com.dzikoysk.sqiffy.changelog.ChangelogBuilder
 import com.dzikoysk.sqiffy.changelog.builders.ChangelogEnumBuilder
@@ -25,10 +24,12 @@ import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RENAME
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RETYPE
 import com.dzikoysk.sqiffy.definition.TypeDefinition
 import com.dzikoysk.sqiffy.definition.TypeFactory
+import com.dzikoysk.sqiffy.definition.toData
 import com.dzikoysk.sqiffy.definition.toDtoDefinitionData
 import com.dzikoysk.sqiffy.definition.toEnumData
 import com.dzikoysk.sqiffy.definition.toFunctionData
 import com.dzikoysk.sqiffy.definition.toPropertyData
+import com.dzikoysk.sqiffy.dialect.Dialect
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.dzikoysk.sqiffy.processor.generators.DslTableGenerator
 import com.dzikoysk.sqiffy.processor.generators.DtoGenerator
@@ -131,7 +132,7 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
                     source = clazz.qualifiedName!!.asString(),
                     packageName = clazz.packageName.asString(),
                     name = clazz.simpleName.asString().substringBeforeLast("Definition"),
-                    definition = annotation
+                    definition = annotation.toData()
                 )
             }
             .toList()
@@ -210,6 +211,7 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
 
             dslTableGenerator.generateTableClass(
                 parsedDefinition = definition,
+                tableName = name,
                 properties = properties
             )
 
@@ -256,6 +258,11 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
 
     private fun generateProperties(typeFactory: TypeFactory, namingStrategy: NamingStrategy, table: ParsedDefinition): LinkedList<PropertyData> {
         val properties = LinkedList<PropertyData>()
+
+        when {
+            table.definition.versions.isEmpty() -> throw IllegalStateException("No versions defined for ${table.source}")
+            table.definition.versions.first().name == null -> throw IllegalStateException("First version definition of ${table.source} must have name")
+        }
 
         for (definitionVersion in table.definition.versions) {
             for (property in definitionVersion.properties) {
