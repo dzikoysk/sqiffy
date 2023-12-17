@@ -18,6 +18,7 @@ import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.kotlin.KotlinPlugin
 import org.jdbi.v3.core.statement.SqlStatements
 import org.jdbi.v3.jackson2.Jackson2Plugin
+import org.jdbi.v3.sqlite3.SQLitePlugin
 import org.jdbi.v3.sqlobject.SqlObjectPlugin
 import org.jdbi.v3.sqlobject.kotlin.KotlinSqlObjectPlugin
 
@@ -37,7 +38,9 @@ class MySqlDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase(state) {
                 state = SqiffyDatabaseConfig(
                     logger = logger,
                     dataSource = dataSource,
-                    localJdbi = createGenericJdbi(dataSource).also { it.registerArgument(UUIDArgumentFactory()) },
+                    localJdbi = createGenericJdbi(dataSource).also {
+                        it.registerArgument(UUIDArgumentFactory())
+                    },
                     dialect = MYSQL,
                     sqlQueryGenerator = MySqlQueryGenerator,
                     changelogBuilder = ChangelogBuilder(MySqlSchemeGenerator, RAW)
@@ -57,7 +60,10 @@ class SqliteDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase(state) {
                 state = SqiffyDatabaseConfig(
                     logger = logger,
                     dataSource = dataSource,
-                    localJdbi = createGenericJdbi(dataSource).also { it.registerArgument(UUIDArgumentFactory()) },
+                    localJdbi = createGenericJdbi(dataSource).also {
+                        it.registerArgument(UUIDArgumentFactory())
+                        it.installPlugin(SQLitePlugin())
+                    },
                     dialect = SQLITE,
                     sqlQueryGenerator = SqliteQueryGenerator,
                     changelogBuilder = ChangelogBuilder(SqliteSchemeGenerator, RAW)
