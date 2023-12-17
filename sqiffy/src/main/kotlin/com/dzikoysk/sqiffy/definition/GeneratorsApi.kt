@@ -7,7 +7,7 @@ class ParsedDefinition(
     val source: String,
     val packageName: String,
     val name: String,
-    val definition: Definition,
+    val definition: DefinitionData,
 ) {
 
     fun getDomainPackage(): String =

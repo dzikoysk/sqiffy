@@ -1,6 +1,6 @@
 package com.dzikoysk.sqiffy.definition
 
-import com.dzikoysk.sqiffy.Dialect
+import com.dzikoysk.sqiffy.dialect.Dialect
 import kotlin.annotation.AnnotationRetention.RUNTIME
 
 enum class ChangelogProvider {

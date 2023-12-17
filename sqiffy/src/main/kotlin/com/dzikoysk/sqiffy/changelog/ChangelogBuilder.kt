@@ -7,7 +7,8 @@ import com.dzikoysk.sqiffy.changelog.builders.ChangelogPropertiesBuilder
 import com.dzikoysk.sqiffy.changelog.builders.VersionedFunctionBuilder
 import com.dzikoysk.sqiffy.changelog.generator.SqlSchemeGenerator
 import com.dzikoysk.sqiffy.definition.DataType
-import com.dzikoysk.sqiffy.definition.DefinitionVersion
+import com.dzikoysk.sqiffy.definition.Definition
+import com.dzikoysk.sqiffy.definition.DefinitionVersionData
 import com.dzikoysk.sqiffy.definition.FunctionDefinition
 import com.dzikoysk.sqiffy.definition.FunctionDefinitionData
 import com.dzikoysk.sqiffy.definition.NamingStrategy
@@ -15,6 +16,7 @@ import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.definition.RuntimeTypeFactory
 import com.dzikoysk.sqiffy.definition.TypeFactory
+import com.dzikoysk.sqiffy.definition.toData
 import com.dzikoysk.sqiffy.definition.toFunctionData
 import java.util.ArrayDeque
 import kotlin.reflect.KClass
@@ -37,7 +39,7 @@ class ChangelogBuilder(
         val sqlSchemeGenerator: SqlSchemeGenerator,
         val currentEnums: Enums,
         val currentScheme: MutableList<TableAnalysisState>,
-        val changeToApply: DefinitionVersion,
+        val changeToApply: DefinitionVersionData,
         val changes: MutableList<Change> = mutableListOf(),
         val state: TableAnalysisState
     ) {
@@ -79,7 +81,7 @@ class ChangelogBuilder(
                         source = it.qualifiedName!!,
                         packageName = it.java.`package`.name,
                         name = it::class.simpleName!!.substringBeforeLast("Definition"),
-                        definition = it.findAnnotation()!!
+                        definition = it.findAnnotation<Definition>()!!.toData()
                     )
                 }
         )
@@ -89,7 +91,7 @@ class ChangelogBuilder(
 
         val tableStates = tables.associateWith {
             TableAnalysisState(
-                changesToApply = ArrayDeque(it.definition.versions.toList()),
+                changesToApply = ArrayDeque(it.definition.versions),
                 source = it.source,
                 tableName = it.definition.versions
                     .firstOrNull()

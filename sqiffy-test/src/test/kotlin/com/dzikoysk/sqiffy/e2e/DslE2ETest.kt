@@ -7,6 +7,7 @@ import com.dzikoysk.sqiffy.api.Role.MODERATOR
 import com.dzikoysk.sqiffy.definition.ChangelogProvider
 import com.dzikoysk.sqiffy.definition.ChangelogProvider.LIQUIBASE
 import com.dzikoysk.sqiffy.definition.ChangelogProvider.SQIFFY
+import com.dzikoysk.sqiffy.dialect.postgres.PostgresDatabase
 import com.dzikoysk.sqiffy.domain.TestDefault
 import com.dzikoysk.sqiffy.domain.UnidentifiedUser
 import com.dzikoysk.sqiffy.domain.User
@@ -224,6 +225,35 @@ internal abstract class DslE2ETest(
     }
 
 }
+
+class EmbeddedPostgresUpsertDslE2ETest : SqiffyE2ETestSpecification() {
+    private val postgres = postgresDataSource()
+    override fun createDataSource(): HikariDataSource = postgres.dataSource
+    @AfterEach fun stop() { postgres.embeddedPostgres.close() }
+
+    @Test
+    fun `should upsert`() {
+        val postgresDatabase = database as PostgresDatabase
+
+        val id = postgresDatabase
+            .upsert(UserTable)
+            .insert {
+                it[UserTable.name] = "Panda"
+                it[UserTable.displayName] = "Only Panda"
+                it[UserTable.uuid] = UUID.randomUUID()
+                it[UserTable.wallet] = 100f
+                it[UserTable.role] = MODERATOR
+            }
+            .update {
+                it[UserTable.name] = "Giant Panda"
+            }
+            .execute { it }
+            .first()
+
+        assertThat(id).isEqualTo(1)
+    }
+}
+
 
 internal class H2MySQLModeDslE2ETest : DslE2ETest() {
     override fun createDataSource(): HikariDataSource = createH2DataSource(MYSQL)

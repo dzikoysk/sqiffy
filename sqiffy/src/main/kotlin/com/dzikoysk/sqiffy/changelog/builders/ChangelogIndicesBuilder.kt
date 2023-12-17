@@ -1,11 +1,11 @@
 package com.dzikoysk.sqiffy.changelog.builders
 
 import com.dzikoysk.sqiffy.changelog.ChangelogBuilder.ChangeLogGeneratorContext
-import com.dzikoysk.sqiffy.definition.IndexData
 import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.ADD_INDEX
 import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.REMOVE_INDEX
 import com.dzikoysk.sqiffy.definition.IndexType.INDEX
 import com.dzikoysk.sqiffy.definition.IndexType.UNIQUE_INDEX
+import com.dzikoysk.sqiffy.definition.toData
 
 internal class ChangelogIndicesBuilder {
 
@@ -14,15 +14,7 @@ internal class ChangelogIndicesBuilder {
             for (index in changeToApply.indices) {
                 when (index.operation) {
                     ADD_INDEX -> {
-                        val indexData = IndexData(
-                            type = index.type,
-                            name = index.name,
-                            columns = index.columns
-                                .takeIf { it.isNotEmpty() }
-                                ?.toList()
-                                ?: throw IllegalArgumentException("Index ${index.name} doesn't have any columns")
-                        )
-
+                        val indexData = index.toData()
                         checkIfConstraintOrIndexNameAlreadyUsed(index.name)
 
                         require(

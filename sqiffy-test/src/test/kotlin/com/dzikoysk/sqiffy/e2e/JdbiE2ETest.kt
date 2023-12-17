@@ -2,7 +2,7 @@
 
 package com.dzikoysk.sqiffy.e2e
 
-import com.dzikoysk.sqiffy.Dialect.POSTGRESQL
+import com.dzikoysk.sqiffy.dialect.Dialect.POSTGRESQL
 import com.dzikoysk.sqiffy.api.Role
 import com.dzikoysk.sqiffy.domain.UnidentifiedUser
 import com.dzikoysk.sqiffy.domain.User

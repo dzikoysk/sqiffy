@@ -54,6 +54,21 @@ annotation class Definition(
     val apiPackage: String = NULL_STRING,
 )
 
+data class DefinitionData(
+    val versions: List<DefinitionVersionData>,
+    val domainPackage: String?,
+    val infrastructurePackage: String?,
+    val apiPackage: String?,
+)
+
+fun Definition.toData(): DefinitionData =
+    DefinitionData(
+        versions = versions.map { it.toData() },
+        domainPackage = domainPackage.takeIf { it != NULL_STRING },
+        infrastructurePackage = infrastructurePackage.takeIf { it != NULL_STRING },
+        apiPackage = apiPackage.takeIf { it != NULL_STRING }
+    )
+
 @Target()
 annotation class DefinitionVersion(
     val version: String,
@@ -61,4 +76,21 @@ annotation class DefinitionVersion(
     val properties: Array<Property> = [],
     val constraints: Array<Constraint> = [],
     val indices: Array<Index> = [],
+)
+
+fun DefinitionVersion.toData(): DefinitionVersionData =
+    DefinitionVersionData(
+        version = version,
+        name = name.takeIf { it != NULL_STRING },
+        properties = properties.toList(),
+        constraints = constraints.toList(),
+        indices = indices.toList()
+    )
+
+data class DefinitionVersionData(
+    val version: String,
+    val name: String?,
+    val properties: List<Property>,
+    val constraints: List<Constraint>,
+    val indices: List<Index>,
 )

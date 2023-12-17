@@ -1,6 +1,6 @@
 package com.dzikoysk.sqiffy.dsl
 
-import com.dzikoysk.sqiffy.MySqlDatabase
+import com.dzikoysk.sqiffy.dialect.MySqlDatabase
 import com.dzikoysk.sqiffy.Sqiffy
 import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.Definition

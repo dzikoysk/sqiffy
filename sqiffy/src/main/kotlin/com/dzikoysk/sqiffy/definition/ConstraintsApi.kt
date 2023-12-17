@@ -25,6 +25,32 @@ annotation class Constraint(
     val references: String = NULL_STRING
 )
 
+fun Constraint.toData(typeFactory: TypeFactory): ConstraintData =
+    when (type) {
+        PRIMARY_KEY ->
+            PrimaryKey(
+                name = name,
+                on = on
+                    .takeIf { it.isNotEmpty() }
+                    ?.toList()
+                    ?: throw IllegalStateException("Primary key '$name' declaration misses `on` property")
+            )
+        FOREIGN_KEY ->
+            ForeignKey(
+                name = name,
+                on = on
+                    .takeIf { it.size == 1 }
+                    ?.first()
+                    ?: throw IllegalStateException("Foreign key '${name}' declaration misses `on` property or contains more than one column"),
+                referenced = typeFactory.getTypeDefinition(this) { referenced }
+                    .takeIf { it.qualifiedName != NULL_CLASS::class.qualifiedName }
+                    ?: throw IllegalStateException("Foreign key '${name}' declaration misses `referenced` class"),
+                references = references
+                    .takeUnless { it == NULL_STRING }
+                    ?: throw IllegalStateException("Foreign key '${name}' declaration misses `references` property")
+            )
+    }
+
 sealed interface ConstraintData {
     val type: ConstraintType
     val name: String

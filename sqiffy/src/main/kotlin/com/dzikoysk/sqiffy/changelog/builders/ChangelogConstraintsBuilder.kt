@@ -8,9 +8,8 @@ import com.dzikoysk.sqiffy.definition.ConstraintType.FOREIGN_KEY
 import com.dzikoysk.sqiffy.definition.ConstraintType.PRIMARY_KEY
 import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.ForeignKey
-import com.dzikoysk.sqiffy.definition.NULL_CLASS
-import com.dzikoysk.sqiffy.definition.NULL_STRING
 import com.dzikoysk.sqiffy.definition.PrimaryKey
+import com.dzikoysk.sqiffy.definition.toData
 
 internal class ChangelogConstraintsBuilder {
 
@@ -29,13 +28,7 @@ internal class ChangelogConstraintsBuilder {
         with (context) {
             when (constraint.definitionType) {
                 ADD_CONSTRAINT -> {
-                    val primaryKey = PrimaryKey(
-                        name = constraint.name,
-                        on = constraint.on
-                            .takeIf { it.isNotEmpty() }
-                            ?.toList()
-                            ?: throw IllegalStateException("Primary key '${constraint.name}' declaration misses `on` property")
-                    )
+                    val primaryKey = constraint.toData(typeFactory) as PrimaryKey
 
                     val primaryKeyProperties = primaryKey.on.map {
                         state.properties
@@ -72,20 +65,7 @@ internal class ChangelogConstraintsBuilder {
         with (context) {
             when (constraint.definitionType) {
                 ADD_CONSTRAINT -> {
-                    val foreignKey = ForeignKey(
-                        name = constraint.name,
-                        on = constraint.on
-                            .takeIf { it.size == 1 }
-                            ?.first()
-                            ?: throw IllegalStateException("Foreign key '${constraint.name}' declaration misses `on` property or contains more than one column"),
-                        referenced = typeFactory.getTypeDefinition(constraint) { referenced }
-                            .takeIf { it.qualifiedName != NULL_CLASS::class.qualifiedName }
-                            ?: throw IllegalStateException("Foreign key '${constraint.name}' declaration misses `referenced` class"),
-                        references = constraint.references
-                            .takeUnless { it == NULL_STRING }
-                            ?: throw IllegalStateException("Foreign key '${constraint.name}' declaration misses `references` property")
-                    )
-
+                    val foreignKey = constraint.toData(typeFactory) as ForeignKey
                     checkIfConstraintOrIndexNameAlreadyUsed(foreignKey.name)
 
                     val onColumn = state.properties

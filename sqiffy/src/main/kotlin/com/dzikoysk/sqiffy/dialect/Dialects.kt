@@ -1,12 +1,16 @@
-package com.dzikoysk.sqiffy
+package com.dzikoysk.sqiffy.dialect
 
+import com.dzikoysk.sqiffy.SqiffyDatabase
+import com.dzikoysk.sqiffy.SqiffyDatabaseConfig
+import com.dzikoysk.sqiffy.SqiffyLogger
+import com.dzikoysk.sqiffy.StdoutSqiffyLogger
 import com.dzikoysk.sqiffy.changelog.ChangelogBuilder
 import com.dzikoysk.sqiffy.changelog.generator.dialects.MySqlSchemeGenerator
-import com.dzikoysk.sqiffy.changelog.generator.dialects.PostgreSqlSchemeGenerator
 import com.dzikoysk.sqiffy.changelog.generator.dialects.SqliteSchemeGenerator
 import com.dzikoysk.sqiffy.definition.NamingStrategy.RAW
+import com.dzikoysk.sqiffy.dialect.Dialect.MYSQL
+import com.dzikoysk.sqiffy.dialect.Dialect.SQLITE
 import com.dzikoysk.sqiffy.dsl.generator.dialects.MySqlQueryGenerator
-import com.dzikoysk.sqiffy.dsl.generator.dialects.PostgreSqlQueryGenerator
 import com.dzikoysk.sqiffy.dsl.generator.dialects.SqliteQueryGenerator
 import com.dzikoysk.sqiffy.shared.UUIDArgumentFactory
 import com.zaxxer.hikari.HikariDataSource
@@ -23,26 +27,6 @@ enum class Dialect {
     SQLITE
 }
 
-class PostgresDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase(state) {
-    companion object {
-        fun createPostgresDatabase(
-            logger: SqiffyLogger = StdoutSqiffyLogger(),
-            dataSource: HikariDataSource
-        ): MySqlDatabase {
-            return MySqlDatabase(
-                state = SqiffyDatabaseConfig(
-                    logger = logger,
-                    dataSource = dataSource,
-                    localJdbi = createGenericJdbi(dataSource),
-                    dialect = Dialect.POSTGRESQL,
-                    sqlQueryGenerator = PostgreSqlQueryGenerator,
-                    changelogBuilder = ChangelogBuilder(PostgreSqlSchemeGenerator, RAW)
-                )
-            )
-        }
-    }
-}
-
 class MySqlDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase(state) {
     companion object {
         fun createMySQLDatabase(
@@ -54,7 +38,7 @@ class MySqlDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase(state) {
                     logger = logger,
                     dataSource = dataSource,
                     localJdbi = createGenericJdbi(dataSource).also { it.registerArgument(UUIDArgumentFactory()) },
-                    dialect = Dialect.MYSQL,
+                    dialect = MYSQL,
                     sqlQueryGenerator = MySqlQueryGenerator,
                     changelogBuilder = ChangelogBuilder(MySqlSchemeGenerator, RAW)
                 )
@@ -68,13 +52,13 @@ class SqliteDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase(state) {
         fun createSqliteDatabase(
             logger: SqiffyLogger = StdoutSqiffyLogger(),
             dataSource: HikariDataSource
-        ): MySqlDatabase {
-            return MySqlDatabase(
+        ): SqliteDatabase {
+            return SqliteDatabase(
                 state = SqiffyDatabaseConfig(
                     logger = logger,
                     dataSource = dataSource,
                     localJdbi = createGenericJdbi(dataSource).also { it.registerArgument(UUIDArgumentFactory()) },
-                    dialect = Dialect.SQLITE,
+                    dialect = SQLITE,
                     sqlQueryGenerator = SqliteQueryGenerator,
                     changelogBuilder = ChangelogBuilder(SqliteSchemeGenerator, RAW)
                 )

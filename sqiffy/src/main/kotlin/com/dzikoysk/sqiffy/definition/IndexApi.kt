@@ -25,3 +25,13 @@ data class IndexData(
     val name: String,
     val columns: List<String>
 )
+
+fun Index.toData(): IndexData =
+    IndexData(
+        type = type,
+        name = name,
+        columns = columns
+            .takeIf { it.isNotEmpty() }
+            ?.toList()
+            ?: throw IllegalArgumentException("Index $name doesn't have any columns")
+    )

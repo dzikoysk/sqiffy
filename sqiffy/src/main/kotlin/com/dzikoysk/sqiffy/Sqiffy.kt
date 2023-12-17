@@ -1,5 +1,8 @@
 package com.dzikoysk.sqiffy
 
+import com.dzikoysk.sqiffy.dialect.MySqlDatabase
+import com.dzikoysk.sqiffy.dialect.SqliteDatabase
+import com.dzikoysk.sqiffy.dialect.postgres.PostgresDatabase
 import com.zaxxer.hikari.HikariDataSource
 
 object Sqiffy {

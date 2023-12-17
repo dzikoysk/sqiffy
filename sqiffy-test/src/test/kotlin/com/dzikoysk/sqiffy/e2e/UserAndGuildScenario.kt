@@ -1,6 +1,6 @@
 package com.dzikoysk.sqiffy.e2e
 
-import com.dzikoysk.sqiffy.Dialect.POSTGRESQL
+import com.dzikoysk.sqiffy.dialect.Dialect.POSTGRESQL
 import com.dzikoysk.sqiffy.definition.ChangelogDefinition
 import com.dzikoysk.sqiffy.definition.ChangelogProvider.LIQUIBASE
 import com.dzikoysk.sqiffy.definition.Constraint

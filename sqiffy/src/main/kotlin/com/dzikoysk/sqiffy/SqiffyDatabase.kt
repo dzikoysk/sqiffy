@@ -4,6 +4,7 @@ import com.dzikoysk.sqiffy.changelog.Changelog
 import com.dzikoysk.sqiffy.changelog.ChangelogBuilder
 import com.dzikoysk.sqiffy.changelog.generator.SqlSchemeGenerator
 import com.dzikoysk.sqiffy.changelog.generator.dialects.getSchemeGenerator
+import com.dzikoysk.sqiffy.dialect.Dialect
 import com.dzikoysk.sqiffy.dsl.DslHandle
 import com.dzikoysk.sqiffy.dsl.JdbiDslHandle
 import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator

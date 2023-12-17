@@ -18,7 +18,7 @@ class ChangelogPropertiesBuilder {
         with(context) {
             when {
                 /* rename table */
-                changeToApply.name != NULL_STRING && state.tableName != changeToApply.name -> {
+                changeToApply.name != null && state.tableName != changeToApply.name -> {
                     registerChange {
                         "rename-table-${state.tableName}-to-${changeToApply.name}" to renameTable(state.tableName, changeToApply.name)
                     }
