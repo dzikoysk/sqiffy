@@ -235,22 +235,28 @@ class EmbeddedPostgresUpsertDslE2ETest : SqiffyE2ETestSpecification() {
     fun `should upsert`() {
         val postgresDatabase = database as PostgresDatabase
 
-        val id = postgresDatabase
-            .upsert(UserTable)
-            .insert {
-                it[UserTable.name] = "Panda"
-                it[UserTable.displayName] = "Only Panda"
-                it[UserTable.uuid] = UUID.randomUUID()
-                it[UserTable.wallet] = 100f
-                it[UserTable.role] = MODERATOR
-            }
-            .update {
-                it[UserTable.name] = "Giant Panda"
-            }
-            .execute { it }
-            .first()
+        repeat(2) { idx ->
+            val (id, name, role) = postgresDatabase
+                .upsert(UserTable)
+                .insert {
+                    it[UserTable.id] = 1
+                    it[UserTable.name] = "1"
+                    it[UserTable.displayName] = "1"
+                    it[UserTable.uuid] = UUID.randomUUID()
+                    it[UserTable.wallet] = 100f
+                    it[UserTable.role] = MODERATOR
+                }
+                .update {
+                    it[UserTable.name] = "2"
+                    it[UserTable.displayName] = "2"
+                }
+                .execute { Triple(it[UserTable.id], it[UserTable.name], it[UserTable.role]) }
+                .first()
 
-        assertThat(id).isEqualTo(1)
+            assertThat(id).isEqualTo(1) // conflict
+            assertThat(name).isEqualTo((idx + 1).toString()) // updated field
+            assertThat(role).isEqualTo(MODERATOR) // non updated field
+        }
     }
 }
 
