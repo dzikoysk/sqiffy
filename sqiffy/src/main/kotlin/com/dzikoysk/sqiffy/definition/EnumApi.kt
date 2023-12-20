@@ -11,7 +11,9 @@ annotation class EnumDefinition(
 )
 
 @Target(CLASS)
-annotation class RawEnum
+annotation class RawEnum(
+    val name: String
+)
 
 enum class EnumOperation {
     ADD_VALUES

@@ -1,6 +1,5 @@
 package com.dzikoysk.sqiffy.e2e
 
-import com.dzikoysk.sqiffy.dialect.Dialect.POSTGRESQL
 import com.dzikoysk.sqiffy.definition.ChangelogDefinition
 import com.dzikoysk.sqiffy.definition.ChangelogProvider.LIQUIBASE
 import com.dzikoysk.sqiffy.definition.Constraint
@@ -32,6 +31,7 @@ import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RENAME
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.RETYPE
 import com.dzikoysk.sqiffy.definition.RawEnum
 import com.dzikoysk.sqiffy.definition.Variant
+import com.dzikoysk.sqiffy.dialect.Dialect.POSTGRESQL
 import com.dzikoysk.sqiffy.e2e.UserAndGuildScenarioVersions.V_1_0_0
 import com.dzikoysk.sqiffy.e2e.UserAndGuildScenarioVersions.V_1_0_1
 import com.dzikoysk.sqiffy.e2e.UserAndGuildScenarioVersions.V_1_0_2
@@ -159,7 +159,7 @@ object RoleDefinition
 ])
 object GuildDefinition
 
-@RawEnum
+@RawEnum("guild_type")
 enum class GuildType {
     DEFAULT
 }
