@@ -10,7 +10,7 @@ enum class AggregationType(val aggregationFunction: String) {
 
 data class Aggregation<T>(
     val type: AggregationType,
-    val resultType: Class<T>,
+    val resultType: Class<out T>,
     val rawIdentifier: String,
     val quotedIdentifier: Quoted,
     val fallbackAlias: String = rawIdentifier // fallback for generated alias
@@ -22,7 +22,7 @@ data class Aggregation<T>(
 
 fun Table.count(): Aggregation<Long> = Aggregation(AggregationType.COUNT, Long::class.javaObjectType, "*", { "*" })
 fun <T> Column<T>.count(): Aggregation<Long> = Aggregation(AggregationType.COUNT, Long::class.javaObjectType, rawIdentifier, quotedIdentifier, name)
-fun <N : Number> Column<N>.sum(): Aggregation<Long> = Aggregation(AggregationType.SUM, Long::class.javaObjectType, rawIdentifier, quotedIdentifier, name)
-fun <N : Number> Column<N>.avg(): Aggregation<Double> = Aggregation(AggregationType.AVG, Double::class.javaObjectType, rawIdentifier, quotedIdentifier, name)
-fun <T> Column<T>.min(): Aggregation<T> = Aggregation(AggregationType.MIN, type, rawIdentifier, quotedIdentifier, name)
-fun <T> Column<T>.max(): Aggregation<T> = Aggregation(AggregationType.MAX, type, rawIdentifier, quotedIdentifier, name)
+fun <N : Number> Column<N>.sum(): Aggregation<Long?> = Aggregation(AggregationType.SUM, Long::class.javaObjectType, rawIdentifier, quotedIdentifier, name)
+fun <N : Number> Column<N>.avg(): Aggregation<Double?> = Aggregation(AggregationType.AVG, Double::class.javaObjectType, rawIdentifier, quotedIdentifier, name)
+fun <T> Column<T>.min(): Aggregation<T?> = Aggregation(AggregationType.MIN, type, rawIdentifier, quotedIdentifier, name)
+fun <T> Column<T>.max(): Aggregation<T?> = Aggregation(AggregationType.MAX, type, rawIdentifier, quotedIdentifier, name)
