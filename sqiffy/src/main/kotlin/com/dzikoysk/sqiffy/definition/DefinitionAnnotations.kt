@@ -2,6 +2,7 @@ package com.dzikoysk.sqiffy.definition
 
 import com.dzikoysk.sqiffy.definition.Kind.DIRECT
 import com.dzikoysk.sqiffy.definition.Kind.INDIRECT
+import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -38,6 +39,8 @@ enum class DataType(
     LONG(DIRECT, Long::class),
     FLOAT(DIRECT, Float::class),
     DOUBLE(DIRECT, Double::class),
+    NUMERIC(DIRECT, BigDecimal::class),
+    DECIMAL(DIRECT, BigDecimal::class),
     DATE(DIRECT, LocalDate::class),
     DATETIME(DIRECT, LocalDateTime::class),
     TIMESTAMP(DIRECT, Instant::class)

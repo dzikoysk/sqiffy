@@ -6,11 +6,13 @@ import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.DataType.BOOLEAN
 import com.dzikoysk.sqiffy.definition.DataType.CHAR
 import com.dzikoysk.sqiffy.definition.DataType.DATE
+import com.dzikoysk.sqiffy.definition.DataType.DECIMAL
 import com.dzikoysk.sqiffy.definition.DataType.DOUBLE
 import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.FLOAT
 import com.dzikoysk.sqiffy.definition.DataType.INT
 import com.dzikoysk.sqiffy.definition.DataType.LONG
+import com.dzikoysk.sqiffy.definition.DataType.NUMERIC
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
 import com.dzikoysk.sqiffy.definition.DataType.TEXT
 import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
@@ -84,6 +86,8 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
                 LONG -> "BIGINT"
                 FLOAT -> "FLOAT"
                 DOUBLE -> "DOUBLE"
+                NUMERIC -> "NUMERIC${details?.let { "($details)" } ?: ""}"
+                DECIMAL -> "DECIMAL${details?.let { "($details)" } ?: ""}"
                 DATE -> "DATE"
                 else -> throw UnsupportedOperationException("Cannot create data type based on $property")
             }
@@ -108,7 +112,7 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
 
     private fun createRegularDefault(rawDefault: String, property: PropertyData, dataType: DataType = property.type!!): String? =
         when (dataType) {
-            SERIAL, BOOLEAN, INT, LONG, FLOAT, DOUBLE -> rawDefault
+            SERIAL, BOOLEAN, INT, LONG, FLOAT, DOUBLE, NUMERIC, DECIMAL -> rawDefault
             UUID_TYPE, ENUM, CHAR, VARCHAR, TEXT -> "'$rawDefault'"
             else -> null
         }

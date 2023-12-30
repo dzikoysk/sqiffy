@@ -141,6 +141,8 @@ class EntityGenerator(private val context: KspContext) {
             DataType.BOOLEAN -> this.toBoolean().toString()
             DataType.LONG -> "${this}L"
             DataType.FLOAT -> "${this}F"
+            DataType.NUMERIC -> "BigDecimal(\"${this}\")"
+            DataType.DECIMAL -> "BigDecimal(\"${this}\")"
             DataType.DATE -> "LocalDate.parse(\"$this\")"
             DataType.DATETIME -> "LocalDateTime.parse(\"$this\")"
             DataType.TIMESTAMP -> "Instant.parse(\"$this\")"

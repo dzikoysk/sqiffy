@@ -218,6 +218,8 @@ internal abstract class DslE2ETest(
         assertEquals(DefaultConstants.INT_DEFAULT, testDefault.int)
         assertEquals(DefaultConstants.LONG_DEFAULT, testDefault.long)
         assertEquals(DefaultConstants.FLOAT_DEFAULT, testDefault.float)
+        assertEquals(DefaultConstants.NUMERIC_DEFAULT, testDefault.numeric.toString())
+        assertEquals(DefaultConstants.DECIMAL_DEFAULT, testDefault.decimal.toString())
         assertEquals(DefaultConstants.DOUBLE_DEFAULT, testDefault.double)
         assertEquals(LocalDate.parse(DefaultConstants.DATE_DEFAULT), testDefault.date)
         assertEquals(LocalDateTime.parse(DefaultConstants.DATETIME_DEFAULT), testDefault.datetime)

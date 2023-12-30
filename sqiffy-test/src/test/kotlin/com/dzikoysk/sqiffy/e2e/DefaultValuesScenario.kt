@@ -5,11 +5,13 @@ import com.dzikoysk.sqiffy.definition.DataType.BOOLEAN
 import com.dzikoysk.sqiffy.definition.DataType.CHAR
 import com.dzikoysk.sqiffy.definition.DataType.DATE
 import com.dzikoysk.sqiffy.definition.DataType.DATETIME
+import com.dzikoysk.sqiffy.definition.DataType.DECIMAL
 import com.dzikoysk.sqiffy.definition.DataType.DOUBLE
 import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.FLOAT
 import com.dzikoysk.sqiffy.definition.DataType.INT
 import com.dzikoysk.sqiffy.definition.DataType.LONG
+import com.dzikoysk.sqiffy.definition.DataType.NUMERIC
 import com.dzikoysk.sqiffy.definition.DataType.TEXT
 import com.dzikoysk.sqiffy.definition.DataType.TIMESTAMP
 import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
@@ -30,6 +32,8 @@ object DefaultConstants {
     const val INT_DEFAULT = 2147483647
     const val LONG_DEFAULT = 9223372036854775807L
     const val FLOAT_DEFAULT = 3.4028235E38F
+    const val NUMERIC_DEFAULT = "1.23"
+    const val DECIMAL_DEFAULT = "1.23"
     const val DOUBLE_DEFAULT = 1.7976931348623157E308
     const val DATE_DEFAULT = "1975-12-05"
     const val DATETIME_DEFAULT = "2016-12-03T16:01:51"
@@ -55,6 +59,8 @@ object DefaultConstants {
                 Property(name = "int", type = INT, default = DefaultConstants.INT_DEFAULT.toString()),
                 Property(name = "long", type = LONG, default = DefaultConstants.LONG_DEFAULT.toString()),
                 Property(name = "float", type = FLOAT, default = DefaultConstants.FLOAT_DEFAULT.toString()),
+                Property(name = "numeric", type = NUMERIC, default = DefaultConstants.NUMERIC_DEFAULT),
+                Property(name = "decimal", type = DECIMAL, default = DefaultConstants.DECIMAL_DEFAULT),
                 Property(name = "double", type = DOUBLE, default = DefaultConstants.DOUBLE_DEFAULT.toString()),
                 Property(name = "date", type = DATE, default = DefaultConstants.DATE_DEFAULT),
                 Property(name = "datetime", type = DATETIME, default = DefaultConstants.DATETIME_DEFAULT),

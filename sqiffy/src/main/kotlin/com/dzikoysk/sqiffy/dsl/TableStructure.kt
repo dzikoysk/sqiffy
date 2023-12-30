@@ -3,6 +3,7 @@ package com.dzikoysk.sqiffy.dsl
 import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.definition.toTypeDefinition
+import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -38,6 +39,8 @@ abstract class Table(name: String) {
     protected fun long(name: String, dbType: String): Column<Long> = column(name, DataType.LONG, dbType, Long::class)
     protected fun float(name: String, dbType: String): Column<Float> = column(name, DataType.FLOAT, dbType, Float::class)
     protected fun double(name: String, dbType: String): Column<Double> = column(name, DataType.DOUBLE, dbType, Double::class)
+    protected fun numeric(name: String, dbType: String): Column<BigDecimal> = column(name, DataType.NUMERIC, dbType, BigDecimal::class)
+    protected fun decimal(name: String, dbType: String): Column<BigDecimal> = column(name, DataType.DECIMAL, dbType, BigDecimal::class)
 
     protected fun date(name: String, dbType: String): Column<LocalDate> = column(name, DataType.DATE, dbType, LocalDate::class)
     protected fun datetime(name: String, dbType: String): Column<LocalDateTime> = column(name, DataType.DATETIME, dbType, LocalDateTime::class)

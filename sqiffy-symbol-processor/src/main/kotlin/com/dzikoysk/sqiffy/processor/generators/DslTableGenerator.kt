@@ -208,6 +208,8 @@ class DslTableGenerator(private val context: KspContext) {
                 DataType.LONG -> "long(${q(name)}, $defaultDbType)"
                 DataType.FLOAT -> "float(${q(name)}, $defaultDbType)"
                 DataType.DOUBLE -> "double(${q(name)}, $defaultDbType)"
+                DataType.NUMERIC -> "numeric(${q(name)}, $defaultDbType)"
+                DataType.DECIMAL -> "decimal(${q(name)}, $defaultDbType)"
                 DataType.DATE -> "date(${q(name)}, $defaultDbType)"
                 DataType.DATETIME -> "datetime(${q(name)}, $defaultDbType)"
                 DataType.TIMESTAMP -> "timestamp(${q(name)}, $defaultDbType)"
