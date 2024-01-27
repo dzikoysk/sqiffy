@@ -10,7 +10,7 @@ import com.dzikoysk.sqiffy.definition.ChangelogProvider.SQIFFY
 import com.dzikoysk.sqiffy.dialect.postgres.PostgresDatabase
 import com.dzikoysk.sqiffy.domain.TestDefault
 import com.dzikoysk.sqiffy.domain.UnidentifiedUser
-import com.dzikoysk.sqiffy.domain.User
+import com.dzikoysk.sqiffy.domain.toUser
 import com.dzikoysk.sqiffy.dsl.and
 import com.dzikoysk.sqiffy.dsl.avg
 import com.dzikoysk.sqiffy.dsl.between
@@ -92,16 +92,7 @@ internal abstract class DslE2ETest(
 
         val userFromDatabase = database.select(UserTable)
             .where { UserTable.uuid eq insertedUser.uuid }
-            .map {
-                User(
-                    id = it[UserTable.id],
-                    name = it[UserTable.name],
-                    uuid = it[UserTable.uuid],
-                    displayName = it[UserTable.displayName],
-                    wallet = it[UserTable.wallet],
-                    role = it[UserTable.role]
-                )
-            }
+            .map { it.toUser() }
             .first()
         assertThat(userFromDatabase).isNotNull
         assertThat(userFromDatabase.name).isEqualTo("Giant Panda")

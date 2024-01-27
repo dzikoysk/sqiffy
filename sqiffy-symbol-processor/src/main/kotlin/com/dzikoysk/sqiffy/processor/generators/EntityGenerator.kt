@@ -3,6 +3,7 @@ package com.dzikoysk.sqiffy.processor.generators
 import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
+import com.dzikoysk.sqiffy.dsl.Row
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.dzikoysk.sqiffy.processor.toClassName
 import com.google.devtools.ksp.processing.Dependencies
@@ -20,13 +21,29 @@ class EntityGenerator(private val context: KspContext) {
 
     internal fun generateEntityClass(parsedDefinition: ParsedDefinition, properties: List<PropertyData>, dtoMethods: List<Pair<FileSpec, List<PropertyData>>>) {
         val domainPackage = parsedDefinition.getDomainPackage()
+        val entityName = parsedDefinition.name
 
-        val entityClass = generateEntityClass(
-            packageName = parsedDefinition.getDomainPackage(),
-            name = parsedDefinition.name,
-            properties = properties,
-            dtoMethods = dtoMethods
-        ).build()
+        val entityClass =
+            generateEntityClass(
+                packageName = domainPackage,
+                name = entityName,
+                properties = properties,
+                dtoMethods = dtoMethods
+            )
+            .addFunction(
+                FunSpec.builder("to$entityName")
+                    .receiver(Row::class)
+                    .returns(ClassName(parsedDefinition.getDomainPackage(), parsedDefinition.name))
+                    .addStatement(
+                        "return %T(\n%L\n)",
+                        ClassName(domainPackage, entityName),
+                        properties.joinToString(",\n") {
+                            "    ${it.formattedName} = this[${parsedDefinition.getInfrastructurePackage()}.${entityName}Table.${it.formattedName}]"
+                        }
+                    )
+                    .build()
+            )
+            .build()
 
         val entityClassName = ClassName(entityClass.packageName, entityClass.name)
         entityClass.writeTo(context.codeGenerator, Dependencies(true))
@@ -67,7 +84,7 @@ class EntityGenerator(private val context: KspContext) {
                 }
             )
 
-            return unidentifiedEntityBuilder.build().writeTo(context.codeGenerator, Dependencies(true))
+            unidentifiedEntityBuilder.build().writeTo(context.codeGenerator, Dependencies(true))
         }
     }
 
