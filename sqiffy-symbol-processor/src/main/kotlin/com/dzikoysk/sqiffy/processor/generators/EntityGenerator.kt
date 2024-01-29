@@ -23,7 +23,7 @@ class EntityGenerator(private val context: KspContext) {
         val domainPackage = parsedDefinition.getDomainPackage()
         val entityName = parsedDefinition.name
 
-        val entityClass =
+        val entityFile =
             generateEntityClass(
                 packageName = domainPackage,
                 name = entityName,
@@ -45,8 +45,8 @@ class EntityGenerator(private val context: KspContext) {
             )
             .build()
 
-        val entityClassName = ClassName(entityClass.packageName, entityClass.name)
-        entityClass.writeTo(context.codeGenerator, Dependencies(true))
+        val entityClassName = ClassName(entityFile.packageName, entityName)
+        entityFile.writeTo(context.codeGenerator, Dependencies(true))
 
         if (properties.any { it.type == DataType.SERIAL }) {
             val serialProperties = properties.filter { it.type == DataType.SERIAL }
@@ -61,7 +61,7 @@ class EntityGenerator(private val context: KspContext) {
 
             val unidentifiedEntityBuilder = generateEntityClass(
                 packageName = domainPackage,
-                name = "Unidentified" + parsedDefinition.name,
+                name = "Unidentified${parsedDefinition.name}",
                 properties = requiredProperties,
                 dtoMethods = matchedDtoMethods,
                 extra = { typeSpec ->
@@ -95,7 +95,7 @@ class EntityGenerator(private val context: KspContext) {
         dtoMethods: List<Pair<FileSpec, List<PropertyData>>>,
         extra: (TypeSpec.Builder) -> Unit = {}
     ): FileSpec.Builder =
-        FileSpec.builder(packageName, name)
+        FileSpec.builder(packageName, "${name}Entity")
             .addType(
                 TypeSpec.classBuilder(name)
                     .addModifiers(DATA)
