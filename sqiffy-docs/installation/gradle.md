@@ -1,3 +1,8 @@
+---
+outline: deep
+aside: false
+---
+
 # Installation
 
 All you need to configure Sqiffy with Gradle is to add the following dependencies to your `build.gradle.kts` file:

@@ -8,7 +8,7 @@ hero:
   actions:
     - theme: brand
       text: API documentation
-      link: /installation/gradle
+      link: /installation/about
     - theme: alt
       text: GitHub
       link: https://github.com/dzikoysk/sqiffy

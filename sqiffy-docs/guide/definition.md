@@ -1,5 +1,6 @@
 ---
 outline: deep
+aside: false
 ---
 
 # Definining a schema

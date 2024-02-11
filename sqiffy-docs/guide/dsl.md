@@ -1,5 +1,6 @@
 ---
 outline: deep
+aside: false
 ---
 
 # Interacting with DSL

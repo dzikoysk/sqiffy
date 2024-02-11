@@ -1,3 +1,8 @@
+---
+outline: deep
+aside: false
+---
+
 # About
 
 **sqiffy** _(or just squiffy 🍹)_ - Experimental compound **SQ**L framework with type-safe DSL API generated at compile-time from scheme d**iff**.
