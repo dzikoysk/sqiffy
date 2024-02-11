@@ -84,3 +84,55 @@ The `UserId` is a type alias for `String`, and that's what Sqiffy will use to re
 ### Initial version
 
 In the initial version of our schema, we have to define the table name and its properties. 
+If you don't want to use application-side schema versioning _(like Sqiffy/Liquibase migrations)_, you will only need this version.
+
+> **Note**: Keep in mind that that during the initial development process of your application, versioning might not be necessary.
+> To keep it simple, it's usually easier to recreate the database from scratch or update it manually.
+
+### Versioning
+
+Once the initial version is done, and you're willing to change your schema, all you need to do is to add a new `DefinitionVersion` to your schema definition.
+In further definitions, you're only declaring changes you want to apply to the previous version, not a whole schema.
+
+In the example above, we've added two more versions to our `UserDefinition`:
+
+* `V_1_0_1` - we've changed the type of `name` property from `VARCHAR(16)` to `VARCHAR(24)`, and added a new `display_name` property
+* `V_1_0_2` - we've renamed `display_name` to `displayName`
+
+All other properties and constraints remain the same as in the previous version. Other supported operations:
+
+| Category | Operations |
+|---|---|
+| Property | * `ADD` - change the type of the property<br>* `RENAME` - change the type of the property<br>* `RETYPE` - change the type of the property<br>* `REMOVE` - change the type of the property |
+| Constraint | * `ADD_CONSTRAINT` - add a new constraint<br>* `REMOVE_CONSTRAINT` - remove a constraint |
+| Index | * `ADD_INDEX` - add a new index<br>* `REMOVE_INDEX` - remove an index |
+
+### References
+
+The last thing we want to show you is how to reference other entities in your schema.
+This is pretty straightforward, you just need to define constriants with `FOREIGN_KEY` type and reference the other entity's object class:
+
+```kotlin
+@Definition([
+    DefinitionVersion(
+        version = V_1_0_0,
+        name = "guilds",
+        properties = [
+            Property(name = "id", type = SERIAL),
+            Property(name = "owner", type = INT),
+        ],
+        constraints = [
+            Constraint(
+                type = FOREIGN_KEY,
+                name = "fk_guild_owner", 
+                on = ["owner"], 
+                referenced = UserDefinition::class, 
+                references = "id"
+            )
+        ]
+    ),
+])
+object GuildDefinition
+```
+
+That's all!
