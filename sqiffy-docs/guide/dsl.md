@@ -67,5 +67,4 @@ val userFromDatabase = database.select(UserTable)
     .first()
 ```
 
-To learn more about the DSL API and all its features, see the [F documentation](/docs).
-```kotlin
+To learn more about the DSL API and all its features, see the [DSL API docs](/dsl/queries).
