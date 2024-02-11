@@ -8,13 +8,13 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Docs', link: '/installation/gradle' }
+      { text: 'Docs', link: '/installation/about' }
     ],
-
     sidebar: [
       {
         text: 'Installation',
         items: [
+          { text: 'About', link: '/installation/about' },
           { text: 'Gradle', link: '/installation/gradle' },
         ]
       },
