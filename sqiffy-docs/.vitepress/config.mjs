@@ -41,6 +41,7 @@ export default defineConfig({
           { text: 'Dialects', link: '/dsl/dialects' },
           { text: 'Transactions', link: '/dsl/transactions' },
           { text: 'Conditions', link: '/dsl/conditions' },
+          { text: 'Aggregations', link: '/dsl/aggregations' },
           { text: 'Joins', link: '/dsl/joins' },
         ]
       }
