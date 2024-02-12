@@ -31,7 +31,7 @@ data class SqiffyDatabaseConfig(
     val handleAccessor: HandleAccessor = StandardHandleAccessor(localJdbi),
 )
 
-abstract class SqiffyDatabase(state: SqiffyDatabaseConfig) : DslHandle(), TransactionManager, Closeable {
+abstract class SqiffyDatabase(state: SqiffyDatabaseConfig) : DslHandle, TransactionManager, Closeable {
 
     internal val logger: SqiffyLogger = state.logger
     internal val dialect: Dialect = state.dialect
@@ -52,11 +52,10 @@ abstract class SqiffyDatabase(state: SqiffyDatabaseConfig) : DslHandle(), Transa
     fun <RESULT> runMigrations(migrator: Migrator<RESULT>): RESULT =
         migrator.runMigrations(this)
 
-    override fun <T> transaction(block: (Transaction) -> T): T {
-        return localJdbi.inTransaction<T, Exception> { handle ->
+    override fun <T> transaction(block: (Transaction) -> T): T =
+        localJdbi.inTransaction<T, Exception> { handle ->
             block.invoke(JdbiTransaction(handle))
         }
-    }
 
     fun with(transaction: Transaction?): DslHandle =
         when (transaction) {

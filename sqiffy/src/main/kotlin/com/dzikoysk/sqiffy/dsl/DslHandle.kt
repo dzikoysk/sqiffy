@@ -10,11 +10,11 @@ import com.dzikoysk.sqiffy.dsl.statements.UpdateValues
 import com.dzikoysk.sqiffy.transaction.HandleAccessor
 import org.jdbi.v3.core.Handle
 
-abstract class DslHandle {
+interface DslHandle {
 
-    abstract fun getDatabase(): SqiffyDatabase
+    fun getDatabase(): SqiffyDatabase
 
-    abstract fun getHandleAccessor(): HandleAccessor
+    fun getHandleAccessor(): HandleAccessor
 
     fun select(table: Table): SelectStatement =
         SelectStatement(getDatabase(), getHandleAccessor(), table)
@@ -33,7 +33,7 @@ abstract class DslHandle {
 
 }
 
-class JdbiDslHandle(private val database: SqiffyDatabase, private val handle: Handle) : DslHandle(), HandleAccessor {
+class JdbiDslHandle(private val database: SqiffyDatabase, private val handle: Handle) : DslHandle, HandleAccessor {
 
     override fun <R> inHandle(body: (Handle) -> R): R =
         body.invoke(handle)
