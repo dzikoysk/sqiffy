@@ -100,3 +100,9 @@ fun <SOURCE, T> Expression<SOURCE, T>.notBetween(from: T, to: T): NotCondition<S
 
 infix fun <SOURCE, T> Expression<SOURCE, T>.between(between: Between<T>): BetweenCondition<SOURCE, T> = BetweenCondition(this, between)
 infix fun <SOURCE, T> Expression<SOURCE, T>.notBetween(between: Between<T>): NotCondition<SOURCE> = NotCondition(BetweenCondition(this, between))
+
+data class InCondition<SOURCE, T>(val value: Expression<SOURCE, T>, val values: Collection<Expression<*, T>>) : Condition<SOURCE>
+//infix fun <SOURCE, T> Expression<SOURCE, T>.within(values: Collection<Expression<SOURCE, T>>): InCondition<SOURCE, T> = InCondition(this, values)
+infix fun <SOURCE, T> Expression<SOURCE, T>.within(values: Collection<T>): InCondition<SOURCE, T> = InCondition(this, values.map { ConstExpression(it) })
+//infix fun <SOURCE, T> Expression<SOURCE, T>.notWithin(values: Collection<Expression<SOURCE, T>>): NotCondition<SOURCE> = NotCondition(InCondition(this, values))
+infix fun <SOURCE, T> Expression<SOURCE, T>.notWithin(values: Collection<T>): NotCondition<SOURCE> = NotCondition(InCondition(this, values.map { ConstExpression(it) }))

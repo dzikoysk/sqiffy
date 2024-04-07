@@ -6,6 +6,7 @@ import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.ComparisonCondition
 import com.dzikoysk.sqiffy.dsl.ConstExpression
 import com.dzikoysk.sqiffy.dsl.Expression
+import com.dzikoysk.sqiffy.dsl.InCondition
 import com.dzikoysk.sqiffy.dsl.LogicalCondition
 import com.dzikoysk.sqiffy.dsl.MathExpression
 import com.dzikoysk.sqiffy.dsl.NotCondition
@@ -151,6 +152,15 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                 GeneratorResult(
                     query = "${valueResult.query} BETWEEN ${leftResult.query} AND ${rightResult.query}",
                     arguments = (valueResult.arguments + leftResult.arguments + rightResult.arguments)
+                )
+            }
+            is InCondition<*, *> -> {
+                val valueResult = createExpression(allocator, expression.value)
+                val inResults = expression.values.map { createExpression(allocator, it) }
+
+                GeneratorResult(
+                    query = "${valueResult.query} IN (${inResults.joinToString(separator = ", ") { it.query }})",
+                    arguments = (inResults.fold(Arguments(allocator)) { arguments, result -> arguments + result.arguments } + valueResult.arguments)
                 )
             }
         }

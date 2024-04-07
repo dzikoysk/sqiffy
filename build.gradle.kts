@@ -21,7 +21,7 @@ allprojects {
     apply(plugin = "signing")
 
     group = "com.dzikoysk.sqiffy"
-    version = "1.0.0-alpha.55"
+    version = "1.0.0-alpha.56"
 
     java {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -111,12 +111,10 @@ subprojects {
 }
 
 nexusPublishing {
-    repositories {
-        sonatype {
-            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-            username.set(getEnvOrProperty("SONATYPE_USER", "sonatypeUser"))
-            password.set(getEnvOrProperty("SONATYPE_PASSWORD", "sonatypePassword"))
-        }
+    repositories.sonatype {
+        nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+        username.set(getEnvOrProperty("SONATYPE_USER", "sonatypeUser"))
+        password.set(getEnvOrProperty("SONATYPE_PASSWORD", "sonatypePassword"))
     }
 }
 

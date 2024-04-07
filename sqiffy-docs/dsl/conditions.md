@@ -19,6 +19,8 @@ Examples of conditions that can be used in queries:
 | Not like | `UserTable.name notLike "G%O%N%E"` |
 | Between | `UserTable.createdAt between (now().minusMinutes(1) and now().plusMinutes(1))` |
 | Not Between  | `UserTable.createdAt notBetween (now().minusMinutes(1) and now().plusMinutes(1))` |
+| In | `UserTable.id within setOf(1, 2, 3)` |
+| Not In | `UserTable.id notWithin setOf(1, 2, 3)` |
 
 If you want to combine multiple conditions, you can use the `and` and `or` functions:
 

@@ -26,11 +26,13 @@ import com.dzikoysk.sqiffy.dsl.min
 import com.dzikoysk.sqiffy.dsl.notBetween
 import com.dzikoysk.sqiffy.dsl.notEq
 import com.dzikoysk.sqiffy.dsl.notLike
+import com.dzikoysk.sqiffy.dsl.notWithin
 import com.dzikoysk.sqiffy.dsl.or
 import com.dzikoysk.sqiffy.dsl.plus
 import com.dzikoysk.sqiffy.dsl.statements.JoinType.INNER
 import com.dzikoysk.sqiffy.dsl.statements.Order.ASC
 import com.dzikoysk.sqiffy.dsl.sum
+import com.dzikoysk.sqiffy.dsl.within
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
 import com.dzikoysk.sqiffy.infra.UserTable
@@ -140,7 +142,9 @@ internal abstract class DslE2ETest(
                         GuildTable.name lessThanOrEq insertedGuild.name,
                         GuildTable.name like insertedGuild.name,
                         GuildTable.name notLike insertedGuild.name,
-                        GuildTable.createdAt notBetween (insertedGuild.createdAt and insertedGuild.createdAt)
+                        GuildTable.createdAt notBetween (insertedGuild.createdAt and insertedGuild.createdAt),
+                        GuildTable.id within setOf(insertedGuild.id),
+                        GuildTable.id notWithin setOf(insertedGuild.id + 1),
                     ),
                     and(
                         GuildTable.id eq GuildTable.id,
