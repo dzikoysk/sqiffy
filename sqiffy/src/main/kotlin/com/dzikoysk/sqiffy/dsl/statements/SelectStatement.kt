@@ -160,6 +160,9 @@ open class SelectStatement(
         }
     }
 
+    fun <R> toList(mapper: (Row) -> R): List<R> =
+        map(mapper).toList()
+
     fun <R> toSet(mapper: (Row) -> R): Set<R> =
         map(mapper).toSet()
 
