@@ -88,7 +88,7 @@ open class SelectStatement(
         this.offset = offset
     }
 
-    fun orderBy(vararg columns: Pair<Column<*>, Order>): SelectStatement = also {
+    fun orderBy(vararg columns: Pair<Selectable, Order>): SelectStatement = also {
         require(this.orderBy == null) { "Order by clause is already defined" }
         this.orderBy = columns
             .map { OrderBy(it.first, it.second) }
@@ -102,7 +102,10 @@ open class SelectStatement(
                 .filter { !groupByColumns.contains(it) }
                 .takeIf { it.isNotEmpty() }
                 ?.let { nonAggregatedColumns ->
-                    database.logger.log(Level.WARN, "Non-aggregated columns: $nonAggregatedColumns used with group by clause")
+                    database.logger.log(
+                        Level.WARN,
+                        "Non-aggregated columns: $nonAggregatedColumns used with group by clause"
+                    )
                 }
         }
 
@@ -156,5 +159,8 @@ open class SelectStatement(
                 .asSequence()
         }
     }
+
+    fun <R> toSet(mapper: (Row) -> R): Set<R> =
+        map(mapper).toSet()
 
 }
