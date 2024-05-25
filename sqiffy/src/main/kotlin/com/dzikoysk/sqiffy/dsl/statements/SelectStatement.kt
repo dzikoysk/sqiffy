@@ -64,8 +64,12 @@ open class SelectStatement(
         slice.addAll(to.table.getColumns())
     }
 
-    fun slice(vararg column: Selectable): SelectStatement = also {
-        this.slice = column.toMutableList()
+    fun slice(vararg selectables: Selectable): SelectStatement = also {
+        this.slice = selectables.toMutableList()
+    }
+
+    fun slice(selectables: Collection<Selectable>): SelectStatement = also {
+        this.slice = selectables.toMutableList()
     }
 
     fun where(where: () -> Expression<out Column<*>, Boolean>): SelectStatement = also {
@@ -90,9 +94,7 @@ open class SelectStatement(
 
     fun orderBy(vararg columns: Pair<Selectable, Order>): SelectStatement = also {
         require(this.orderBy == null) { "Order by clause is already defined" }
-        this.orderBy = columns
-            .map { OrderBy(it.first, it.second) }
-            .toList()
+        this.orderBy = columns.map { OrderBy(it.first, it.second) }
     }
 
     fun <R> map(mapper: (Row) -> R): Sequence<R> {
