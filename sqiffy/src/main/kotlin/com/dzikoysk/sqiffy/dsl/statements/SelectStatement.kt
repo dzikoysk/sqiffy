@@ -82,6 +82,11 @@ open class SelectStatement(
         this.groupBy = columns.toList()
     }
 
+    fun groupBy(columns: Collection<Column<*>>): SelectStatement = also {
+        require(this.groupBy == null) { "Group by clause is already defined" }
+        this.groupBy = columns.toList()
+    }
+
     fun having(having: () -> Expression<out Aggregation<*>, Boolean>): SelectStatement = also {
         require(this.having == null) { "Having clause is already defined" }
         this.having = having()
