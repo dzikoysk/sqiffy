@@ -73,9 +73,9 @@ interface SqlQueryGenerator {
 
     /* Expressions */
 
-    fun createExpression(
+    fun <SOURCE, RESULT> createExpression(
         allocator: ParameterAllocator,
-        expression: Expression<*, *>
+        expression: Expression<SOURCE, RESULT>
     ): GeneratorResult
 
     fun quoteType(): QuoteType =

@@ -1,16 +1,6 @@
 package com.dzikoysk.sqiffy.dsl.generator.dialects
 
-import com.dzikoysk.sqiffy.dsl.Aggregation
-import com.dzikoysk.sqiffy.dsl.BetweenCondition
-import com.dzikoysk.sqiffy.dsl.Column
-import com.dzikoysk.sqiffy.dsl.ComparisonCondition
-import com.dzikoysk.sqiffy.dsl.ConstExpression
-import com.dzikoysk.sqiffy.dsl.Expression
-import com.dzikoysk.sqiffy.dsl.InCondition
-import com.dzikoysk.sqiffy.dsl.LogicalCondition
-import com.dzikoysk.sqiffy.dsl.MathExpression
-import com.dzikoysk.sqiffy.dsl.NotCondition
-import com.dzikoysk.sqiffy.dsl.Selectable
+import com.dzikoysk.sqiffy.dsl.*
 import com.dzikoysk.sqiffy.dsl.generator.ArgumentType.VALUE
 import com.dzikoysk.sqiffy.dsl.generator.Arguments
 import com.dzikoysk.sqiffy.dsl.generator.ExpressionColumns
@@ -24,6 +14,7 @@ import com.dzikoysk.sqiffy.dsl.statements.JoinType.LEFT
 import com.dzikoysk.sqiffy.dsl.statements.JoinType.RIGHT
 import com.dzikoysk.sqiffy.dsl.statements.OrderBy
 import com.dzikoysk.sqiffy.shared.multiline
+import kotlin.math.exp
 
 abstract class GenericQueryGenerator : SqlQueryGenerator {
 
@@ -93,7 +84,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
             """)
         )
 
-    override fun createExpression(allocator: ParameterAllocator, expression: Expression<*, *>): GeneratorResult =
+    override fun <SOURCE, RESULT> createExpression(allocator: ParameterAllocator, expression: Expression<SOURCE, RESULT>): GeneratorResult =
         when (expression) {
             is Column<*> ->
                 GeneratorResult(
@@ -103,7 +94,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                 GeneratorResult(
                     query = "${expression.aggregationFunction}(${expression.quotedIdentifier.toString(quoteType())})"
                 )
-            is ConstExpression ->
+            is ConstExpression<*> ->
                 Arguments(allocator).let {
                     GeneratorResult(
                         query = ":${it.createArgument(VALUE, expression.value!!)}",
@@ -154,14 +145,36 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                     arguments = (valueResult.arguments + leftResult.arguments + rightResult.arguments)
                 )
             }
-            is InCondition<*, *> -> {
-                val valueResult = createExpression(allocator, expression.value)
-                val inResults = expression.values.map { createExpression(allocator, it) }
+            is WithinCondition<*, *> -> {
+                when {
+                    expression.values.isEmpty() -> GeneratorResult(query = "TRUE")
+                    expression.values.size == 1 ->
+                        createExpression(
+                            allocator,
+                            @Suppress("UNCHECKED_CAST")
+                            ComparisonCondition<SOURCE, RESULT>(
+                                operator = when (expression.type) {
+                                    WithinType.IN -> ComparisonOperator.EQUALS
+                                    WithinType.NOT_IN -> ComparisonOperator.NOT_EQUALS
+                                },
+                                left = expression.value as Expression<SOURCE, RESULT>,
+                                right = expression.values.first() as Expression<SOURCE, RESULT>,
+                            )
+                        )
+                    else -> {
+                        val valueResult = createExpression(allocator, expression.value)
+                        val inResults = expression.values.map { createExpression(allocator, it) }
+                        val sql = when (expression.type) {
+                            WithinType.IN -> "IN"
+                            WithinType.NOT_IN -> "NOT IN"
+                        }
 
-                GeneratorResult(
-                    query = "${valueResult.query} IN (${inResults.joinToString(separator = ", ") { it.query }})",
-                    arguments = (inResults.fold(Arguments(allocator)) { arguments, result -> arguments + result.arguments } + valueResult.arguments)
-                )
+                        GeneratorResult(
+                            query = "${valueResult.query} $sql (${inResults.joinToString(separator = ", ") { it.query }})",
+                            arguments = (inResults.fold(Arguments(allocator)) { arguments, result -> arguments + result.arguments } + valueResult.arguments)
+                        )
+                    }
+                }
             }
         }
 
