@@ -1,6 +1,7 @@
 package com.dzikoysk.sqiffy.processor.generators
 
 import com.dzikoysk.sqiffy.definition.DataType
+import com.dzikoysk.sqiffy.definition.NULL_VALUE
 import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
 import com.dzikoysk.sqiffy.dsl.Row
@@ -145,8 +146,12 @@ class EntityGenerator(private val context: KspContext) {
                     .build()
             )
 
-    private fun String.toKotlinCode(dataType: DataType, typeName: TypeName): String =
-        when (dataType) {
+    private fun String.toKotlinCode(dataType: DataType, typeName: TypeName): String {
+        if (this == NULL_VALUE) {
+            return "null"
+        }
+
+        return when (dataType) {
             /* Special types */
             DataType.UUID_TYPE -> "UUID.fromString(\"$this\")"
             DataType.ENUM -> "$typeName.$this"
@@ -165,5 +170,5 @@ class EntityGenerator(private val context: KspContext) {
             DataType.TIMESTAMP -> "Instant.parse(\"$this\")"
             else -> this
         }
-
+    }
 }

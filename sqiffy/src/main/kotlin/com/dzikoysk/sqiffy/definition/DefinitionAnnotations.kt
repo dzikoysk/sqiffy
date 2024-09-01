@@ -10,8 +10,9 @@ import java.util.UUID
 import kotlin.annotation.AnnotationRetention.RUNTIME
 import kotlin.reflect.KClass
 
-const val NULL_STRING = "~NULL-STRING~"
 object NULL_CLASS
+const val NULL_STRING = "~NULL-STRING~"
+const val NULL_VALUE = "~NULL-VALUE~"
 
 enum class Kind {
     DIRECT,

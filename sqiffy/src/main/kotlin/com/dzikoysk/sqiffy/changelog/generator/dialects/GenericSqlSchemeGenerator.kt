@@ -17,6 +17,7 @@ import com.dzikoysk.sqiffy.definition.DataType.SERIAL
 import com.dzikoysk.sqiffy.definition.DataType.TEXT
 import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
 import com.dzikoysk.sqiffy.definition.DataType.VARCHAR
+import com.dzikoysk.sqiffy.definition.NULL_VALUE
 import com.dzikoysk.sqiffy.definition.PropertyData
 
 abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
@@ -98,15 +99,19 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
             .let { dataType -> "$dataType ${property.default?.let { default -> "DEFAULT ${default.toSqlDefault(property)} " } ?: ""}" }
             .let { if (!property.nullable) "$it NOT NULL" else it }
 
-    private fun String.toSqlDefault(property: PropertyData): String =
-        when (property.rawDefault) {
-            true -> property.default!!
-            else ->
-                createSqlDefault(this, property)
-                    ?: createRegularDefault(this, property)
-                    ?: throw UnsupportedOperationException("Cannot create default value based on $this")
+    private fun String.toSqlDefault(property: PropertyData): String {
+        if (property.rawDefault) {
+            return property.default!!
         }
 
+        if (property.default == NULL_VALUE) {
+            return "NULL"
+        }
+
+        return createSqlDefault(this, property)
+            ?: createRegularDefault(this, property)
+            ?: throw UnsupportedOperationException("Cannot create default value based on $this")
+    }
 
     abstract fun createSqlDefault(rawDefault: String, property: PropertyData, dataType: DataType = property.type!!): String?
 
