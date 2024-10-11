@@ -29,7 +29,6 @@ import com.dzikoysk.sqiffy.dsl.notLike
 import com.dzikoysk.sqiffy.dsl.notWithin
 import com.dzikoysk.sqiffy.dsl.or
 import com.dzikoysk.sqiffy.dsl.plus
-import com.dzikoysk.sqiffy.dsl.statements.JoinType.INNER
 import com.dzikoysk.sqiffy.dsl.statements.Order.ASC
 import com.dzikoysk.sqiffy.dsl.sum
 import com.dzikoysk.sqiffy.dsl.within
@@ -134,8 +133,7 @@ internal abstract class DslE2ETest(
             .where {
                 or(
                     and(
-                        GuildTable.id eq insertedGuild.id,
-                        GuildTable.name notEq insertedGuild.name,
+                        (GuildTable.id eq insertedGuild.id) and (GuildTable.name notEq insertedGuild.name),
                         GuildTable.name greaterThan insertedGuild.name,
                         GuildTable.name greaterThanOrEq insertedGuild.name,
                         GuildTable.name lessThan insertedGuild.name,

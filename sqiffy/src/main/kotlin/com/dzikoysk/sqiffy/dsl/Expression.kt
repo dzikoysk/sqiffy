@@ -1,5 +1,7 @@
 //@file:Suppress("internal", "INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
 
+@file:Suppress("unused")
+
 package com.dzikoysk.sqiffy.dsl
 
 //import kotlin.internal.LowPriorityInOverloadResolution
@@ -40,8 +42,12 @@ enum class LogicalOperator(val symbol: String) {
 }
 
 class LogicalCondition<SOURCE>(val operator: LogicalOperator, val conditions: List<Condition<out SOURCE>>) : Condition<SOURCE>
+
 fun <SOURCE> and(vararg conditions: Condition<out SOURCE>): LogicalCondition<SOURCE> = LogicalCondition(LogicalOperator.AND, conditions.toList())
+infix fun <SOURCE> Condition<out SOURCE>.and(value: Condition<out SOURCE>): LogicalCondition<SOURCE> = and(this, value)
+
 fun <SOURCE> or(vararg conditions: Condition<out SOURCE>): LogicalCondition<SOURCE> = LogicalCondition(LogicalOperator.OR, conditions.toList())
+infix fun <SOURCE> Condition<out SOURCE>.or(value: Condition<out SOURCE>): LogicalCondition<SOURCE> = or(this, value)
 
 data class NotCondition<SOURCE>(val condition: Condition<SOURCE>) : Condition<SOURCE>
 fun <SOURCE> not(condition: Condition<SOURCE>): NotCondition<SOURCE> = NotCondition(condition)
