@@ -147,7 +147,11 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
             }
             is WithinCondition<*, *> -> {
                 when {
-                    expression.values.isEmpty() -> GeneratorResult(query = "TRUE")
+                    expression.values.isEmpty() ->
+                        when (expression.type) {
+                            WithinType.IN -> GeneratorResult(query = "FALSE")
+                            WithinType.NOT_IN -> GeneratorResult(query = "TRUE")
+                        }
                     expression.values.size == 1 ->
                         createExpression(
                             allocator,
