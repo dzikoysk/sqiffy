@@ -1,3 +1,5 @@
+@file:Suppress("MemberVisibilityCanBePrivate", "unused")
+
 package com.dzikoysk.sqiffy.dsl.statements
 
 import com.dzikoysk.sqiffy.SqiffyDatabase
@@ -56,6 +58,15 @@ open class SelectStatement(
     fun distinct(): SelectStatement = also {
         this.distinct = true
     }
+
+    fun <T> leftJoin(on: Column<T>, to: Column<T>): SelectStatement =
+        join(type = JoinType.LEFT, on = on, to = to)
+
+    fun <T> innerJoin(on: Column<T>, to: Column<T>): SelectStatement =
+        join(type = JoinType.INNER, on = on, to = to)
+
+    fun <T> rightJoin(on: Column<T>, to: Column<T>): SelectStatement =
+        join(type = JoinType.RIGHT, on = on, to = to)
 
     fun <T> join(type: JoinType, on: Column<T>, to: Column<T>): SelectStatement = also {
         val join = Join(type, on, to)

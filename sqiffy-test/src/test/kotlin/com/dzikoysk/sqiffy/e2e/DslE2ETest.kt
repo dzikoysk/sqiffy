@@ -119,7 +119,7 @@ internal abstract class DslE2ETest(
 
         val joinedData = database.select(UserTable)
             .distinct()
-            .join(INNER, UserTable.id, GuildTable.owner)
+            .innerJoin(UserTable.id, GuildTable.owner)
             .slice(UserTable.name, GuildTable.name)
             .where { GuildTable.owner eq insertedGuild.owner }
             .limit(1, offset = 0)
