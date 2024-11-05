@@ -7,20 +7,22 @@ aside: false
 
 Examples of conditions that can be used in queries:
 
-| Function | Example |
-| --- | --- |
-| Equals | `UserTable.id eq 123456` |
-| Not equals | `UserTable.name notEq "Panda` |
-| Left greater than right | `UserTable.id greaterThan 1000` |
-| Left greater or equals right | `UserTable.id greaterThanOrEq 1000` |
-| Left less than right | `UserTable.id lessThan 1000` |
-| Left less or equals right | `UserTable.id lessThanOrEq 1000` |
-| Like | `UserTable.name like "G%O%N%E"` |
-| Not like | `UserTable.name notLike "G%O%N%E"` |
-| Between | `UserTable.createdAt between (now().minusMinutes(1) and now().plusMinutes(1))` |
-| Not Between  | `UserTable.createdAt notBetween (now().minusMinutes(1) and now().plusMinutes(1))` |
-| In | `UserTable.id within setOf(1, 2, 3)` |
-| Not In | `UserTable.id notWithin setOf(1, 2, 3)` |
+| Function                     | Example                                                                           |
+|------------------------------|-----------------------------------------------------------------------------------|
+| Is null                      | `UserTable.name.isNull()`                                                         |
+| Is not null                  | `UserTable.name.isNotNull()`                                                      |
+| Equals                       | `UserTable.id eq 123456`                                                          |
+| Not equals                   | `UserTable.name notEq "Panda`                                                     |
+| Left greater than right      | `UserTable.id greaterThan 1000`                                                   |
+| Left greater or equals right | `UserTable.id greaterThanOrEq 1000`                                               |
+| Left less than right         | `UserTable.id lessThan 1000`                                                      |
+| Left less or equals right    | `UserTable.id lessThanOrEq 1000`                                                  |
+| Like                         | `UserTable.name like "G%O%N%E"`                                                   |
+| Not like                     | `UserTable.name notLike "G%O%N%E"`                                                |
+| Between                      | `UserTable.createdAt between (now().minusMinutes(1) and now().plusMinutes(1))`    |
+| Not Between                  | `UserTable.createdAt notBetween (now().minusMinutes(1) and now().plusMinutes(1))` |
+| In                           | `UserTable.id within setOf(1, 2, 3)`                                              |
+| Not In                       | `UserTable.id notWithin setOf(1, 2, 3)`                                           |
 
 If you want to combine multiple conditions, you can use the `and` and `or` functions:
 
