@@ -8,14 +8,12 @@ import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
 import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator
 import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator.GeneratorResult
 import com.dzikoysk.sqiffy.dsl.statements.Join
-import com.dzikoysk.sqiffy.dsl.statements.JoinCondition
 import com.dzikoysk.sqiffy.dsl.statements.JoinType.FULL
 import com.dzikoysk.sqiffy.dsl.statements.JoinType.INNER
 import com.dzikoysk.sqiffy.dsl.statements.JoinType.LEFT
 import com.dzikoysk.sqiffy.dsl.statements.JoinType.RIGHT
 import com.dzikoysk.sqiffy.dsl.statements.OrderBy
 import com.dzikoysk.sqiffy.shared.multiline
-import kotlin.math.exp
 
 abstract class GenericQueryGenerator : SqlQueryGenerator {
 
@@ -65,7 +63,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                         FULL -> "FULL JOIN"
                     }
                     "$joinType ${join.table.getName().toQuoted()} ON (${join.conditions.joinToString(separator = " AND ") {
-                        "${it.on.quotedIdentifier.toString(quoteType())} = ${joinsExpressions[it.onExpression]}"
+                        "${it.on.quotedIdentifier.toString(quoteType())} = ${joinsExpressions[it.toExpression]}"
                     }})"
                 }
             }

@@ -31,7 +31,7 @@ data class Join(
 
 data class JoinCondition(
     val on: Column<*>,
-    val onExpression: Expression<*, *>
+    val toExpression: Expression<*, *>
 )
 
 enum class Order {
@@ -74,18 +74,22 @@ open class SelectStatement(
         join(type = JoinType.RIGHT, on = on, to = to)
 
     fun <T> join(type: JoinType, on: Column<T>, to: Column<T>): SelectStatement = also {
-        val join = Join(type, on.table, listOf(JoinCondition(on = on, onExpression = to)))
+        val join = Join(type, to.table, listOf(JoinCondition(on = on, toExpression = to)))
         require(!joins.contains(join)) { "Join $join is already defined" }
         joins.add(join)
         slice.addAll(to.table.getColumns())
     }
 
-    fun <T, J : Table> join(type: JoinType, table: J, vararg conditions: J.() -> Pair<Column<*>, Expression<*, *>>): SelectStatement = also {
+    @ExperimentalStdlibApi
+    fun <T : Table> join(type: JoinType, table: T, vararg conditions: (T) -> Pair<Column<*>, Expression<*, *>>): SelectStatement = also {
         val mappedConditions = conditions.map { it(table) }
-        val join = Join(type, table, mappedConditions.map { JoinCondition(on = it.first, onExpression = it.second) })
+        val joinedToColumns = mappedConditions.map { it.second }.filterIsInstance<Column<*>>()
+        require(joinedToColumns.map { it.table }.toSet().size == 1) { "All joined columns must be from the same table" }
+
+        val join = Join(type, table, mappedConditions.map { JoinCondition(on = it.first, toExpression = it.second) })
         require(!joins.contains(join)) { "Join $join is already defined" }
         joins.add(join)
-        slice.addAll(mappedConditions.map { it.second }.filterIsInstance<Column<*>>().flatMap { it.table.getColumns() })
+        slice.addAll(joinedToColumns.flatMap { it.table.getColumns() })
     }
 
     fun slice(vararg selectables: Selectable): SelectStatement = also {
@@ -156,11 +160,11 @@ open class SelectStatement(
             )
         }
 
-        val joinResult = joins.map { join ->
+        val joinResult = joins.flatMap { join ->
             join.conditions.map { condition ->
                 val onExpressionResult = database.sqlQueryGenerator.createExpression(
                     allocator = allocator,
-                    expression = condition.onExpression
+                    expression = condition.toExpression
                 )
                 condition to onExpressionResult
             }
@@ -171,7 +175,7 @@ open class SelectStatement(
             distinct = distinct,
             selected = slice,
             joins = joins,
-            joinsExpressions = joinResult,
+            joinsExpressions = joinResult.map { it.first.toExpression to it.second.query }.associate { it },
             where = whereResult?.query,
             groupBy = groupBy,
             having = havingResult?.query,
@@ -180,8 +184,7 @@ open class SelectStatement(
             offset = offset,
         )
 
-        val joinArguments = joinResult.flatMap { it.map { condition -> condition.second.arguments }}
-        val arguments = query.arguments + whereResult?.arguments + havingResult?.arguments + joinArguments
+        val arguments = query.arguments + whereResult?.arguments + havingResult?.arguments + joinResult.map { it.second.arguments }
 
         database.logger.log(Level.DEBUG, "Executing query: ${query.query} with arguments: $arguments")
 
