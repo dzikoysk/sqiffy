@@ -11,28 +11,9 @@ import com.dzikoysk.sqiffy.dialect.postgres.PostgresDatabase
 import com.dzikoysk.sqiffy.domain.TestDefault
 import com.dzikoysk.sqiffy.domain.UnidentifiedUser
 import com.dzikoysk.sqiffy.domain.toUser
-import com.dzikoysk.sqiffy.dsl.and
-import com.dzikoysk.sqiffy.dsl.avg
-import com.dzikoysk.sqiffy.dsl.between
-import com.dzikoysk.sqiffy.dsl.count
-import com.dzikoysk.sqiffy.dsl.eq
-import com.dzikoysk.sqiffy.dsl.greaterThan
-import com.dzikoysk.sqiffy.dsl.greaterThanOrEq
-import com.dzikoysk.sqiffy.dsl.lessThan
-import com.dzikoysk.sqiffy.dsl.lessThanOrEq
-import com.dzikoysk.sqiffy.dsl.like
-import com.dzikoysk.sqiffy.dsl.max
-import com.dzikoysk.sqiffy.dsl.min
-import com.dzikoysk.sqiffy.dsl.notBetween
-import com.dzikoysk.sqiffy.dsl.notEq
-import com.dzikoysk.sqiffy.dsl.notLike
-import com.dzikoysk.sqiffy.dsl.notWithin
-import com.dzikoysk.sqiffy.dsl.or
-import com.dzikoysk.sqiffy.dsl.plus
+import com.dzikoysk.sqiffy.dsl.*
 import com.dzikoysk.sqiffy.dsl.statements.JoinType
 import com.dzikoysk.sqiffy.dsl.statements.Order.ASC
-import com.dzikoysk.sqiffy.dsl.sum
-import com.dzikoysk.sqiffy.dsl.within
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
 import com.dzikoysk.sqiffy.infra.UserTable
@@ -146,6 +127,7 @@ internal abstract class DslE2ETest(
                         GuildTable.createdAt notBetween (insertedGuild.createdAt and insertedGuild.createdAt),
                         GuildTable.id within setOf(insertedGuild.id),
                         GuildTable.id notWithin setOf(insertedGuild.id + 1),
+                        GuildTable.id.isNotNull() and not(GuildTable.id.isNull()),
                     ),
                     and(
                         GuildTable.id eq GuildTable.id,

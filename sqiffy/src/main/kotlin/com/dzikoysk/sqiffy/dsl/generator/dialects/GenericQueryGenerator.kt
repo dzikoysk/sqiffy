@@ -118,6 +118,22 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                     )
                 }
             }
+            is IsNullCondition<*, *> -> {
+                createExpression(allocator, expression.value).let {
+                    GeneratorResult(
+                        query = "${it.query} IS NULL",
+                        arguments = it.arguments
+                    )
+                }
+            }
+            is IsNotNullCondition<*, *> -> {
+                createExpression(allocator, expression.value).let {
+                    GeneratorResult(
+                        query = "${it.query} IS NOT NULL",
+                        arguments = it.arguments
+                    )
+                }
+            }
             is ComparisonCondition<*, *> -> {
                 val leftResult = createExpression(allocator, expression.left)
                 val rightResult = createExpression(allocator, expression.right)

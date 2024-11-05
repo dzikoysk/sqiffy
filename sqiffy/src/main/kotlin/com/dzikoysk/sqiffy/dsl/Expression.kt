@@ -52,6 +52,14 @@ infix fun <SOURCE> Condition<out SOURCE>.or(value: Condition<out SOURCE>): Logic
 data class NotCondition<SOURCE>(val condition: Condition<SOURCE>) : Condition<SOURCE>
 fun <SOURCE> not(condition: Condition<SOURCE>): NotCondition<SOURCE> = NotCondition(condition)
 
+/* Null operators */
+
+class IsNullCondition<SOURCE, T>(val value: Expression<SOURCE, T>) : Condition<SOURCE>
+fun <SOURCE> Column<SOURCE>.isNull(): Condition<Column<SOURCE>> = IsNullCondition(this)
+
+fun <SOURCE> Column<SOURCE>.isNotNull(): Condition<Column<SOURCE>> = IsNotNullCondition(this)
+class IsNotNullCondition<SOURCE, T>(val value: Expression<SOURCE, T>) : Condition<SOURCE>
+
 /* Basic comparison operators */
 
 enum class ComparisonOperator(val symbol: String) {
