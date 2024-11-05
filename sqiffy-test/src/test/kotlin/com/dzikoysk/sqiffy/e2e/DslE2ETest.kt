@@ -29,6 +29,7 @@ import com.dzikoysk.sqiffy.dsl.notLike
 import com.dzikoysk.sqiffy.dsl.notWithin
 import com.dzikoysk.sqiffy.dsl.or
 import com.dzikoysk.sqiffy.dsl.plus
+import com.dzikoysk.sqiffy.dsl.statements.JoinType
 import com.dzikoysk.sqiffy.dsl.statements.Order.ASC
 import com.dzikoysk.sqiffy.dsl.sum
 import com.dzikoysk.sqiffy.dsl.within
@@ -63,6 +64,7 @@ internal abstract class DslE2ETest(
     migrationProvider: ChangelogProvider = SQIFFY
 ) : SqiffyE2ETestSpecification(migrationProvider = migrationProvider) {
 
+    @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun `should insert and select entity`() {
         val userToInsert = UnidentifiedUser(
@@ -130,6 +132,7 @@ internal abstract class DslE2ETest(
 
         val matchedGuild = database.select(GuildTable)
             .slice(GuildTable.name)
+            .join(JoinType.LEFT, UserTable, { GuildTable.id to it.id }, { GuildTable.id to it.id })
             .where {
                 or(
                     and(

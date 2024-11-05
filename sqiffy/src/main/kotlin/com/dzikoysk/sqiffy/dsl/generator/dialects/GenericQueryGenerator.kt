@@ -14,7 +14,6 @@ import com.dzikoysk.sqiffy.dsl.statements.JoinType.LEFT
 import com.dzikoysk.sqiffy.dsl.statements.JoinType.RIGHT
 import com.dzikoysk.sqiffy.dsl.statements.OrderBy
 import com.dzikoysk.sqiffy.shared.multiline
-import kotlin.math.exp
 
 abstract class GenericQueryGenerator : SqlQueryGenerator {
 
@@ -36,6 +35,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
         selected: List<Selectable>,
         where: String?,
         joins: List<Join>,
+        joinsExpressions: Map<Expression<*, *>, String>,
         groupBy: List<Column<*>>?,
         having: String?,
         orderBy: List<OrderBy>?,
@@ -62,9 +62,9 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                         RIGHT -> "RIGHT JOIN"
                         FULL -> "FULL JOIN"
                     }
-                    "$joinType ${
-                        join.onTo.table.getName().toQuoted()
-                    } ON ${join.on.quotedIdentifier.toString(quoteType())} = ${join.onTo.quotedIdentifier.toString(quoteType())}"
+                    "$joinType ${join.table.getName().toQuoted()} ON (${join.conditions.joinToString(separator = " AND ") {
+                        "${it.on.quotedIdentifier.toString(quoteType())} = ${joinsExpressions[it.toExpression]}"
+                    }})"
                 }
             }
                 ${where?.let { "WHERE $it" } ?: ""}

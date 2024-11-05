@@ -37,6 +37,7 @@ interface SqlQueryGenerator {
         selected: List<Selectable>,
         where: String? = null,
         joins: List<Join> = emptyList(),
+        joinsExpressions: Map<Expression<*, *>, String> = emptyMap(),
         groupBy: List<Column<*>>? = null,
         having: String? = null,
         orderBy: List<OrderBy>? = null,
