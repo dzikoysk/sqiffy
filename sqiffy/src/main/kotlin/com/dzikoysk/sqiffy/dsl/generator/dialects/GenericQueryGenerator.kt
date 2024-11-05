@@ -8,6 +8,7 @@ import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
 import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator
 import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator.GeneratorResult
 import com.dzikoysk.sqiffy.dsl.statements.Join
+import com.dzikoysk.sqiffy.dsl.statements.JoinCondition
 import com.dzikoysk.sqiffy.dsl.statements.JoinType.FULL
 import com.dzikoysk.sqiffy.dsl.statements.JoinType.INNER
 import com.dzikoysk.sqiffy.dsl.statements.JoinType.LEFT
@@ -36,6 +37,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
         selected: List<Selectable>,
         where: String?,
         joins: List<Join>,
+        joinsExpressions: Map<Expression<*, *>, String>,
         groupBy: List<Column<*>>?,
         having: String?,
         orderBy: List<OrderBy>?,
@@ -62,9 +64,9 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                         RIGHT -> "RIGHT JOIN"
                         FULL -> "FULL JOIN"
                     }
-                    "$joinType ${
-                        join.onTo.table.getName().toQuoted()
-                    } ON ${join.on.quotedIdentifier.toString(quoteType())} = ${join.onTo.quotedIdentifier.toString(quoteType())}"
+                    "$joinType ${join.table.getName().toQuoted()} ON (${join.conditions.joinToString(separator = " AND ") {
+                        "${it.on.quotedIdentifier.toString(quoteType())} = ${joinsExpressions[it.onExpression]}"
+                    }})"
                 }
             }
                 ${where?.let { "WHERE $it" } ?: ""}
