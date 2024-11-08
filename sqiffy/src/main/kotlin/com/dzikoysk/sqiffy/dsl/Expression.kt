@@ -14,7 +14,7 @@ sealed interface Condition<SOURCE> : Expression<SOURCE, Boolean>
 
 class ConstExpression<T>(val value: T) : Expression<T, T>
 
-fun const(value: String): ConstExpression<String> = ConstExpression(value)
+fun <T> const(value: T): ConstExpression<T> = ConstExpression(value)
 
 /* Math operators */
 
