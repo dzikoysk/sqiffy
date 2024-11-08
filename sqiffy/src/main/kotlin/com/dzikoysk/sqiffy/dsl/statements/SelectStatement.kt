@@ -89,7 +89,7 @@ open class SelectStatement(
         val join = Join(type, table, mappedConditions.map { JoinCondition(on = it.first, toExpression = it.second) })
         require(!joins.contains(join)) { "Join $join is already defined" }
         joins.add(join)
-        slice.addAll(joinedToColumns.flatMap { it.table.getColumns() })
+        slice.addAll(table.getColumns())
     }
 
     fun slice(vararg selectables: Selectable): SelectStatement = also {
@@ -98,6 +98,14 @@ open class SelectStatement(
 
     fun slice(selectables: Collection<Selectable>): SelectStatement = also {
         this.slice = selectables.toMutableList()
+    }
+
+    fun extendSlice(vararg selectables: Selectable): SelectStatement = also {
+        this.slice.addAll(selectables)
+    }
+
+    fun extendSlice(selectables: Collection<Selectable>): SelectStatement = also {
+        this.slice.addAll(selectables)
     }
 
     fun where(where: () -> Expression<out Column<*>, Boolean>): SelectStatement = also {

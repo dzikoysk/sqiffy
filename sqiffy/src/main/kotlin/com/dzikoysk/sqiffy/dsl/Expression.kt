@@ -10,7 +10,11 @@ sealed interface Expression<SOURCE, RESULT>
 
 sealed interface Condition<SOURCE> : Expression<SOURCE, Boolean>
 
+/* Const expressions */
+
 class ConstExpression<T>(val value: T) : Expression<T, T>
+
+fun const(value: String): ConstExpression<String> = ConstExpression(value)
 
 /* Math operators */
 
