@@ -13,7 +13,7 @@ plugins {
 }
 
 dependencies {
-    val sqiffy = "1.0.0-alpha.63"
+    val sqiffy = "1.0.0-alpha.64"
     ksp("com.dzikoysk.sqiffy:sqiffy-symbol-processor:$sqiffy")
     implementation("com.dzikoysk.sqiffy:sqiffy:$sqiffy")
 }

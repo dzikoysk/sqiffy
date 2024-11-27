@@ -51,6 +51,7 @@ fun Property.toPropertyData(typeFactory: TypeFactory, namingStrategy: NamingStra
                     typeFactory.getTypeAnnotation(this, EnumDefinition::class) { enumDefinition }
                         ?.toEnumData()
                         ?: run {
+                            val enumName = typeFactory.getTypeDefinition(this) { enumDefinition }.qualifiedName
                             val rawEnum = typeFactory.getTypeAnnotation(this, RawEnum::class) { enumDefinition }
 
                             when {
@@ -58,7 +59,7 @@ fun Property.toPropertyData(typeFactory: TypeFactory, namingStrategy: NamingStra
                                     EnumDefinitionData(
                                         name = rawEnum.name,
                                         raw = true,
-                                        mappedTo = typeFactory.getTypeDefinition(this) { enumDefinition }.qualifiedName,
+                                        mappedTo = enumName,
                                         versions = listOf(
                                             EnumVersionData(
                                                 version = "0.0.0",
@@ -67,7 +68,7 @@ fun Property.toPropertyData(typeFactory: TypeFactory, namingStrategy: NamingStra
                                             )
                                         )
                                     )
-                                else -> throw IllegalStateException("@EnumDefinition is not defined for $name")
+                                else -> throw IllegalStateException("@EnumDefinition is not defined for property '$name' of type $enumName")
                             }
                         }
                 else -> null
