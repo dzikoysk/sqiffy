@@ -78,7 +78,7 @@ object RoleDefinition
             Property(name = "role", type = ENUM, enumDefinition = RoleDefinition::class)
         ],
         constraints = [
-            Constraint(type = PRIMARY_KEY, name = "pk_id", on = "id"),
+            Constraint(type = PRIMARY_KEY, name = "pk_id", on = ["id"]),
         ],
         indices = [
             Index(type = INDEX, name = "idx_id", columns = ["id"]),
@@ -115,7 +115,7 @@ object UserDefinition
             Property(name = "owner", type = INT)
         ],
         constraints = [
-            Constraint(type = FOREIGN_KEY, on = "id", name = "fk_id", referenced = UserDefinition::class, references = "id")
+            Constraint(type = FOREIGN_KEY, on = ["id"], name = "fk_id", referenced = UserDefinition::class, references = "id")
         ]
     ),
     DefinitionVersion(
@@ -127,7 +127,7 @@ object UserDefinition
     DefinitionVersion(
         version = V_1_0_2,
         constraints = [
-            Constraint(type = FOREIGN_KEY, on = "id", name = "fk_id", referenced = UserDefinition::class, references = "id")
+            Constraint(type = FOREIGN_KEY, on = ["id"], name = "fk_id", referenced = UserDefinition::class, references = "id")
         ]
     )
 ])
