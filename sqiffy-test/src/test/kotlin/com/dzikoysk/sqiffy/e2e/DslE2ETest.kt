@@ -245,7 +245,7 @@ class EmbeddedPostgresUpsertDslE2ETest : SqiffyE2ETestSpecification() {
 
         val secondResult =
             postgresDatabase
-                .upsert(UserTable) { listOf(id) }
+                .upsert(UserTable) { listOf(it.id) }
                 .insert {
                     it[UserTable.id] = 1
                     it[UserTable.name] = "1"

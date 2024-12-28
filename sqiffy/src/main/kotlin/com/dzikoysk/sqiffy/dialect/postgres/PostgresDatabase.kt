@@ -58,7 +58,7 @@ class PostgresDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase(state) {
 
     fun <T : Table> upsert(
         table: T,
-        conflictingColumns: T.() -> Collection<Column<*>>,
+        conflictingColumns: (T) -> Collection<Column<*>>,
     ): UpsertStatement =
         upsert(
             table = table,
