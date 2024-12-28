@@ -43,7 +43,7 @@ To define them, you can use `constraints` & `indices` fields in `DefinitionVersi
             Property(name = "name", type = VARCHAR, details = "12"),
         ],
         constraints = [
-            Constraint(type = PRIMARY_KEY, name = "pk_id", on = "id"),
+            Constraint(type = PRIMARY_KEY, name = "pk_id", on = ["id"]),
         ],
         indices = [
             Index(type = UNIQUE_INDEX, name = "uq_name", columns = ["name"])
