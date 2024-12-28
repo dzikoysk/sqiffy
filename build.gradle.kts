@@ -21,7 +21,7 @@ allprojects {
     apply(plugin = "signing")
 
     group = "com.dzikoysk.sqiffy"
-    version = "1.0.0-alpha.65"
+    version = "1.0.0-alpha.66"
 
     java {
         sourceCompatibility = JavaVersion.VERSION_11

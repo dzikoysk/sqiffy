@@ -215,8 +215,14 @@ class EmbeddedPostgresUpsertDslE2ETest : SqiffyE2ETestSpecification() {
     fun `should upsert`() {
         val postgresDatabase = database as PostgresDatabase
 
-        repeat(2) { idx ->
-            val (id, name, role) = postgresDatabase
+        data class View(
+            val id: Int,
+            val name: String,
+            val role: Role
+        )
+
+        val firstResult =
+            postgresDatabase
                 .upsert(UserTable)
                 .insert {
                     it[UserTable.id] = 1
@@ -230,13 +236,34 @@ class EmbeddedPostgresUpsertDslE2ETest : SqiffyE2ETestSpecification() {
                     it[UserTable.name] = "2"
                     it[UserTable.displayName] = "2"
                 }
-                .execute { Triple(it[UserTable.id], it[UserTable.name], it[UserTable.role]) }
+                .execute { View(it[UserTable.id], it[UserTable.name], it[UserTable.role]) }
                 .first()
 
-            assertThat(id).isEqualTo(1) // conflict
-            assertThat(name).isEqualTo((idx + 1).toString()) // updated field
-            assertThat(role).isEqualTo(MODERATOR) // non updated field
-        }
+        assertThat(firstResult.id).isEqualTo(1) // conflict
+        assertThat(firstResult.name).isEqualTo("1") // updated field
+        assertThat(firstResult.role).isEqualTo(MODERATOR) // non updated field
+
+        val secondResult =
+            postgresDatabase
+                .upsert(UserTable) { listOf(id) }
+                .insert {
+                    it[UserTable.id] = 1
+                    it[UserTable.name] = "1"
+                    it[UserTable.displayName] = "1"
+                    it[UserTable.uuid] = UUID.randomUUID()
+                    it[UserTable.wallet] = 100f
+                    it[UserTable.role] = MODERATOR
+                }
+                .update {
+                    it[UserTable.name] = "2"
+                    it[UserTable.displayName] = "2"
+                }
+                .execute { View(it[UserTable.id], it[UserTable.name], it[UserTable.role]) }
+                .first()
+
+        assertThat(secondResult.id).isEqualTo(1) // conflict
+        assertThat(secondResult.name).isEqualTo("2") // updated field
+        assertThat(secondResult.role).isEqualTo(MODERATOR) // non updated field
     }
 }
 

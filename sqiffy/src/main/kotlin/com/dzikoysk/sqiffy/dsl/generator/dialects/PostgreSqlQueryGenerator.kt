@@ -91,7 +91,7 @@ object PostgreSqlQueryGenerator : GenericQueryGenerator() {
         tableName: String,
         insertColumns: List<QueryColumn>,
         updateColumns: List<QueryColumn>,
-        conflictingColumns: List<Column<*>>,
+        conflictingColumns: Collection<Column<*>>,
         expressionColumns: ExpressionColumns,
         where: String?
     ): UpsertGeneratorResult {
