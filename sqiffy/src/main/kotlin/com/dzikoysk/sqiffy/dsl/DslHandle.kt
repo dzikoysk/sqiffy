@@ -33,7 +33,10 @@ interface DslHandle {
 
 }
 
-class JdbiDslHandle(private val database: SqiffyDatabase, private val handle: Handle) : DslHandle, HandleAccessor {
+open class JdbiDslHandle<DATABASE : SqiffyDatabase>(
+    protected val internalDatabase: DATABASE,
+    protected val handle: Handle,
+) : DslHandle, HandleAccessor {
 
     override fun <R> inHandle(body: (Handle) -> R): R =
         body.invoke(handle)
@@ -41,7 +44,7 @@ class JdbiDslHandle(private val database: SqiffyDatabase, private val handle: Ha
     override fun getHandleAccessor(): HandleAccessor =
         this
 
-    override fun getDatabase(): SqiffyDatabase =
-        database
+    override fun getDatabase(): DATABASE =
+        internalDatabase
 
 }

@@ -57,6 +57,12 @@ abstract class SqiffyDatabase(state: SqiffyDatabaseConfig) : DslHandle, Transact
             block.invoke(JdbiTransaction(handle))
         }
 
+    operator fun invoke(transaction: Transaction?): DslHandle =
+        when (transaction) {
+            is JdbiTransaction -> JdbiDslHandle(this, transaction.handle)
+            else -> this
+        }
+
     fun with(transaction: Transaction?): DslHandle =
         when (transaction) {
             is JdbiTransaction -> JdbiDslHandle(this, transaction.handle)
