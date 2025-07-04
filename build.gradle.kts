@@ -1,13 +1,14 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm") version "2.2.0"
     `java-library`
 
     application
     signing
     `maven-publish`
-    id("io.github.gradle-nexus.publish-plugin") version "1.3.0"
+    id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
 description = "Sqiffy | Parent module"
@@ -21,7 +22,7 @@ allprojects {
     apply(plugin = "signing")
 
     group = "com.dzikoysk.sqiffy"
-    version = "1.0.0-alpha.68"
+    version = "1.0.0-alpha.69"
 
     java {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -32,13 +33,13 @@ allprojects {
     }
 
     tasks.withType<KotlinCompile>().configureEach {
-        kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_11.toString()
-            languageVersion = "1.9"
-            freeCompilerArgs = listOf(
-                "-Xjvm-default=all", // For generating default methods in interfaces
-                "-Xcontext-receivers"
-            )
+        kotlin {
+            compilerOptions {
+                jvmTarget.set(JvmTarget.JVM_11)
+                freeCompilerArgs.addAll(
+                    "-Xjvm-default=all", // For generating default methods in interfaces
+                )
+            }
         }
     }
 
@@ -97,12 +98,15 @@ subprojects {
     dependencies {
         api("com.zaxxer:HikariCP:5.0.1")
 
-        val junit = "5.9.3"
+        val junit = "5.13.2"
         testImplementation("org.junit.jupiter:junit-jupiter-params:$junit")
         testImplementation("org.junit.jupiter:junit-jupiter-api:$junit")
         testImplementation("org.junit.jupiter:junit-jupiter-engine:$junit")
 
-        testImplementation("org.assertj:assertj-core:3.24.1")
+        val junitPlatform = "1.13.0"
+        testRuntimeOnly("org.junit.platform:junit-platform-launcher:$junitPlatform")
+
+        testImplementation("org.assertj:assertj-core:3.27.3")
     }
 
     tasks.test {
@@ -111,10 +115,13 @@ subprojects {
 }
 
 nexusPublishing {
-    repositories.sonatype {
-        nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-        username.set(getEnvOrProperty("SONATYPE_USER", "sonatypeUser"))
-        password.set(getEnvOrProperty("SONATYPE_PASSWORD", "sonatypePassword"))
+    repositories {
+        sonatype {
+            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
+            username.set(getEnvOrProperty("SONATYPE_USER", "sonatypeUser"))
+            password.set(getEnvOrProperty("SONATYPE_PASSWORD", "sonatypePassword"))
+        }
     }
 }
 

@@ -2,9 +2,9 @@ description = "Sqiffy Symbol Processor | KSP implementation of Sqiffy specificat
 
 dependencies {
     implementation(project(":sqiffy"))
-    implementation("com.google.devtools.ksp:symbol-processing-api:1.9.22-1.0.17")
+    implementation("com.google.devtools.ksp:symbol-processing-api:2.2.0-2.0.2")
 
-    val kotlinPoet = "1.14.2"
+    val kotlinPoet = "2.2.0"
     implementation("com.squareup:kotlinpoet:$kotlinPoet")
     implementation("com.squareup:kotlinpoet-ksp:$kotlinPoet")
 }

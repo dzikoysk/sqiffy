@@ -34,11 +34,11 @@ Gradle _(kts)_:
 
 ```kotlin
 plugins {
-    id("com.google.devtools.ksp") version "1.9.22-1.0.17" // for Kotlin 1.9.22
+    id("com.google.devtools.ksp") version "2.2.0-2.0.2" // for Kotlin 1.9.22
 }
 
 dependencies {
-    val sqiffy = "1.0.0-alpha.68"
+    val sqiffy = "1.0.0-alpha.69"
     ksp("com.dzikoysk.sqiffy:sqiffy-symbol-processor:$sqiffy") // annotation processor
     implementation("com.dzikoysk.sqiffy:sqiffy:$sqiffy") // core library & implementation
 }

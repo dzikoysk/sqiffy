@@ -25,6 +25,7 @@ import com.dzikoysk.sqiffy.shared.createHikariDataSource
 import com.dzikoysk.sqiffy.shared.createSQLiteDataSource
 import com.dzikoysk.sqiffy.transaction.NoTransaction
 import com.dzikoysk.sqiffy.transaction.Transaction
+import com.dzikoysk.sqiffy.transaction.Transaction.Companion.invoke
 import com.zaxxer.hikari.HikariDataSource
 import java.time.Instant
 import java.time.LocalDate
@@ -175,7 +176,7 @@ internal abstract class DslE2ETest(
     }
 
     private fun deleteGuild(id: Int, transaction: Transaction = NoTransaction): Int =
-        transaction(database)
+        transaction.invoke(database)
             .delete(GuildTable)
             .where { GuildTable.id eq id }
             .execute()
