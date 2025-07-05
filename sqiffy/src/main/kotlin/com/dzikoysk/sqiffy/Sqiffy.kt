@@ -21,4 +21,3 @@ object Sqiffy {
         } as DATABASE
 
 }
-

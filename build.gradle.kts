@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "2.2.0"
+    kotlin("jvm") version "1.9.25"
     `java-library`
 
     application
@@ -22,7 +22,7 @@ allprojects {
     apply(plugin = "signing")
 
     group = "com.dzikoysk.sqiffy"
-    version = "1.0.0-alpha.69"
+    version = "1.0.0-alpha.70"
 
     java {
         sourceCompatibility = JavaVersion.VERSION_11

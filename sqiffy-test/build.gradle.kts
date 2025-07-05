@@ -1,7 +1,7 @@
 import com.google.devtools.ksp.gradle.KspTask
 
 plugins {
-    id("com.google.devtools.ksp") version "2.2.0-2.0.2"
+    id("com.google.devtools.ksp") version "1.9.25-1.0.20"
 }
 
 dependencies {
