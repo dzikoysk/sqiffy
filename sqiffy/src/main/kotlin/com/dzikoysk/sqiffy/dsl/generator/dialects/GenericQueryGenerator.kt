@@ -63,7 +63,11 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                         FULL -> "FULL JOIN"
                     }
                     "$joinType ${join.table.getName().toQuoted()} ON (${join.conditions.joinToString(separator = " AND ") {
-                        "${it.on.quotedIdentifier.toString(quoteType())} = ${joinsExpressions[it.toExpression]}"
+                        if (it.toExpression is Condition<*>) {
+                            joinsExpressions.getValue(it.toExpression)
+                        } else {
+                            "${it.on.quotedIdentifier.toString(quoteType())} = ${joinsExpressions.getValue(it.toExpression)}"
+                        }
                     }})"
                 }
             }
