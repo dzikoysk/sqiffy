@@ -4,6 +4,7 @@ package com.dzikoysk.sqiffy.e2e
 
 import com.dzikoysk.sqiffy.api.Role
 import com.dzikoysk.sqiffy.api.Role.MODERATOR
+import com.dzikoysk.sqiffy.api.UserResponse
 import com.dzikoysk.sqiffy.definition.ChangelogProvider
 import com.dzikoysk.sqiffy.definition.ChangelogProvider.LIQUIBASE
 import com.dzikoysk.sqiffy.definition.ChangelogProvider.SQIFFY
@@ -63,6 +64,18 @@ internal abstract class DslE2ETest(
             .values(userToInsert)
             .map { userToInsert.withId(id = it[UserTable.id]) }
             .first()
+
+        val response = insertedUser.toUserResponse(isActive = true)
+        assertThat(response).isEqualTo(
+            UserResponse(
+                id = insertedUser.id,
+                uuid = insertedUser.uuid,
+                name = insertedUser.name,
+                role = insertedUser.role,
+                displayName = insertedUser.displayName,
+                isActive = true
+            )
+        )
 
         val updatedRecords = database
             .update(UserTable) {

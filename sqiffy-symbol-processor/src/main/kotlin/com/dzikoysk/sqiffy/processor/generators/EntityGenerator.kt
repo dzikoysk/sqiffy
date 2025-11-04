@@ -1,9 +1,11 @@
 package com.dzikoysk.sqiffy.processor.generators
 
+import com.dzikoysk.sqiffy.definition.AdditionalPropertyData
 import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.NULL_VALUE
 import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
+import com.dzikoysk.sqiffy.definition.VariantData
 import com.dzikoysk.sqiffy.dsl.Row
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.dzikoysk.sqiffy.processor.toClassName
@@ -20,7 +22,17 @@ import com.squareup.kotlinpoet.ksp.writeTo
 
 class EntityGenerator(private val context: KspContext) {
 
-    internal fun generateEntityClass(parsedDefinition: ParsedDefinition, properties: List<PropertyData>, dtoMethods: List<Pair<FileSpec, List<PropertyData>>>) {
+    data class DtoMetadata(
+        val targetFile: FileSpec,
+        val selectedProperties: List<PropertyData>,
+        val additionalProperties: List<AdditionalPropertyData>,
+    )
+
+    internal fun generateEntityClass(
+        parsedDefinition: ParsedDefinition,
+        properties: List<PropertyData>,
+        dtoMethods: List<DtoMetadata>,
+    ) {
         val domainPackage = parsedDefinition.getDomainPackage()
         val entityName = parsedDefinition.name
 
@@ -58,7 +70,7 @@ class EntityGenerator(private val context: KspContext) {
                 ?: return
 
             val matchedDtoMethods = dtoMethods
-                .filter { requiredProperties.containsAll(it.second) }
+                .filter { requiredProperties.containsAll(it.selectedProperties) }
 
             val unidentifiedEntityBuilder = generateEntityClass(
                 packageName = domainPackage,
@@ -70,7 +82,10 @@ class EntityGenerator(private val context: KspContext) {
                         FunSpec.builder("withId")
                             .also { functionBuilder ->
                                 serialProperties.forEach {
-                                    functionBuilder.addParameter(it.formattedName, it.type!!.contextualType(it).toClassName())
+                                    functionBuilder.addParameter(
+                                        name = it.formattedName,
+                                        type = it.type!!.contextualType(it).toClassName(),
+                                    )
                                 }
                             }
                             .returns(entityClassName)
@@ -93,7 +108,7 @@ class EntityGenerator(private val context: KspContext) {
         packageName: String,
         name: String,
         properties: List<PropertyData>,
-        dtoMethods: List<Pair<FileSpec, List<PropertyData>>>,
+        dtoMethods: List<DtoMetadata>,
         extra: (TypeSpec.Builder) -> Unit = {}
     ): FileSpec.Builder =
         FileSpec.builder(packageName, "${name}Entity")
@@ -126,17 +141,27 @@ class EntityGenerator(private val context: KspContext) {
                             )
                         }
                     }
-                    .also {
-                        dtoMethods.forEach { (dtoClass, selectedProperties) ->
-                            val dtoClassName = ClassName(dtoClass.packageName, dtoClass.name)
+                    .also { builder ->
+                        dtoMethods.forEach { metadata ->
+                            val dtoClassName = ClassName(metadata.targetFile.packageName, metadata.targetFile.name)
 
-                            it.addFunction(
-                                FunSpec.builder("to${dtoClass.name}")
+                            builder.addFunction(
+                                FunSpec
+                                    .builder("to${metadata.targetFile.name}")
+                                    .also {
+                                        metadata.additionalProperties.forEach { additionalProperty ->
+                                            it.addParameter(
+                                                ParameterSpec
+                                                    .builder(additionalProperty.formattedName, additionalProperty.type.toClassName())
+                                                    .build()
+                                            )
+                                        }
+                                    }
                                     .returns(dtoClassName)
                                     .addStatement(
                                         "return %T(%L)",
                                         dtoClassName,
-                                        selectedProperties.joinToString(", ") { "${it.formattedName} = ${it.formattedName}" }
+                                        (metadata.selectedProperties.map { it.formattedName } + metadata.additionalProperties.map { it.formattedName }).joinToString(", ") { "$it = $it" }
                                     )
                                     .build()
                             )

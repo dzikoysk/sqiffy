@@ -31,7 +31,15 @@ annotation class Variant(
     val name: String,
     val mode: Mode = Mode.INCLUDE,
     val properties: Array<String> = [],
+    val additionalProperties: Array<AdditionalProperty> = [],
     val implements: Array<KClass<*>> = []
+)
+
+@Target(ANNOTATION_CLASS)
+annotation class AdditionalProperty(
+    val name: String,
+    val type: KClass<*>,
+    val nullable: Boolean = false,
 )
 
 fun Variant.toVariantData(typeFactory: TypeFactory, namingStrategy: NamingStrategy): VariantData =
@@ -44,6 +52,14 @@ fun Variant.toVariantData(typeFactory: TypeFactory, namingStrategy: NamingStrate
                 formattedProperty = NamingStrategyFormatter.format(namingStrategy, it)
             )
         },
+        additionalProperties = additionalProperties.map {
+            AdditionalPropertyData(
+                name = it.name,
+                formattedName = NamingStrategyFormatter.format(namingStrategy, it.name),
+                type = typeFactory.getTypeDefinition(this) { it.type },
+                nullable = it.nullable
+            )
+        },
         implements = implements.map { typeFactory.getTypeDefinition(this) { it } }
     )
 
@@ -51,7 +67,15 @@ data class VariantData(
     val name: String,
     val mode: Mode,
     val properties: List<PropertyReference>,
+    val additionalProperties: List<AdditionalPropertyData>,
     val implements: List<TypeDefinition>
+)
+
+data class AdditionalPropertyData(
+    val name: String,
+    val formattedName: String,
+    val type: TypeDefinition,
+    val nullable: Boolean,
 )
 
 data class PropertyReference(

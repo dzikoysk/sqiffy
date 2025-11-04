@@ -1,5 +1,6 @@
 package com.dzikoysk.sqiffy.e2e
 
+import com.dzikoysk.sqiffy.definition.AdditionalProperty
 import com.dzikoysk.sqiffy.definition.ChangelogDefinition
 import com.dzikoysk.sqiffy.definition.ChangelogProvider.LIQUIBASE
 import com.dzikoysk.sqiffy.definition.Constraint
@@ -24,6 +25,7 @@ import com.dzikoysk.sqiffy.definition.Index
 import com.dzikoysk.sqiffy.definition.IndexDefinitionOperation.REMOVE_INDEX
 import com.dzikoysk.sqiffy.definition.IndexType.INDEX
 import com.dzikoysk.sqiffy.definition.IndexType.UNIQUE_INDEX
+import com.dzikoysk.sqiffy.definition.Mode.EXCLUDE
 import com.dzikoysk.sqiffy.definition.NamingStrategy.CAMEL_CASE
 import com.dzikoysk.sqiffy.definition.Property
 import com.dzikoysk.sqiffy.definition.PropertyDefinitionOperation.ADD
@@ -110,6 +112,14 @@ object UserDefinition
             name = "AllUserDto",
             implements = [ Serializable::class ]
         ),
+        Variant(
+            name = "UserResponse",
+            mode = EXCLUDE,
+            properties = [ UserTableNames.WALLET ],
+            additionalProperties = [
+                AdditionalProperty(name = "isActive", type = Boolean::class)
+            ]
+        )
     ]
 )
 object UserDtoDefinition

@@ -15,7 +15,11 @@ import com.squareup.kotlinpoet.ksp.writeTo
 
 internal class DtoGenerator(private val context: KspContext) {
 
-    internal fun generateDtoClass(definition: ParsedDefinition, variantData: VariantData, selectedProperties: List<PropertyData>): Pair<FileSpec, List<PropertyData>> {
+    internal fun generateDtoClass(
+        definition: ParsedDefinition,
+        variantData: VariantData,
+        selectedProperties: List<PropertyData>,
+    ): Pair<FileSpec, List<PropertyData>> {
         val dtoClass = FileSpec.builder(definition.getApiPackage(), variantData.name)
             .addType(
                 TypeSpec.classBuilder(variantData.name)
@@ -29,7 +33,16 @@ internal class DtoGenerator(private val context: KspContext) {
                         FunSpec.constructorBuilder()
                             .also { constructorBuilder ->
                                 selectedProperties.forEach {
-                                    constructorBuilder.addParameter(it.formattedName, it.type!!.contextualType(it).toClassName().copy(nullable = it.nullable))
+                                    constructorBuilder.addParameter(
+                                        name = it.formattedName,
+                                        type = it.type!!.contextualType(it).toClassName().copy(nullable = it.nullable)
+                                    )
+                                }
+                                variantData.additionalProperties.forEach {
+                                    constructorBuilder.addParameter(
+                                        name = it.name,
+                                        type = it.type.toClassName(),
+                                    )
                                 }
                             }
                             .build()
@@ -37,8 +50,23 @@ internal class DtoGenerator(private val context: KspContext) {
                     .also { typeBuilder ->
                         selectedProperties.forEach {
                             typeBuilder.addProperty(
-                                PropertySpec.builder(it.formattedName, it.type!!.contextualType(it).toClassName().copy(nullable = it.nullable))
+                                PropertySpec
+                                    .builder(
+                                        name = it.formattedName,
+                                        type = it.type!!.contextualType(it).toClassName().copy(nullable = it.nullable)
+                                    )
                                     .initializer(it.formattedName)
+                                    .build()
+                            )
+                        }
+                        variantData.additionalProperties.forEach {
+                            typeBuilder.addProperty(
+                                PropertySpec
+                                    .builder(
+                                        name = it.name,
+                                        type = it.type.toClassName(),
+                                    )
+                                    .initializer(it.name)
                                     .build()
                             )
                         }

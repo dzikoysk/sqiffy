@@ -235,15 +235,23 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
                 .firstOrNull { it.from.qualifiedName == definition.source }
                 ?.variants
                 ?.map { variant ->
-                    dtoGenerator.generateDtoClass(
+                    val baseProperties = when {
+                        variant.properties.isEmpty() -> properties
+                        variant.mode == Mode.INCLUDE -> properties.filter { property -> variant.properties.any { property.name == it.name } }
+                        variant.mode == Mode.EXCLUDE -> properties.filterNot { property -> variant.properties.any { property.name == it.name } }
+                        else -> throw IllegalStateException("Unsupported mode ${variant.mode}")
+                    }
+
+                    val (file, _) = dtoGenerator.generateDtoClass(
                         definition = definition,
                         variantData = variant,
-                        selectedProperties = when {
-                            variant.properties.isEmpty() -> properties
-                            variant.mode == Mode.INCLUDE -> properties.filter { property -> variant.properties.any { property.name == it.name } }
-                            variant.mode == Mode.EXCLUDE -> properties.filterNot { property -> variant.properties.any { property.name == it.name } }
-                            else -> throw IllegalStateException("Unsupported mode ${variant.mode}")
-                        }
+                        selectedProperties = baseProperties,
+                    )
+
+                    EntityGenerator.DtoMetadata(
+                        targetFile = file,
+                        selectedProperties = baseProperties,
+                        additionalProperties = variant.additionalProperties,
                     )
                 }
                 ?: emptyList()
