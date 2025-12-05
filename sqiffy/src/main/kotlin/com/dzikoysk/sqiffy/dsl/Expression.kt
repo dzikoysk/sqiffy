@@ -74,7 +74,9 @@ enum class ComparisonOperator(val symbol: String) {
     LESS_THAN("<"),
     LESS_THAN_OR_EQUALS("<="),
     LIKE("LIKE"),
-    NOT_LIKE("NOT LIKE")
+    NOT_LIKE("NOT LIKE"),
+    ILIKE("ILIKE"),
+    NOT_ILIKE("NOT ILIKE")
 }
 
 class ComparisonCondition<SOURCE, RESULT>(
@@ -106,6 +108,12 @@ infix fun <SOURCE> Expression<SOURCE, String>.like(to: String): ComparisonCondit
 
 infix fun <SOURCE> Expression<SOURCE, String>.notLike(to: Expression<SOURCE, String>): ComparisonCondition<SOURCE, String> = ComparisonCondition(ComparisonOperator.NOT_LIKE, this, to)
 infix fun <SOURCE> Expression<SOURCE, String>.notLike(to: String): ComparisonCondition<SOURCE, String> = ComparisonCondition(ComparisonOperator.NOT_LIKE, this, ConstExpression(to))
+
+infix fun <SOURCE> Expression<SOURCE, String>.ilike(to: Expression<SOURCE, String>): ComparisonCondition<SOURCE, String> = ComparisonCondition(ComparisonOperator.ILIKE, this, to)
+infix fun <SOURCE> Expression<SOURCE, String>.ilike(to: String): ComparisonCondition<SOURCE, String> = ComparisonCondition(ComparisonOperator.ILIKE, this, ConstExpression(to))
+
+infix fun <SOURCE> Expression<SOURCE, String>.notIlike(to: Expression<SOURCE, String>): ComparisonCondition<SOURCE, String> = ComparisonCondition(ComparisonOperator.NOT_ILIKE, this, to)
+infix fun <SOURCE> Expression<SOURCE, String>.notIlike(to: String): ComparisonCondition<SOURCE, String> = ComparisonCondition(ComparisonOperator.NOT_ILIKE, this, ConstExpression(to))
 
 /* Complex operators */
 

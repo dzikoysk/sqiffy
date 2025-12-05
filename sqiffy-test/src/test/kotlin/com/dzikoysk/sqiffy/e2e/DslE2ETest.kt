@@ -139,6 +139,8 @@ internal abstract class DslE2ETest(
                         GuildTable.name lessThanOrEq insertedGuild.name,
                         GuildTable.name like insertedGuild.name,
                         GuildTable.name notLike insertedGuild.name,
+                        GuildTable.name ilike insertedGuild.name.uppercase(),
+                        GuildTable.name notIlike insertedGuild.name.lowercase() + "!",
                         GuildTable.createdAt notBetween (insertedGuild.createdAt and insertedGuild.createdAt),
                         GuildTable.id within setOf(insertedGuild.id),
                         GuildTable.id notWithin setOf(insertedGuild.id + 1),
