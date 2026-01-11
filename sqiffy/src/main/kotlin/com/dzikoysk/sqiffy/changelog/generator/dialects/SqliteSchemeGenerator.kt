@@ -3,6 +3,7 @@ package com.dzikoysk.sqiffy.changelog.generator.dialects
 import com.dzikoysk.sqiffy.changelog.EnumState
 import com.dzikoysk.sqiffy.changelog.Enums
 import com.dzikoysk.sqiffy.definition.DataType
+import com.dzikoysk.sqiffy.definition.DataType.BIGSERIAL
 import com.dzikoysk.sqiffy.definition.DataType.BINARY
 import com.dzikoysk.sqiffy.definition.DataType.DATE
 import com.dzikoysk.sqiffy.definition.DataType.DATETIME
@@ -66,7 +67,7 @@ object SqliteSchemeGenerator : GenericSqlSchemeGenerator() {
 
     override fun createDataType(property: PropertyData, availableEnums: Enums): String =
         when (property.type) {
-            SERIAL -> "INTEGER PRIMARY KEY AUTOINCREMENT"
+            SERIAL, BIGSERIAL -> "INTEGER PRIMARY KEY AUTOINCREMENT"
             UUID_TYPE -> "TEXT"
             ENUM -> "TEXT"
             BINARY -> "TEXT"

@@ -9,6 +9,7 @@ import com.dzikoysk.sqiffy.definition.DataType.DATETIME
 import com.dzikoysk.sqiffy.definition.DataType.DOUBLE
 import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
+import com.dzikoysk.sqiffy.definition.DataType.BIGSERIAL
 import com.dzikoysk.sqiffy.definition.DataType.TIMESTAMP
 import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
 import com.dzikoysk.sqiffy.definition.PropertyData
@@ -46,6 +47,7 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
     override fun createDataType(property: PropertyData, availableEnums: Enums): String =
         when (property.type) {
             SERIAL -> "SERIAL"
+            BIGSERIAL -> "BIGSERIAL"
             UUID_TYPE -> "UUID"
             ENUM -> property.enumDefinition
                 ?.let { availableEnums.getEnum(it.getMappedTypeDefinition()) }

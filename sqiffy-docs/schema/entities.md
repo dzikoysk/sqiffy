@@ -101,11 +101,11 @@ In the example above, we've added two more versions to our `UserDefinition`:
 
 All other properties and constraints remain the same as in the previous version. Other supported operations:
 
-| Category | Operations |
-|---|---|
-| Property | * `ADD` - change the type of the property<br>* `RENAME` - change the type of the property<br>* `RETYPE` - change the type of the property<br>* `REMOVE` - change the type of the property |
-| Constraint | * `ADD_CONSTRAINT` - add a new constraint<br>* `REMOVE_CONSTRAINT` - remove a constraint |
-| Index | * `ADD_INDEX` - add a new index<br>* `REMOVE_INDEX` - remove an index |
+| Category   | Operations                                                                                                                                                                                |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Property   | * `ADD` - change the type of the property<br>* `RENAME` - change the type of the property<br>* `RETYPE` - change the type of the property<br>* `REMOVE` - change the type of the property |
+| Constraint | * `ADD_CONSTRAINT` - add a new constraint<br>* `REMOVE_CONSTRAINT` - remove a constraint                                                                                                  |
+| Index      | * `ADD_INDEX` - add a new index<br>* `REMOVE_INDEX` - remove an index                                                                                                                     |
 
 ### References
 

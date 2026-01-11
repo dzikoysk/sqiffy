@@ -5,7 +5,6 @@ import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.NULL_VALUE
 import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
-import com.dzikoysk.sqiffy.definition.VariantData
 import com.dzikoysk.sqiffy.dsl.Row
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.dzikoysk.sqiffy.processor.toClassName
@@ -61,11 +60,11 @@ class EntityGenerator(private val context: KspContext) {
         val entityClassName = ClassName(entityFile.packageName, entityName)
         entityFile.writeTo(context.codeGenerator, Dependencies(true))
 
-        if (properties.any { it.type == DataType.SERIAL }) {
-            val serialProperties = properties.filter { it.type == DataType.SERIAL }
+        if (properties.any { it.type == DataType.SERIAL || it.type == DataType.BIGSERIAL }) {
+            val serialProperties = properties.filter { it.type == DataType.SERIAL || it.type == DataType.BIGSERIAL }
 
             val requiredProperties = properties
-                .filter { it.type != DataType.SERIAL }
+                .filter { it.type != DataType.SERIAL && it.type != DataType.BIGSERIAL }
                 .takeIf { it.isNotEmpty() }
                 ?: return
 

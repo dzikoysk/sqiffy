@@ -51,7 +51,7 @@ internal abstract class JdbiE2ETest : SqiffyE2ETestSpecification() {
                 .bind("3", userToInsert.role)
                 .bind("4", userToInsert.wallet)
                 .executeAndReturnGeneratedKeys()
-                .map { row -> row.getColumn(UserTableNames.ID, Int::class.javaObjectType) }
+                .map { row -> row.getColumn(UserTableNames.ID, Long::class.javaObjectType) }
                 .first()
                 .let { userToInsert.withId(it) }
         }

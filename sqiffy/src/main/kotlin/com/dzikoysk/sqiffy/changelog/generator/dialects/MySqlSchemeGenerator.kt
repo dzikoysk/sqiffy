@@ -8,6 +8,7 @@ import com.dzikoysk.sqiffy.definition.DataType.DATE
 import com.dzikoysk.sqiffy.definition.DataType.DATETIME
 import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
+import com.dzikoysk.sqiffy.definition.DataType.BIGSERIAL
 import com.dzikoysk.sqiffy.definition.DataType.TIMESTAMP
 import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
 import com.dzikoysk.sqiffy.definition.PropertyData
@@ -22,7 +23,7 @@ object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
             val type = "${propertyData.name.toQuoted()} ${createDataTypeWithAttributes(propertyData, enums)}";
 
             when (propertyData.type) {
-                SERIAL -> "$type, KEY (${propertyData.name.toQuoted()})"
+                SERIAL, BIGSERIAL -> "$type, KEY (${propertyData.name.toQuoted()})"
                 else -> type
             }
         }
@@ -42,6 +43,7 @@ object MySqlSchemeGenerator : GenericSqlSchemeGenerator() {
         with (property) {
             when (type) {
                 SERIAL -> "INT AUTO_INCREMENT"
+                BIGSERIAL -> "BIGINT AUTO_INCREMENT"
                 UUID_TYPE -> "VARCHAR(36)"
                 ENUM ->
                     enumDefinition

@@ -4,6 +4,7 @@ package com.dzikoysk.sqiffy.dialect.postgres
 
 import com.dzikoysk.sqiffy.SqiffyDatabase
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
+import com.dzikoysk.sqiffy.definition.DataType.BIGSERIAL
 import com.dzikoysk.sqiffy.dsl.*
 import com.dzikoysk.sqiffy.dsl.generator.Arguments
 import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
@@ -40,7 +41,7 @@ open class UpsertStatement(
         table = table,
         insertValuesSupplier = insertValuesSupplier,
         updateValuesSupplier = updateValuesSupplier,
-        conflictingColumns = listOf(table.getColumns().first { it.dataType == SERIAL })
+        conflictingColumns = listOf(table.getColumns().first { it.dataType == SERIAL || it.dataType == BIGSERIAL })
     )
 
     fun insert(insertValues: InsertValuesBody): UpsertStatement = also {

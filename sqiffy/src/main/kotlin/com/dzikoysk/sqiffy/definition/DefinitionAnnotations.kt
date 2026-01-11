@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.dzikoysk.sqiffy.definition
 
 import com.dzikoysk.sqiffy.definition.Kind.DIRECT
@@ -10,6 +12,7 @@ import java.util.UUID
 import kotlin.annotation.AnnotationRetention.RUNTIME
 import kotlin.reflect.KClass
 
+@Suppress("ClassName")
 object NULL_CLASS
 const val NULL_STRING = "~NULL-STRING~"
 const val NULL_VALUE = "~NULL-VALUE~"
@@ -28,6 +31,8 @@ enum class DataType(
     NULL_TYPE(INDIRECT, NULL_CLASS::class),
     UUID_TYPE(INDIRECT, UUID::class),
     SERIAL(INDIRECT, Int::class),
+    @Suppress("SpellCheckingInspection")
+    BIGSERIAL(INDIRECT, Long::class),
     ENUM(DIRECT, Enum::class, { it.enumDefinition?.getMappedTypeDefinition() ?: throw IllegalStateException("Enum definition class is not defined for $it") }),
 
     /* Regular types */

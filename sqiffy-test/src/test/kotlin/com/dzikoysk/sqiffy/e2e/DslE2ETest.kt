@@ -9,7 +9,6 @@ import com.dzikoysk.sqiffy.definition.ChangelogProvider
 import com.dzikoysk.sqiffy.definition.ChangelogProvider.LIQUIBASE
 import com.dzikoysk.sqiffy.definition.ChangelogProvider.SQIFFY
 import com.dzikoysk.sqiffy.dialect.postgres.PostgresDatabase
-import com.dzikoysk.sqiffy.dialect.postgres.invoke
 import com.dzikoysk.sqiffy.domain.TestDefault
 import com.dzikoysk.sqiffy.domain.UnidentifiedUser
 import com.dzikoysk.sqiffy.domain.toUser
@@ -233,7 +232,7 @@ class EmbeddedPostgresUpsertDslE2ETest : SqiffyE2ETestSpecification() {
         val postgresDatabase = database as PostgresDatabase
 
         data class View(
-            val id: Int,
+            val id: Long,
             val name: String,
             val role: Role
         )
@@ -257,7 +256,7 @@ class EmbeddedPostgresUpsertDslE2ETest : SqiffyE2ETestSpecification() {
                     .execute { View(it[UserTable.id], it[UserTable.name], it[UserTable.role]) }
                     .first()
 
-            assertThat(firstResult.id).isEqualTo(1) // conflict
+            assertThat(firstResult.id).isEqualTo(1L) // conflict
             assertThat(firstResult.name).isEqualTo("1") // updated field
             assertThat(firstResult.role).isEqualTo(MODERATOR) // non updated field
 
@@ -279,7 +278,7 @@ class EmbeddedPostgresUpsertDslE2ETest : SqiffyE2ETestSpecification() {
                     .execute { View(it[UserTable.id], it[UserTable.name], it[UserTable.role]) }
                     .first()
 
-            assertThat(secondResult.id).isEqualTo(1) // conflict
+            assertThat(secondResult.id).isEqualTo(1L) // conflict
             assertThat(secondResult.name).isEqualTo("2") // updated field
             assertThat(secondResult.role).isEqualTo(MODERATOR) // non updated field
         }

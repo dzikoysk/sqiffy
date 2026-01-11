@@ -11,6 +11,8 @@ import com.dzikoysk.sqiffy.definition.DataType.DATETIME
 import com.dzikoysk.sqiffy.definition.DataType.ENUM
 import com.dzikoysk.sqiffy.definition.DataType.FLOAT
 import com.dzikoysk.sqiffy.definition.DataType.INT
+import com.dzikoysk.sqiffy.definition.DataType.LONG
+import com.dzikoysk.sqiffy.definition.DataType.BIGSERIAL
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
 import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
 import com.dzikoysk.sqiffy.definition.DataType.VARCHAR
@@ -54,7 +56,7 @@ object UserAndGuildScenarioVersions {
     const val V_1_0_2 = "1.0.2"
 }
 
-typealias UserId = Int
+typealias UserId = Long
 
 @Definition(
     domainPackage = "com.dzikoysk.sqiffy.domain",
@@ -65,7 +67,7 @@ typealias UserId = Int
             version = V_1_0_0,
             name = "users",
             properties = [
-                Property(name = "id", type = SERIAL, mappedTo = UserId::class),
+                Property(name = "id", type = BIGSERIAL),
                 Property(name = "uuid", type = UUID_TYPE),
                 Property(name = "name", type = VARCHAR, details = "12"),
                 Property(name = "wallet", type = FLOAT, default = "0.0"),
@@ -145,7 +147,7 @@ object RoleDefinition
         properties = [
             Property(name = "id", type = SERIAL),
             Property(name = "name", type = VARCHAR, details = "24"),
-            Property(name = "owner", type = INT),
+            Property(name = "owner", type = LONG),
             Property(name = "created_at", type = DATETIME),
             Property(name = "type", type = ENUM, enumDefinition = GuildType::class, default = "DEFAULT"),
         ],

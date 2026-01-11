@@ -14,6 +14,7 @@ import com.dzikoysk.sqiffy.definition.DataType.INT
 import com.dzikoysk.sqiffy.definition.DataType.LONG
 import com.dzikoysk.sqiffy.definition.DataType.NUMERIC
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
+import com.dzikoysk.sqiffy.definition.DataType.BIGSERIAL
 import com.dzikoysk.sqiffy.definition.DataType.TEXT
 import com.dzikoysk.sqiffy.definition.DataType.UUID_TYPE
 import com.dzikoysk.sqiffy.definition.DataType.VARCHAR
@@ -117,7 +118,7 @@ abstract class GenericSqlSchemeGenerator : SqlSchemeGenerator {
 
     private fun createRegularDefault(rawDefault: String, property: PropertyData, dataType: DataType = property.type!!): String? =
         when (dataType) {
-            SERIAL, BOOLEAN, INT, LONG, FLOAT, DOUBLE, NUMERIC, DECIMAL -> rawDefault
+            SERIAL, BIGSERIAL, BOOLEAN, INT, LONG, FLOAT, DOUBLE, NUMERIC, DECIMAL -> rawDefault
             UUID_TYPE, ENUM, CHAR, VARCHAR, TEXT -> "'$rawDefault'"
             else -> null
         }

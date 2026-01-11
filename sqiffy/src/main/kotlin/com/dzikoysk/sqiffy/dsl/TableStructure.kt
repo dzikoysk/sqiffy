@@ -24,6 +24,7 @@ abstract class Table(name: String) {
             .also { columns.add(it) }
 
     protected fun serial(name: String, dbType: String): Column<Int> = column(name, DataType.SERIAL, dbType, Int::class)
+    protected fun bigserial(name: String, dbType: String): Column<Long> = column(name, DataType.BIGSERIAL, dbType, Long::class)
 
     protected fun char(name: String, dbType: String): Column<Char> = column(name, DataType.CHAR, dbType, Char::class)
     protected fun varchar(name: String,  dbType: String): Column<String> = column(name, DataType.VARCHAR, dbType, String::class)
