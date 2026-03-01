@@ -25,6 +25,9 @@ interface DslHandle {
     fun insert(table: Table, values: (Values) -> Unit): InsertStatement =
         InsertStatement(getDatabase(), getHandleAccessor(), table, Values().also { values.invoke(it) })
 
+    fun <T : Table> insertOrIgnore(table: T, conflictingColumns: (T) -> Collection<Column<*>>, values: (Values) -> Unit): InsertStatement =
+        InsertStatement(getDatabase(), getHandleAccessor(), table, Values().also { values.invoke(it) }, conflictingColumns(table))
+
     fun update(table: Table, values: (UpdateValues) -> Unit): UpdateStatement =
         UpdateStatement(getDatabase(), getHandleAccessor(), table, UpdateValues().also { values.invoke(it) })
 

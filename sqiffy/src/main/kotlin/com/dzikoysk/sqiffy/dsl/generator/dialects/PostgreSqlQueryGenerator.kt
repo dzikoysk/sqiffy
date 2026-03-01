@@ -80,6 +80,28 @@ object PostgreSqlQueryGenerator : GenericQueryGenerator() {
         )
 
 
+    override fun createInsertOrIgnoreQuery(
+        allocator: ParameterAllocator,
+        tableName: String,
+        columns: List<QueryColumn>,
+        conflictingColumns: Collection<Column<*>>,
+    ): GeneratorResult {
+        val arguments = Arguments(allocator)
+        val values = createInsertValues(arguments, columns)
+
+        return GeneratorResult(
+            query =
+                multiline("""
+                    INSERT INTO ${tableName.toQuoted()}
+                    (${columns.joinToString(separator = ", ") { it.name.toQuoted() }})
+                    VALUES ($values)
+                    ON CONFLICT (${conflictingColumns.joinToString(separator = ", ") { it.name.toQuoted() }})
+                    DO NOTHING
+                """),
+            arguments = arguments
+        )
+    }
+
     data class UpsertGeneratorResult(
         val query: String,
         val insertArguments: Arguments = Arguments(ParameterAllocator()),

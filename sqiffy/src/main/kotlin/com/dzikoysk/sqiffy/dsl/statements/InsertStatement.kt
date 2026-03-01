@@ -5,6 +5,7 @@ import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.DataType.BIGSERIAL
 import com.dzikoysk.sqiffy.definition.DataType.SERIAL
 import com.dzikoysk.sqiffy.transaction.HandleAccessor
+import com.dzikoysk.sqiffy.dsl.Column
 import com.dzikoysk.sqiffy.dsl.Row
 import com.dzikoysk.sqiffy.dsl.Statement
 import com.dzikoysk.sqiffy.dsl.Table
@@ -75,11 +76,33 @@ open class InsertStatement(
     database: SqiffyDatabase,
     accessor: HandleAccessor,
     table: Table,
-    values: Values
+    values: Values,
+    private val conflictingColumns: Collection<Column<*>>? = null,
 ) : AbstractInsertStatement(database, accessor, table, values) {
 
-    fun execute(): Unit =
-        map { }.firstOrNull() ?: Unit
+    fun execute() {
+        if (conflictingColumns != null) {
+            val allocator = ParameterAllocator()
+
+            val result = database.sqlQueryGenerator.createInsertOrIgnoreQuery(
+                allocator = allocator,
+                tableName = table.getName(),
+                columns = values.getColumns().map { it.toQueryColumn() },
+                conflictingColumns = conflictingColumns,
+            )
+
+            database.logger.log(Level.DEBUG, "Executing query: ${result.query}")
+
+            handleAccessor.inHandle { handle ->
+                handle
+                    .createUpdate(result.query)
+                    .bindArguments(result.arguments, values)
+                    .execute()
+            }
+        } else {
+            map { }.firstOrNull() ?: Unit
+        }
+    }
 
 }
 
