@@ -21,6 +21,7 @@ internal class AggregationTest {
                 version = "1.0.0",
                 properties = [
                     Property(name = "id", type = DataType.SERIAL),
+                    Property(name = "category", type = DataType.VARCHAR, details = "16"),
                 ]
             )
         ]
@@ -31,10 +32,20 @@ internal class AggregationTest {
     fun `should count records`() {
         val database = Sqiffy.createDatabase<MySqlDatabase>(dataSource = createH2DataSource(mode = H2Mode.MYSQL))
         database.runMigrations(SqiffyMigrator(database.generateChangeLog(tables = listOf(TestCountDefinition::class))))
-        database.insert(TestCountTable).values().map {  }
-        database.insert(TestCountTable).values().map {  }
-        database.insert(TestCountTable).values().map {  }
+        database.insert(TestCountTable).values(category = "a").map {  }
+        database.insert(TestCountTable).values(category = "b").map {  }
+        database.insert(TestCountTable).values(category = "a").map {  }
         assertThat(database.select(TestCountTable).slice(TestCountTable.id.count()).map { it[TestCountTable.id.count()] }.firstOrNull()).isEqualTo(3)
+    }
+
+    @Test
+    fun `should count distinct values`() {
+        val database = Sqiffy.createDatabase<MySqlDatabase>(dataSource = createH2DataSource(mode = H2Mode.MYSQL))
+        database.runMigrations(SqiffyMigrator(database.generateChangeLog(tables = listOf(TestCountDefinition::class))))
+        database.insert(TestCountTable).values(category = "a").map {  }
+        database.insert(TestCountTable).values(category = "b").map {  }
+        database.insert(TestCountTable).values(category = "a").map {  }
+        assertThat(database.select(TestCountTable).slice(TestCountTable.category.countDistinct()).map { it[TestCountTable.category.countDistinct()] }.firstOrNull()).isEqualTo(2)
     }
 
 }

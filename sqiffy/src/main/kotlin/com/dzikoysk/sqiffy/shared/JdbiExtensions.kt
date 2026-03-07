@@ -2,6 +2,7 @@ package com.dzikoysk.sqiffy.shared
 
 import com.dzikoysk.sqiffy.dsl.Aggregation
 import com.dzikoysk.sqiffy.dsl.Column
+import com.dzikoysk.sqiffy.dsl.distinctModifier
 import org.jdbi.v3.core.argument.AbstractArgumentFactory
 import org.jdbi.v3.core.config.ConfigRegistry
 import org.jdbi.v3.core.mapper.MappingException
@@ -25,9 +26,9 @@ operator fun <T> RowView.get(column: Column<T>): T =
 operator fun <T> RowView.get(aggregation: Aggregation<T>): T =
     with (aggregation) {
         try {
-            getColumn("${type.aggregationFunction}($rawIdentifier)", resultType) // get column from generated alias
+            getColumn("${type.aggregationFunction}(${distinctModifier()}$rawIdentifier)", resultType) // get column from generated alias
         } catch (mappingException: MappingException) {
-            getColumn("${type.aggregationFunction}($fallbackAlias)", resultType) // default column name fallback
+            getColumn("${type.aggregationFunction}(${distinctModifier()}$fallbackAlias)", resultType) // default column name fallback
         }
     }
 

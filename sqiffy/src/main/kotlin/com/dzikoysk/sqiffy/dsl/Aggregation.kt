@@ -13,15 +13,19 @@ data class Aggregation<T>(
     val resultType: Class<out T>,
     val rawIdentifier: String,
     val quotedIdentifier: Quoted,
-    val fallbackAlias: String = rawIdentifier // fallback for generated alias
+    val fallbackAlias: String = rawIdentifier, // fallback for generated alias
+    val distinct: Boolean = false,
 ) : Selectable, Expression<Aggregation<T>, T> {
     val aggregationFunction: String = type.aggregationFunction
     override val selectableType: SelectableType = SelectableType.AGGREGATION
-    override val id: String = "$aggregationFunction($rawIdentifier)"
+    override val id: String = "$aggregationFunction(${distinctModifier()}$rawIdentifier)"
 }
+
+internal fun Aggregation<*>.distinctModifier(): String = if (distinct) "DISTINCT " else ""
 
 fun Table.count(): Aggregation<Long> = Aggregation(AggregationType.COUNT, Long::class.javaObjectType, "*", { "*" })
 fun <T> Column<T>.count(): Aggregation<Long> = Aggregation(AggregationType.COUNT, Long::class.javaObjectType, rawIdentifier, quotedIdentifier, name)
+fun <T> Column<T>.countDistinct(): Aggregation<Long> = Aggregation(AggregationType.COUNT, Long::class.javaObjectType, rawIdentifier, quotedIdentifier, name, distinct = true)
 fun <N : Number> Column<N>.sum(): Aggregation<Long?> = Aggregation(AggregationType.SUM, Long::class.javaObjectType, rawIdentifier, quotedIdentifier, name)
 fun <N : Number> Column<N>.avg(): Aggregation<Double?> = Aggregation(AggregationType.AVG, Double::class.javaObjectType, rawIdentifier, quotedIdentifier, name)
 fun <T> Column<T>.min(): Aggregation<T?> = Aggregation(AggregationType.MIN, type, rawIdentifier, quotedIdentifier, name)

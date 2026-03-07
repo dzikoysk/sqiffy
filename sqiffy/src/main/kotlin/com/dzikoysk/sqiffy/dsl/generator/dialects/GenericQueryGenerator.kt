@@ -20,7 +20,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
     protected open fun Selectable.toIdentifier(): String =
         when (this) {
             is Column<*> -> "${table.getName().toQuoted()}.${name.toQuoted()}"
-            is Aggregation<*> -> "$aggregationFunction(${quotedIdentifier.toString(quoteType())})"
+            is Aggregation<*> -> "$aggregationFunction(${distinctModifier()}${quotedIdentifier.toString(quoteType())})"
             else -> throw IllegalArgumentException("Unknown selectable type: $javaClass")
         }
 
@@ -48,7 +48,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                 selected.joinToString(separator = ", ") {
                     it.toIdentifier() + " AS " + when (it) {
                         is Column<*> -> "${it.table.getName()}.${it.name}".toQuoted()
-                        is Aggregation<*> -> ("${it.aggregationFunction}(${it.rawIdentifier})").toQuoted()
+                        is Aggregation<*> -> ("${it.aggregationFunction}(${it.distinctModifier()}${it.rawIdentifier})").toQuoted()
                         else -> throw IllegalArgumentException("Unknown selectable type: $javaClass")
                     }
                 }
@@ -96,7 +96,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                 )
             is Aggregation<*> ->
                 GeneratorResult(
-                    query = "${expression.aggregationFunction}(${expression.quotedIdentifier.toString(quoteType())})"
+                    query = "${expression.aggregationFunction}(${expression.distinctModifier()}${expression.quotedIdentifier.toString(quoteType())})"
                 )
             is ConstExpression<*> ->
                 Arguments(allocator).let {

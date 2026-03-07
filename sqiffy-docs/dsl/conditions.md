@@ -19,6 +19,8 @@ Examples of conditions that can be used in queries:
 | Left less or equals right    | `UserTable.id lessThanOrEq 1000`                                                  |
 | Like                         | `UserTable.name like "G%O%N%E"`                                                   |
 | Not like                     | `UserTable.name notLike "G%O%N%E"`                                                |
+| ILike (case-insensitive)     | `UserTable.name ilike "g%o%n%e"`                                                  |
+| Not ILike                    | `UserTable.name notIlike "g%o%n%e"`                                               |
 | Between                      | `UserTable.createdAt between (now().minusMinutes(1) and now().plusMinutes(1))`    |
 | Not Between                  | `UserTable.createdAt notBetween (now().minusMinutes(1) and now().plusMinutes(1))` |
 | In                           | `UserTable.id within setOf(1, 2, 3)`                                              |

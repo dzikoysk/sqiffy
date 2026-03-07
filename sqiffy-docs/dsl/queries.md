@@ -55,6 +55,21 @@ val insertedUser = database
 ```
 
 
+### Insert or Ignore
+
+If you want to skip inserts that would violate a unique constraint, use `insertOrIgnore` with the conflicting columns:
+
+```kotlin
+database
+    .insertOrIgnore(UserTable, { listOf(it.name) }) {
+        it[UserTable.name] = "Panda"
+        it[UserTable.age] = 20
+    }
+    .execute()
+```
+
+This translates to `INSERT ... ON CONFLICT (name) DO NOTHING` in PostgreSQL.
+
 ## Update
 
 Standard update query:
