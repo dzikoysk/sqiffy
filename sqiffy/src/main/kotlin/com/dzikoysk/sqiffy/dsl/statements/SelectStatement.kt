@@ -12,7 +12,10 @@ import com.dzikoysk.sqiffy.dsl.RowException
 import com.dzikoysk.sqiffy.dsl.Selectable
 import com.dzikoysk.sqiffy.dsl.Statement
 import com.dzikoysk.sqiffy.dsl.Table
+import com.dzikoysk.sqiffy.dsl.generator.Arguments
 import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
+import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator
+import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator.GeneratorResult
 import com.dzikoysk.sqiffy.dsl.generator.bindArguments
 import org.slf4j.event.Level
 
@@ -138,6 +141,54 @@ open class SelectStatement(
         this.orderBy = columns.map { OrderBy(it.first, it.second) }
     }
 
+    protected data class ResolvedExpressions(
+        val allocator: ParameterAllocator,
+        val whereQuery: String?,
+        val whereArguments: GeneratorResult?,
+        val havingQuery: String?,
+        val havingArguments: GeneratorResult?,
+        val joinResults: List<Pair<JoinCondition, GeneratorResult>>,
+        val joinsExpressions: Map<Expression<*, *>, String>,
+    ) {
+        fun combineArguments(queryArguments: GeneratorResult): GeneratorResult {
+            val combined = queryArguments.arguments + whereArguments?.arguments + havingArguments?.arguments + joinResults.map { it.second.arguments }
+            return GeneratorResult(queryArguments.query, combined)
+        }
+    }
+
+    protected fun resolveExpressions(): ResolvedExpressions {
+        val allocator = ParameterAllocator()
+
+        val whereResult = where?.let {
+            database.sqlQueryGenerator.createExpression(allocator = allocator, expression = it)
+        }
+
+        val havingResult = having?.let {
+            database.sqlQueryGenerator.createExpression(allocator = allocator, expression = it)
+        }
+
+        val joinResults = joins.flatMap { join ->
+            join.conditions.map { condition ->
+                condition to database.sqlQueryGenerator.createExpression(allocator = allocator, expression = condition.toExpression)
+            }
+        }
+
+        return ResolvedExpressions(
+            allocator = allocator,
+            whereQuery = whereResult?.query,
+            whereArguments = whereResult,
+            havingQuery = havingResult?.query,
+            havingArguments = havingResult,
+            joinResults = joinResults,
+            joinsExpressions = joinResults.map { it.first.toExpression to it.second.query }.associate { it },
+        )
+    }
+
+    protected fun <R> executeQuery(query: GeneratorResult, handler: (org.jdbi.v3.core.Handle, GeneratorResult) -> R): R {
+        database.logger.log(Level.DEBUG, "Executing query: ${query.query} with arguments: ${query.arguments}")
+        return handleAccessor.inHandle { handle -> handler(handle, query) }
+    }
+
     fun <R> map(mapper: (Row) -> R): Sequence<R> {
         groupBy?.also { groupByColumns ->
             slice
@@ -145,61 +196,32 @@ open class SelectStatement(
                 .filter { !groupByColumns.contains(it) }
                 .takeIf { it.isNotEmpty() }
                 ?.let { nonAggregatedColumns ->
-                    database.logger.log(
-                        Level.WARN,
-                        "Non-aggregated columns: $nonAggregatedColumns used with group by clause"
-                    )
+                    database.logger.log(Level.WARN, "Non-aggregated columns: $nonAggregatedColumns used with group by clause")
                 }
         }
 
-        val allocator = ParameterAllocator()
+        val resolved = resolveExpressions()
 
-        val whereResult = where?.let {
-            database.sqlQueryGenerator.createExpression(
-                allocator = allocator,
-                expression = it
+        val query = resolved.combineArguments(
+            database.sqlQueryGenerator.createSelectQuery(
+                tableName = from.getName(),
+                distinct = distinct,
+                selected = slice,
+                joins = joins,
+                joinsExpressions = resolved.joinsExpressions,
+                where = resolved.whereQuery,
+                groupBy = groupBy,
+                having = resolved.havingQuery,
+                orderBy = orderBy,
+                limit = limit,
+                offset = offset,
             )
-        }
-
-        val havingResult = having?.let {
-            database.sqlQueryGenerator.createExpression(
-                allocator = allocator,
-                expression = it
-            )
-        }
-
-        val joinResult = joins.flatMap { join ->
-            join.conditions.map { condition ->
-                val onExpressionResult = database.sqlQueryGenerator.createExpression(
-                    allocator = allocator,
-                    expression = condition.toExpression
-                )
-                condition to onExpressionResult
-            }
-        }
-
-        val query = database.sqlQueryGenerator.createSelectQuery(
-            tableName = from.getName(),
-            distinct = distinct,
-            selected = slice,
-            joins = joins,
-            joinsExpressions = joinResult.map { it.first.toExpression to it.second.query }.associate { it },
-            where = whereResult?.query,
-            groupBy = groupBy,
-            having = havingResult?.query,
-            orderBy = orderBy,
-            limit = limit,
-            offset = offset,
         )
 
-        val arguments = query.arguments + whereResult?.arguments + havingResult?.arguments + joinResult.map { it.second.arguments }
-
-        database.logger.log(Level.DEBUG, "Executing query: ${query.query} with arguments: $arguments")
-
-        return handleAccessor.inHandle { handle ->
+        return executeQuery(query) { handle, q ->
             handle
-                .select(query.query)
-                .bindArguments(arguments)
+                .select(q.query)
+                .bindArguments(q.arguments)
                 .map { view ->
                     try {
                         mapper(Row(view))
@@ -220,5 +242,22 @@ open class SelectStatement(
 
     fun <R> toSet(mapper: (Row) -> R): Set<R> =
         map(mapper).toSet()
+
+    fun exists(): Boolean {
+        val resolved = resolveExpressions()
+
+        val query = resolved.combineArguments(
+            database.sqlQueryGenerator.createExistsQuery(
+                tableName = from.getName(),
+                where = resolved.whereQuery,
+                joins = joins,
+                joinsExpressions = resolved.joinsExpressions,
+            )
+        )
+
+        return executeQuery(query) { handle, q ->
+            handle.select(q.query).bindArguments(q.arguments).mapTo(Boolean::class.java).first()
+        }
+    }
 
 }

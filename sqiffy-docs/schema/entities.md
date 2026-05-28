@@ -135,4 +135,39 @@ This is pretty straightforward, you just need to define constriants with `FOREIG
 object GuildDefinition
 ```
 
+### Implementing interfaces
+
+Generated entity classes can implement interfaces via the `implements` parameter.
+Properties matching the interface are automatically marked `override`:
+
+```kotlin
+interface HasId {
+    val id: Long
+}
+
+@Definition(
+    implements = [HasId::class],
+    versions = [
+        DefinitionVersion(
+            version = V_1_0_0,
+            name = "items",
+            properties = [
+                Property(name = "id", type = BIGSERIAL),
+                Property(name = "name", type = VARCHAR, details = "64"),
+            ]
+        )
+    ]
+)
+object ItemDefinition
+```
+
+This generates:
+
+```kotlin
+data class Item(
+    override val id: Long,  // override from HasId
+    val name: String,       // no override, not in interface
+) : HasId
+```
+
 That's all!

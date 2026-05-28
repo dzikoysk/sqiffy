@@ -5,6 +5,7 @@ import com.dzikoysk.sqiffy.definition.DataType
 import com.dzikoysk.sqiffy.definition.NULL_VALUE
 import com.dzikoysk.sqiffy.definition.ParsedDefinition
 import com.dzikoysk.sqiffy.definition.PropertyData
+import com.dzikoysk.sqiffy.definition.TypeDefinition
 import com.dzikoysk.sqiffy.dsl.Row
 import com.dzikoysk.sqiffy.processor.SqiffySymbolProcessorProvider.KspContext
 import com.dzikoysk.sqiffy.processor.toClassName
@@ -13,6 +14,7 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier.DATA
+import com.squareup.kotlinpoet.KModifier.OVERRIDE
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
@@ -40,7 +42,9 @@ class EntityGenerator(private val context: KspContext) {
                 packageName = domainPackage,
                 name = entityName,
                 properties = properties,
-                dtoMethods = dtoMethods
+                dtoMethods = dtoMethods,
+                implements = parsedDefinition.implements,
+                overrideProperties = parsedDefinition.overrideProperties,
             )
             .addFunction(
                 FunSpec.builder("to$entityName")
@@ -108,12 +112,19 @@ class EntityGenerator(private val context: KspContext) {
         name: String,
         properties: List<PropertyData>,
         dtoMethods: List<DtoMetadata>,
+        implements: List<TypeDefinition> = emptyList(),
+        overrideProperties: Set<String> = emptySet(),
         extra: (TypeSpec.Builder) -> Unit = {}
     ): FileSpec.Builder =
         FileSpec.builder(packageName, "${name}Entity")
             .addType(
                 TypeSpec.classBuilder(name)
                     .addModifiers(DATA)
+                    .also { classBuilder ->
+                        implements.forEach {
+                            classBuilder.addSuperinterface(it.toClassName())
+                        }
+                    }
                     .primaryConstructor(
                         FunSpec.constructorBuilder()
                             .also { constructorBuilder ->
@@ -136,6 +147,7 @@ class EntityGenerator(private val context: KspContext) {
                             typeBuilder.addProperty(
                                 PropertySpec.builder(it.formattedName, it.type!!.toTypeName(it))
                                     .initializer(it.formattedName)
+                                    .also { prop -> if (it.formattedName in overrideProperties) prop.addModifiers(OVERRIDE) }
                                     .build()
                             )
                         }

@@ -3,6 +3,7 @@ package com.dzikoysk.sqiffy.processor
 import com.dzikoysk.sqiffy.definition.TypeDefinition
 import com.dzikoysk.sqiffy.definition.TypeFactory
 import com.google.devtools.ksp.KSTypeNotPresentException
+import com.google.devtools.ksp.KSTypesNotPresentException
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.getClassDeclarationByName
@@ -22,6 +23,14 @@ class KspTypeFactory(private val resolver: Resolver) : TypeFactory {
             resolver.getClassDeclarationByName(type.qualifiedName!!)!!.asStarProjectedType()
         } catch (exception: KSTypeNotPresentException) {
             exception.ksType
+        }
+
+    @OptIn(KspExperimental::class)
+    override fun <A : Annotation?> getTypeDefinitions(annotation: A, supplier: A.() -> Array<KClass<*>>): List<TypeDefinition> =
+        try {
+            supplier(annotation).map { kclass -> getTypeDefinition(annotation) { kclass } }
+        } catch (exception: KSTypesNotPresentException) {
+            exception.ksTypes.map { TypeDefinition(it.declaration.packageName.asString(), it.declaration.simpleName.asString()) }
         }
 
     override fun <A : Annotation?> getTypeDefinition(annotation: A, supplier: A.() -> KClass<*>): TypeDefinition =

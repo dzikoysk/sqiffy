@@ -128,11 +128,23 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
         val tables = tableDefinitions
             .flatMap { it.getAnnotationsByType(Definition::class).map { annotation -> it to annotation } }
             .map { (clazz, annotation) ->
+                val data = annotation.toData(typeFactory)
+
+                val overrideProperties = mutableSetOf<String>()
+                for (typeDef in data.implements) {
+                    val declaration = resolver.getClassDeclarationByName(resolver.getKSNameFromString(typeDef.qualifiedName))
+                    declaration?.getAllProperties()?.forEach { prop ->
+                        overrideProperties.add(prop.simpleName.asString())
+                    }
+                }
+
                 ParsedDefinition(
                     source = clazz.qualifiedName!!.asString(),
                     packageName = clazz.packageName.asString(),
                     name = clazz.simpleName.asString().substringBeforeLast("Definition"),
-                    definition = annotation.toData()
+                    definition = data,
+                    implements = data.implements,
+                    overrideProperties = overrideProperties,
                 )
             }
             .toList()

@@ -61,6 +61,8 @@ annotation class Definition(
     val infrastructurePackage: String = NULL_STRING,
     /** Package for API related classes (e.g. DTOs) */
     val apiPackage: String = NULL_STRING,
+    /** Interfaces that the generated entity class should implement */
+    val implements: Array<KClass<*>> = [],
 )
 
 data class DefinitionData(
@@ -68,14 +70,16 @@ data class DefinitionData(
     val domainPackage: String?,
     val infrastructurePackage: String?,
     val apiPackage: String?,
+    val implements: List<TypeDefinition>,
 )
 
-fun Definition.toData(): DefinitionData =
+fun Definition.toData(typeFactory: TypeFactory): DefinitionData =
     DefinitionData(
         versions = versions.map { it.toData() },
         domainPackage = domainPackage.takeIf { it != NULL_STRING },
         infrastructurePackage = infrastructurePackage.takeIf { it != NULL_STRING },
-        apiPackage = apiPackage.takeIf { it != NULL_STRING }
+        apiPackage = apiPackage.takeIf { it != NULL_STRING },
+        implements = typeFactory.getTypeDefinitions(this) { implements },
     )
 
 @Target()

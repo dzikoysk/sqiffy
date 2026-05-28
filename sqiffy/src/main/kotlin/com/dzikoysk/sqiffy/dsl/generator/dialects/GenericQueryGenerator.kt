@@ -80,6 +80,38 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
             """)
         )
 
+    override fun createExistsQuery(
+        tableName: String,
+        where: String?,
+        joins: List<Join>,
+        joinsExpressions: Map<Expression<*, *>, String>,
+    ): GeneratorResult =
+        GeneratorResult(
+            query = multiline("""
+                SELECT EXISTS(
+                    SELECT 1 FROM ${tableName.toQuoted()}
+                    ${
+                    joins.joinToString(separator = " ") { join ->
+                        val joinType = when (join.type) {
+                            INNER -> "INNER JOIN"
+                            LEFT -> "LEFT JOIN"
+                            RIGHT -> "RIGHT JOIN"
+                            FULL -> "FULL JOIN"
+                        }
+                        "$joinType ${join.table.getName().toQuoted()} ON (${join.conditions.joinToString(separator = " AND ") {
+                            if (it.toExpression is Condition<*>) {
+                                joinsExpressions.getValue(it.toExpression)
+                            } else {
+                                "${it.on.quotedIdentifier.toString(quoteType())} = ${joinsExpressions.getValue(it.toExpression)}"
+                            }
+                        }})"
+                    }
+                }
+                    ${where?.let { "WHERE $it" } ?: ""}
+                )
+            """)
+        )
+
     override fun createDeleteQuery(tableName: String, where: String?): GeneratorResult =
         GeneratorResult(
             query = multiline("""

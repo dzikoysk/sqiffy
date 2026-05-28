@@ -28,6 +28,7 @@ Other parameters:
 | Having | `having { UserTable.name eq "Panda" }` | Filter the results after grouping |
 | Join | `innerJoin(INNER/LEFT/RIGHT/FULL, GuildTable.owner, UserTable.id)` | Join two tables |
 | Slice | `slice(UserTable.name, UserTable.age)` | Only return specific columns |
+| Exists | `exists()` | Returns true if at least one row matches |
 
 ## Insert
 
@@ -84,6 +85,16 @@ val updatedRecords = database
     .execute()
 ```
 
+## Exists
+
+Check if any rows match a condition without loading data:
+
+```kotlin
+val hasAdmin = database.select(UserTable)
+    .where { UserTable.role eq Role.ADMIN }
+    .exists()
+```
+
 ## Delete
 
 Standard delete query:
@@ -93,4 +104,15 @@ database
     .delete(UserTable)
     .where { UserTable.id eq id }
     .execute()
+```
+
+## Raw Query
+
+Escape hatch for SQL that the DSL can't express:
+
+```kotlin
+val names = database.rawQuery(
+    sql = "SELECT DISTINCT name FROM users WHERE active = :active",
+    args = mapOf("active" to true),
+) { rs -> rs.getString("name") }
 ```
