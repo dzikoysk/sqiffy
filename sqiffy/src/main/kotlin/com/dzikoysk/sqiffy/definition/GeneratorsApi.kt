@@ -8,6 +8,8 @@ class ParsedDefinition(
     val packageName: String,
     val name: String,
     val definition: DefinitionData,
+    val implements: List<TypeDefinition>,
+    val overrideProperties: Set<String> = emptySet(),
 ) {
 
     fun getDomainPackage(): String =
@@ -46,6 +48,9 @@ fun KClass<*>.toTypeDefinition(): TypeDefinition =
 interface TypeFactory {
 
     fun <A : Annotation?> getTypeDefinition(annotation: A, supplier: A.() -> KClass<*>): TypeDefinition
+
+    fun <A : Annotation?> getTypeDefinitions(annotation: A, supplier: A.() -> Array<KClass<*>>): List<TypeDefinition> =
+        supplier.invoke(annotation).map { getTypeDefinition(annotation) { it } }
 
     fun <A : Annotation?, R : Annotation> getTypeAnnotation(annotation: A, annotationType: KClass<R>, supplier: A.() -> KClass<*>): R?
 

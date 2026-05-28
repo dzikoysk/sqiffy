@@ -77,12 +77,15 @@ class ChangelogBuilder(
             tables = tables
                 .toSet()
                 .map {
-                    ParsedDefinition(
-                        source = it.qualifiedName!!,
-                        packageName = it.java.`package`.name,
-                        name = it::class.simpleName!!.substringBeforeLast("Definition"),
-                        definition = it.findAnnotation<Definition>()!!.toData()
-                    )
+                    it.findAnnotation<Definition>()!!.toData(typeFactory).let { data ->
+                        ParsedDefinition(
+                            source = it.qualifiedName!!,
+                            packageName = it.java.`package`.name,
+                            name = it::class.simpleName!!.substringBeforeLast("Definition"),
+                            definition = data,
+                            implements = data.implements,
+                        )
+                    }
                 }
         )
 

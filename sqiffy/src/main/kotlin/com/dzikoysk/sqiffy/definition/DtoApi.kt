@@ -60,7 +60,7 @@ fun Variant.toVariantData(typeFactory: TypeFactory, namingStrategy: NamingStrate
                 nullable = it.nullable
             )
         },
-        implements = implements.map { typeFactory.getTypeDefinition(this) { it } }
+        implements = typeFactory.getTypeDefinitions(this) { implements }
     )
 
 data class VariantData(

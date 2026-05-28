@@ -45,13 +45,13 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
         GeneratorResult(
             query = multiline("""
                 SELECT ${if (distinct) "DISTINCT" else ""} ${
-                selected.joinToString(separator = ", ") {
+                selected.takeIf { it.isNotEmpty() }?.joinToString(separator = ", ") {
                     it.toIdentifier() + " AS " + when (it) {
                         is Column<*> -> "${it.table.getName()}.${it.name}".toQuoted()
                         is Aggregation<*> -> ("${it.aggregationFunction}(${it.distinctModifier()}${it.rawIdentifier})").toQuoted()
                         else -> throw IllegalArgumentException("Unknown selectable type: $javaClass")
                     }
-                }
+                } ?: "1"
             }
                 FROM ${tableName.toQuoted()}
                 ${
@@ -79,6 +79,22 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                 ${offset?.let { "OFFSET $it" } ?: ""} 
             """)
         )
+
+    override fun createExistsQuery(
+        tableName: String,
+        where: String?,
+        joins: List<Join>,
+        joinsExpressions: Map<Expression<*, *>, String>,
+    ): GeneratorResult {
+        val inner = createSelectQuery(
+            tableName = tableName,
+            selected = emptyList(),
+            where = where,
+            joins = joins,
+            joinsExpressions = joinsExpressions,
+        )
+        return GeneratorResult(query = "SELECT EXISTS(${inner.query})")
+    }
 
     override fun createDeleteQuery(tableName: String, where: String?): GeneratorResult =
         GeneratorResult(

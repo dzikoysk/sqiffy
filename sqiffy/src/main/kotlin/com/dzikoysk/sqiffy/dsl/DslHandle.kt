@@ -8,6 +8,7 @@ import com.dzikoysk.sqiffy.dsl.statements.SelectStatement
 import com.dzikoysk.sqiffy.dsl.statements.UpdateStatement
 import com.dzikoysk.sqiffy.dsl.statements.UpdateValues
 import com.dzikoysk.sqiffy.transaction.HandleAccessor
+import java.sql.ResultSet
 import org.jdbi.v3.core.Handle
 
 interface DslHandle {
@@ -15,6 +16,13 @@ interface DslHandle {
     fun getDatabase(): SqiffyDatabase
 
     fun getHandleAccessor(): HandleAccessor
+
+    fun <R> rawQuery(sql: String, args: Map<String, Any?> = emptyMap(), mapper: (ResultSet) -> R): List<R> =
+        getHandleAccessor().inHandle { handle ->
+            val query = handle.createQuery(sql)
+            args.forEach { (key, value) -> query.bind(key, value) }
+            query.map { rs, _ -> mapper(rs) }.list()
+        }
 
     fun select(table: Table): SelectStatement =
         SelectStatement(getDatabase(), getHandleAccessor(), table)

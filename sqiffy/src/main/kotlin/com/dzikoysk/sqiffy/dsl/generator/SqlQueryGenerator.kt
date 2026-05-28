@@ -74,6 +74,13 @@ interface SqlQueryGenerator {
         where: String? = null
     ): GeneratorResult
 
+    fun createExistsQuery(
+        tableName: String,
+        where: String? = null,
+        joins: List<Join> = emptyList(),
+        joinsExpressions: Map<Expression<*, *>, String> = emptyMap(),
+    ): GeneratorResult
+
     fun createDeleteQuery(
         tableName: String,
         where: String? = null
