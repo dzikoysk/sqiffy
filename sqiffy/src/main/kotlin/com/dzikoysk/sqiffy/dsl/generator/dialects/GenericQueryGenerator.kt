@@ -45,13 +45,13 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
         GeneratorResult(
             query = multiline("""
                 SELECT ${if (distinct) "DISTINCT" else ""} ${
-                selected.joinToString(separator = ", ") {
+                selected.takeIf { it.isNotEmpty() }?.joinToString(separator = ", ") {
                     it.toIdentifier() + " AS " + when (it) {
                         is Column<*> -> "${it.table.getName()}.${it.name}".toQuoted()
                         is Aggregation<*> -> ("${it.aggregationFunction}(${it.distinctModifier()}${it.rawIdentifier})").toQuoted()
                         else -> throw IllegalArgumentException("Unknown selectable type: $javaClass")
                     }
-                }
+                } ?: "1"
             }
                 FROM ${tableName.toQuoted()}
                 ${
@@ -85,32 +85,16 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
         where: String?,
         joins: List<Join>,
         joinsExpressions: Map<Expression<*, *>, String>,
-    ): GeneratorResult =
-        GeneratorResult(
-            query = multiline("""
-                SELECT EXISTS(
-                    SELECT 1 FROM ${tableName.toQuoted()}
-                    ${
-                    joins.joinToString(separator = " ") { join ->
-                        val joinType = when (join.type) {
-                            INNER -> "INNER JOIN"
-                            LEFT -> "LEFT JOIN"
-                            RIGHT -> "RIGHT JOIN"
-                            FULL -> "FULL JOIN"
-                        }
-                        "$joinType ${join.table.getName().toQuoted()} ON (${join.conditions.joinToString(separator = " AND ") {
-                            if (it.toExpression is Condition<*>) {
-                                joinsExpressions.getValue(it.toExpression)
-                            } else {
-                                "${it.on.quotedIdentifier.toString(quoteType())} = ${joinsExpressions.getValue(it.toExpression)}"
-                            }
-                        }})"
-                    }
-                }
-                    ${where?.let { "WHERE $it" } ?: ""}
-                )
-            """)
+    ): GeneratorResult {
+        val inner = createSelectQuery(
+            tableName = tableName,
+            selected = emptyList(),
+            where = where,
+            joins = joins,
+            joinsExpressions = joinsExpressions,
         )
+        return GeneratorResult(query = "SELECT EXISTS(${inner.query})")
+    }
 
     override fun createDeleteQuery(tableName: String, where: String?): GeneratorResult =
         GeneratorResult(
