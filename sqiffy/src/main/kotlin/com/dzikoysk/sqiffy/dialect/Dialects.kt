@@ -12,7 +12,16 @@ import com.dzikoysk.sqiffy.dialect.Dialect.MYSQL
 import com.dzikoysk.sqiffy.dialect.Dialect.SQLITE
 import com.dzikoysk.sqiffy.dsl.generator.dialects.MySqlQueryGenerator
 import com.dzikoysk.sqiffy.dsl.generator.dialects.SqliteQueryGenerator
+import com.dzikoysk.sqiffy.shared.InstantArgumentFactory
+import com.dzikoysk.sqiffy.shared.InstantColumnMapper
+import com.dzikoysk.sqiffy.shared.LocalDateArgumentFactory
+import com.dzikoysk.sqiffy.shared.LocalDateColumnMapper
+import com.dzikoysk.sqiffy.shared.LocalDateTimeArgumentFactory
+import com.dzikoysk.sqiffy.shared.LocalDateTimeColumnMapper
 import com.dzikoysk.sqiffy.shared.UUIDArgumentFactory
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
 import com.zaxxer.hikari.HikariDataSource
 import org.jdbi.v3.core.Jdbi
 import org.jdbi.v3.core.kotlin.KotlinPlugin
@@ -62,6 +71,12 @@ class SqliteDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase(state) {
                     dataSource = dataSource,
                     localJdbi = createGenericJdbi(dataSource).also {
                         it.registerArgument(UUIDArgumentFactory())
+                        it.registerArgument(LocalDateArgumentFactory())
+                        it.registerArgument(LocalDateTimeArgumentFactory())
+                        it.registerArgument(InstantArgumentFactory())
+                        it.registerColumnMapper(LocalDate::class.java, LocalDateColumnMapper)
+                        it.registerColumnMapper(LocalDateTime::class.java, LocalDateTimeColumnMapper)
+                        it.registerColumnMapper(Instant::class.java, InstantColumnMapper)
                         it.installPlugin(SQLitePlugin())
                     },
                     dialect = SQLITE,

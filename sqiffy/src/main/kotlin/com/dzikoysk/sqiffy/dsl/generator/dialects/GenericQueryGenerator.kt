@@ -126,7 +126,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                 val rightResult = createExpression(allocator, expression.right)
 
                 GeneratorResult(
-                    query = "${leftResult.query} ${expression.operator.symbol} ${rightResult.query}",
+                    query = "(${leftResult.query} ${expression.operator.symbol} ${rightResult.query})",
                     arguments = (leftResult.arguments + rightResult.arguments)
                 )
             }

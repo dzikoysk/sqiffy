@@ -34,7 +34,7 @@ object PostgreSqlSchemeGenerator : GenericSqlSchemeGenerator() {
         """CREATE TYPE ${name.toQuoted()} AS ENUM (${values.joinToString(separator = ", ") { "'$it'" }});"""
 
     override fun addEnumValues(enum: EnumState, values: List<String>, inUse: List<Pair<String, PropertyData>>): String =
-        listOf(values.first()).joinToString(separator = "\n") {
+        values.joinToString(separator = "\n") {
             """ALTER TYPE ${enum.name.toQuoted()} ADD VALUE '$it';"""
         }
 

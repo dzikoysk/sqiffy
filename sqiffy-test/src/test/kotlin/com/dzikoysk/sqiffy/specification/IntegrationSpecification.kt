@@ -1,0 +1,66 @@
+package com.dzikoysk.sqiffy.specification
+
+import com.dzikoysk.sqiffy.Slf4JSqiffyLogger
+import com.dzikoysk.sqiffy.Sqiffy
+import com.dzikoysk.sqiffy.SqiffyDatabase
+import com.dzikoysk.sqiffy.e2e.GuildDefinition
+import com.dzikoysk.sqiffy.e2e.GuildTable
+import com.dzikoysk.sqiffy.e2e.UserDefinition
+import com.dzikoysk.sqiffy.infra.UserTable
+import com.dzikoysk.sqiffy.migrator.SqiffyMigrator
+import com.zaxxer.hikari.HikariDataSource
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.slf4j.LoggerFactory
+
+/**
+ * Base for every DSL integration test. The concrete per-target subclasses select a database by
+ * applying one of the [SqiffyTargetExtension] extensions (see `SqiffyTargets.kt`), which inject a
+ * data source before [bootDatabase] runs. The shared schema is migrated once per test and wiped, so
+ * the same suite behaves identically on engines that reuse a single database across test methods.
+ */
+@Suppress("PropertyName")
+internal abstract class IntegrationSpecification {
+
+    @JvmField var _extensionInitialized = false
+    @JvmField var _dataSource: HikariDataSource? = null
+
+    lateinit var database: SqiffyDatabase
+
+    @BeforeEach
+    fun bootDatabase() {
+        check(_extensionInitialized) { "Missing target extension - annotate the concrete test with @ExtendWith(<Target>::class)" }
+
+        database = Sqiffy.createDatabase(
+            dataSource = _dataSource!!,
+            logger = Slf4JSqiffyLogger(LoggerFactory.getLogger(SqiffyDatabase::class.java))
+        )
+
+        database.runMigrations(
+            SqiffyMigrator(
+                database.generateChangeLog(
+                    tables = listOf(
+                        UserDefinition::class,
+                        GuildDefinition::class,
+                        TypesDefinition::class,
+                        LinkDefinition::class,
+                        TaggedDefinition::class,
+                    )
+                )
+            )
+        )
+
+        // start every test from an empty schema (children before parents because of the FK)
+        database.delete(GuildTable).execute()
+        database.delete(TypesTable).execute()
+        database.delete(LinkTable).execute()
+        database.delete(TaggedTable).execute()
+        database.delete(UserTable).execute()
+    }
+
+    @AfterEach
+    fun closeDatabase() {
+        database.close()
+    }
+
+}

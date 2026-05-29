@@ -2,12 +2,23 @@ package com.dzikoysk.sqiffy.definition
 
 import com.dzikoysk.sqiffy.definition.EnumOperation.ADD_VALUES
 import kotlin.annotation.AnnotationTarget.CLASS
+import kotlin.reflect.KClass
 
 @Target(CLASS)
 annotation class EnumDefinition(
     val name: String = NULL_STRING,
-    val mappedTo: String,
-    val value: Array<EnumVersion>
+    /**
+     * Fully-qualified name of the enum to generate. Mutually exclusive with [mappedFrom]. If an enum
+     * already exists at this name it is referenced (and validated) instead of generated.
+     */
+    val mappedTo: String = NULL_STRING,
+    val value: Array<EnumVersion>,
+    /**
+     * An existing enum to map onto, as a class reference instead of a string [mappedTo]. The enum is
+     * referenced (never generated) and its constants are validated against [value] at compile time.
+     * Declared after [value] so existing definitions that pass `value` positionally keep binding correctly.
+     */
+    val mappedFrom: KClass<*> = NULL_CLASS::class,
 )
 
 @Target(CLASS)
@@ -26,7 +37,8 @@ annotation class EnumVersion(
     val values: Array<String>,
 )
 
-fun EnumDefinition.toEnumData(): EnumDefinitionData =
+/** [mappedFrom] is the resolved type of the `mappedFrom` class reference (null when only `mappedTo` is set). */
+fun EnumDefinition.toEnumData(mappedFrom: TypeDefinition?): EnumDefinitionData =
     EnumDefinitionData(
         name =
             name
@@ -35,9 +47,9 @@ fun EnumDefinition.toEnumData(): EnumDefinitionData =
         raw =
             false,
         mappedTo =
-            mappedTo
-                .takeIf { it != NULL_STRING }
-                ?: throw IllegalStateException("Enum name cannot be null"),
+            mappedFrom?.qualifiedName
+                ?: mappedTo.takeIf { it != NULL_STRING }
+                ?: throw IllegalStateException("@EnumDefinition '$name' must declare either mappedTo or mappedFrom"),
         versions =
             value.map {
                 EnumVersionData(

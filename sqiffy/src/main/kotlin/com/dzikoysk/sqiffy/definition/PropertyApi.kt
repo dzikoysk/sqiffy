@@ -49,7 +49,7 @@ fun Property.toPropertyData(typeFactory: TypeFactory, namingStrategy: NamingStra
             when (type) {
                 ENUM ->
                     typeFactory.getTypeAnnotation(this, EnumDefinition::class) { enumDefinition }
-                        ?.toEnumData()
+                        ?.toEnumData(typeFactory.getAnnotationClassMember(this, EnumDefinition::class, "mappedFrom") { enumDefinition })
                         ?: run {
                             val enumName = typeFactory.getTypeDefinition(this) { enumDefinition }.qualifiedName
                             val rawEnum = typeFactory.getTypeAnnotation(this, RawEnum::class) { enumDefinition }
