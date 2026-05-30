@@ -2,6 +2,7 @@ package com.dzikoysk.sqiffy.processor
 
 import com.dzikoysk.sqiffy.changelog.Changelog
 import com.dzikoysk.sqiffy.changelog.ChangelogBuilder
+import com.dzikoysk.sqiffy.changelog.EnumState
 import com.dzikoysk.sqiffy.changelog.builders.ChangelogEnumBuilder
 import com.dzikoysk.sqiffy.changelog.generator.dialects.getSchemeGenerator
 import com.dzikoysk.sqiffy.definition.ChangelogDefinition
@@ -47,6 +48,7 @@ import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
+import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
@@ -102,7 +104,7 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
 
         val enums = resolver.getSymbolsWithAnnotation(EnumDefinition::class.qualifiedName!!)
             .filterIsInstance<KSClassDeclaration>()
-            .flatMap { it.getAnnotationsByType(EnumDefinition::class) }
+            .flatMap { declaration -> declaration.getAnnotationsByType(EnumDefinition::class).map { declaration to it } }
 
         val functions = resolver.getSymbolsWithAnnotation(FunctionDefinition::class.qualifiedName!!)
             .filterIsInstance<KSPropertyDeclaration>()
@@ -150,16 +152,28 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
             .toList()
 
         val enumChangelogGenerator = ChangelogEnumBuilder(schemaGenerator)
-        enums.forEach { enumChangelogGenerator.defineEnum(it.toEnumData()) }
+        enums.forEach { (declaration, annotation) ->
+            val mappedFrom = declaration.annotationClassMember(EnumDefinition::class.qualifiedName!!, "mappedFrom")
+            enumChangelogGenerator.defineEnum(annotation.toEnumData(mappedFrom))
+        }
 
         enumChangelogGenerator.generateChangelog(emptyMap())
             .finalEnumStates
             .entries
             .forEach { (enumData, finalState) ->
-                enumGenerator.generateEnum(
-                    enumState = finalState,
-                    mappedTo = enumData.getMappedTypeDefinition()
-                )
+                val mappedTo = enumData.getMappedTypeDefinition()
+                // When mappedTo resolves to an enum that already exists (a hand-written/library enum, or one we
+                // generated in an earlier KSP round), reference it instead of generating — and validate its
+                // constants against the declaration so adding a value on only one side fails the build.
+                when (val existing = resolver.getClassDeclarationByName(resolver.getKSNameFromString(mappedTo.qualifiedName))) {
+                    null -> enumGenerator.generateEnum(enumState = finalState, mappedTo = mappedTo)
+                    else -> when (existing.classKind) {
+                        ClassKind.ENUM_CLASS -> validateMappedEnum(mappedTo, finalState, existing)
+                        else -> context.logger.error(
+                            "@EnumDefinition mappedTo '${mappedTo.qualifiedName}' refers to an existing type that is not an enum"
+                        )
+                    }
+                }
             }
 
         val baseSchemeGenerator = ChangelogBuilder(
@@ -211,6 +225,22 @@ internal class SqiffySymbolProcessor(private val context: KspContext) : SymbolPr
         }
 
         return emptyList()
+    }
+
+    private fun validateMappedEnum(mappedTo: TypeDefinition, finalState: EnumState, declaration: KSClassDeclaration) {
+        val actual = declaration.declarations
+            .filterIsInstance<KSClassDeclaration>()
+            .filter { it.classKind == ClassKind.ENUM_ENTRY }
+            .map { it.simpleName.asString() }
+            .toSet()
+        val declared = finalState.values.toSet()
+
+        if (actual != declared) {
+            context.logger.error(
+                "Enum '${mappedTo.qualifiedName}' is out of sync with its @EnumDefinition: " +
+                    "definition declares $declared but the enum defines $actual"
+            )
+        }
     }
 
     private fun generateTableDls(typeFactory: TypeFactory, namingStrategy: NamingStrategy, changeLog: Changelog) {

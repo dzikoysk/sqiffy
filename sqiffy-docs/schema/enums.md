@@ -39,6 +39,38 @@ object UserDefinition
 
 And that's it! The `com.example.user.api.UserRole` class will be generated for you, and you can use it in your code.
 
+### Mapping to an existing enum
+
+Sometimes the enum already exists — it's hand-written, or owned by another module (e.g. a shared domain
+library) that must not depend on Sqiffy. In that case point `@EnumDefinition` at it with `mappedFrom` instead
+of generating a new class:
+
+```kotlin
+// declared elsewhere — a plain Kotlin enum, no Sqiffy dependency
+enum class UserRole { USER, ADMIN }
+
+@EnumDefinition(
+    name = "user_role",
+    mappedFrom = UserRole::class,
+    value = [
+        EnumVersion(version = V_0_0_0, operation = ADD_VALUES, values = ["USER", "ADMIN"]),
+    ]
+)
+internal object UserRoleDefinition
+```
+
+The existing `UserRole` is **referenced, not generated** — columns and entities use it directly (which also
+lets a `@Definition(implements = [...])` entity satisfy an interface whose property is typed with that enum).
+Migrations are still driven by the versioned `value` list, so the DB side stays under Sqiffy's control.
+
+To keep the two in sync, the declared `value`s are **validated against the enum's constants at compile time**:
+adding a value to the enum (or to `value`) without updating the other fails the build rather than surfacing at
+runtime.
+
+> `mappedFrom` (a class reference) and `mappedTo` (a fully-qualified name string, generated when no such class
+> exists yet) are mutually exclusive — use `mappedFrom` when the enum already exists, `mappedTo` to have Sqiffy
+> generate it.
+
 ### Raw enums
 
 If you don't want to version your enums, you can use raw enums in your database schema:

@@ -2,6 +2,7 @@ import com.google.devtools.ksp.gradle.KspTask
 
 plugins {
     id("com.google.devtools.ksp") version "1.9.25-1.0.20"
+    jacoco
 }
 
 dependencies {
@@ -35,4 +36,24 @@ sourceSets.configureEach {
 
 tasks.withType<KspTask> {
     dependsOn("clean")
+}
+
+// Tests live here but exercise the :sqiffy core, so the coverage report is pointed at its
+// main sources rather than this module's (test-only) classes. The symbol processor runs at
+// KSP compile time (not in the test JVM), so it is verified indirectly - its generated output
+// is compiled and exercised by these tests - and is intentionally left out of the runtime report.
+private val coveredModules = listOf(project(":sqiffy"))
+
+tasks.test {
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    classDirectories.setFrom(files(coveredModules.map { it.layout.buildDirectory.dir("classes/kotlin/main") }))
+    sourceDirectories.setFrom(files(coveredModules.map { it.layout.projectDirectory.dir("src/main/kotlin") }))
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+    }
 }

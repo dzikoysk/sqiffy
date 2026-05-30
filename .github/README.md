@@ -11,11 +11,11 @@ Table of contents:
 
 ### What it does?
 
-1. User defines versioned table definition using `@Defintion` annotation 
+1. User defines versioned table definition using `@Definition` annotation 
 2. Sqiffy's annotation processor (KSP) at compile-time:
    1. Converts table definitions into versioned changelog, similar to [Liquibase](https://github.com/liquibase/liquibase)
    2. Generates up-to-date entity data classes for Kotlin with [KotlinPoet](https://github.com/square/kotlinpoet)
-   3. Creates bindings for [Exposed (<ins>DSL</ins>)](https://github.com/JetBrains/Exposed) framework
+   3. Generates type-safe bindings for the built-in DSL
    4. Validates schemes and bindings to eliminate typos and invalid operations
 3. When application starts, you can run set of prepared versioned migrations against current database state
 
@@ -34,7 +34,7 @@ Gradle _(kts)_:
 
 ```kotlin
 plugins {
-    id("com.google.devtools.ksp") version "1.9.25-1.0.20" // for Kotlin 1.9.22
+    id("com.google.devtools.ksp") version "1.9.25-1.0.20" // for Kotlin 1.9.25
 }
 
 dependencies {

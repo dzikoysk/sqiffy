@@ -56,6 +56,22 @@ interface TypeFactory {
 
     fun <A : Annotation?> getEnumValues(annotation: A, supplier: A.() -> KClass<*>): List<String>?
 
+    /**
+     * Resolves a single `KClass`-typed [member] of [annotationType] declared on the class produced by
+     * [supplier], returning its type (or null when absent / left as `NULL_CLASS`).
+     *
+     * KSP's `getAnnotationsByType` proxy NPEs on single-`KClass` members of annotations that also have an
+     * array member (it routes them through `asArray`), so the KSP factory reads the value straight off the
+     * `KSAnnotation` instead. Use this for any single-`KClass` annotation member rather than a `supplier`
+     * that dereferences it through the proxy.
+     */
+    fun <A : Annotation?> getAnnotationClassMember(
+        annotation: A,
+        annotationType: KClass<out Annotation>,
+        member: String,
+        supplier: A.() -> KClass<*>,
+    ): TypeDefinition?
+
 }
 
 class RuntimeTypeFactory : TypeFactory {
@@ -73,5 +89,21 @@ class RuntimeTypeFactory : TypeFactory {
             ?.enumConstants
             ?.filterIsInstance<Enum<*>>()
             ?.map { it.name }
+
+    override fun <A : Annotation?> getAnnotationClassMember(
+        annotation: A,
+        annotationType: KClass<out Annotation>,
+        member: String,
+        supplier: A.() -> KClass<*>,
+    ): TypeDefinition? {
+        val markerAnnotation = supplier.invoke(annotation).annotations.firstOrNull { annotationType.isInstance(it) } ?: return null
+        // A `KClass` annotation member reflects as a java.lang.Class at runtime, so normalize before mapping.
+        val value = when (val raw = annotationType.members.first { it.name == member }.call(markerAnnotation)) {
+            is KClass<*> -> raw
+            is Class<*> -> raw.kotlin
+            else -> return null
+        }
+        return value.toTypeDefinition().takeIf { it.qualifiedName != NULL_CLASS::class.qualifiedName }
+    }
 
 }

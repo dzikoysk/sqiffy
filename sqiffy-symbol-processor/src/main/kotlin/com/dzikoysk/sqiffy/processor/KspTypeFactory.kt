@@ -1,5 +1,6 @@
 package com.dzikoysk.sqiffy.processor
 
+import com.dzikoysk.sqiffy.definition.NULL_CLASS
 import com.dzikoysk.sqiffy.definition.TypeDefinition
 import com.dzikoysk.sqiffy.definition.TypeFactory
 import com.google.devtools.ksp.KSTypeNotPresentException
@@ -62,4 +63,32 @@ class KspTypeFactory(private val resolver: Resolver) : TypeFactory {
                 ?.toList()
         }
 
+    override fun <A : Annotation?> getAnnotationClassMember(
+        annotation: A,
+        annotationType: KClass<out Annotation>,
+        member: String,
+        supplier: A.() -> KClass<*>,
+    ): TypeDefinition? =
+        (getKSType(annotation, supplier).declaration as? KSClassDeclaration)
+            ?.annotationClassMember(annotationType.qualifiedName!!, member)
+
+}
+
+/**
+ * Reads a single `KClass`-typed [member] of the annotation [annotationFqn] on this declaration straight off
+ * the [KSAnnotation], returning its type (or null when absent / `NULL_CLASS`). This is the proxy-free path
+ * around KSP's `getAnnotationsByType` NPE on single-`KClass` members (see [TypeFactory.getAnnotationClassMember]).
+ */
+internal fun KSClassDeclaration.annotationClassMember(annotationFqn: String, member: String): TypeDefinition? {
+    val type = annotations
+        .firstOrNull { it.annotationType.resolve().declaration.qualifiedName?.asString() == annotationFqn }
+        ?.arguments
+        ?.firstOrNull { it.name?.asString() == member }
+        ?.value as? KSType
+        ?: return null
+
+    return TypeDefinition(
+        packageName = type.declaration.packageName.asString(),
+        simpleName = type.declaration.simpleName.asString(),
+    ).takeIf { it.qualifiedName != NULL_CLASS::class.qualifiedName }
 }
