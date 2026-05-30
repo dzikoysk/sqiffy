@@ -63,7 +63,7 @@ internal abstract class InsertStatementTest : IntegrationSpecification() {
 
         database.insertOrIgnore(UserTable, conflictingColumns = { listOf(it.name) }) {
             it[UserTable.uuid] = UUID.randomUUID()
-            it[UserTable.name] = "Panda" // users.name is covered by a UNIQUE index (uq_name)
+            it[UserTable.name] = "Panda"
             it[UserTable.wallet] = 0f
             it[UserTable.role] = Role.USER
             it[UserTable.displayName] = null

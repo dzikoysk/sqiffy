@@ -12,11 +12,6 @@ import org.testcontainers.containers.MySQLContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 
-/**
- * Launches a database target for a test by injecting its data source into the [IntegrationSpecification]
- * instance (reflectively, like Reposilite's integration runner). Container-backed targets are started
- * once and reused; per-test isolation comes from the schema wipe in [IntegrationSpecification.bootDatabase].
- */
 internal abstract class SqiffyTargetExtension : BeforeEachCallback {
 
     abstract fun createDataSource(): HikariDataSource

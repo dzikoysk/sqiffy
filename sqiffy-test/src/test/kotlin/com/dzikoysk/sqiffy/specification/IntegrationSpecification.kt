@@ -13,12 +13,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.slf4j.LoggerFactory
 
-/**
- * Base for every DSL integration test. The concrete per-target subclasses select a database by
- * applying one of the [SqiffyTargetExtension] extensions (see `SqiffyTargets.kt`), which inject a
- * data source before [bootDatabase] runs. The shared schema is migrated once per test and wiped, so
- * the same suite behaves identically on engines that reuse a single database across test methods.
- */
 @Suppress("PropertyName")
 internal abstract class IntegrationSpecification {
 
@@ -50,7 +44,7 @@ internal abstract class IntegrationSpecification {
             )
         )
 
-        // start every test from an empty schema (children before parents because of the FK)
+        // wipe children before parents (guilds.owner -> users FK)
         database.delete(GuildTable).execute()
         database.delete(TypesTable).execute()
         database.delete(LinkTable).execute()
