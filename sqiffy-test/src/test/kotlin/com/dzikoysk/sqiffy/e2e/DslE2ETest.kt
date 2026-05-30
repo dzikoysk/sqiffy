@@ -36,11 +36,11 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.testcontainers.containers.MariaDBContainer
-import org.testcontainers.containers.MySQLContainer
-import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.mariadb.MariaDBContainer
+import org.testcontainers.mysql.MySQLContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 
 internal abstract class DslE2ETest(
@@ -308,11 +308,9 @@ internal class SqliteDslE2ETest : DslE2ETest() {
 
 @Testcontainers
 internal class PostgreSQLDslE2ETest : DslE2ETest() {
-    private class SpecifiedPostgreSQLContainer(image: String) : PostgreSQLContainer<SpecifiedPostgreSQLContainer>(DockerImageName.parse(image))
-
     companion object {
         @Container
-        private val POSTGRESQL_CONTAINER = SpecifiedPostgreSQLContainer("postgres:11.12")
+        private val POSTGRESQL_CONTAINER = PostgreSQLContainer(DockerImageName.parse("postgres:11.12"))
     }
 
     override fun createDataSource(): HikariDataSource =
@@ -326,11 +324,9 @@ internal class PostgreSQLDslE2ETest : DslE2ETest() {
 
 @Testcontainers
 internal class MariaDbDslE2ETest : DslE2ETest() {
-    private class SpecifiedMariaDbContainer(image: String) : MariaDBContainer<SpecifiedMariaDbContainer>(DockerImageName.parse(image))
-
     companion object {
         @Container
-        private val MARIADB_CONTAINER = SpecifiedMariaDbContainer("mariadb:10.6.1")
+        private val MARIADB_CONTAINER = MariaDBContainer(DockerImageName.parse("mariadb:10.6.1"))
     }
 
     override fun createDataSource(): HikariDataSource =
@@ -344,11 +340,9 @@ internal class MariaDbDslE2ETest : DslE2ETest() {
 
 @Testcontainers
 internal class MySQLDslE2ETest : DslE2ETest() {
-    private class SpecifiedMySQLContainer(image: String) : MySQLContainer<SpecifiedMySQLContainer>(DockerImageName.parse(image))
-
     companion object {
         @Container
-        private val MYSQL_CONTAINER = SpecifiedMySQLContainer("mysql:8.0.25")
+        private val MYSQL_CONTAINER = MySQLContainer(DockerImageName.parse("mysql:8.0.25"))
     }
 
     override fun createDataSource(): HikariDataSource =

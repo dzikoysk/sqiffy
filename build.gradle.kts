@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.9.25"
+    kotlin("jvm") version "2.3.0"
     `java-library`
 
     application
@@ -22,11 +22,11 @@ allprojects {
     apply(plugin = "signing")
 
     group = "com.dzikoysk.sqiffy"
-    version = "1.0.0-alpha.78"
+    version = "1.0.0-alpha.79"
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
 
         withJavadocJar()
         withSourcesJar()
@@ -35,9 +35,9 @@ allprojects {
     tasks.withType<KotlinCompile>().configureEach {
         kotlin {
             compilerOptions {
-                jvmTarget.set(JvmTarget.JVM_11)
+                jvmTarget.set(JvmTarget.JVM_17)
                 freeCompilerArgs.addAll(
-                    "-Xjvm-default=all", // For generating default methods in interfaces
+                    "-jvm-default=no-compatibility", // For generating default methods in interfaces
                 )
             }
         }
@@ -96,15 +96,14 @@ allprojects {
 
 subprojects {
     dependencies {
-        api("com.zaxxer:HikariCP:5.0.1")
+        api("com.zaxxer:HikariCP:7.0.2")
 
-        val junit = "5.13.2"
+        val junit = "6.1.0"
         testImplementation("org.junit.jupiter:junit-jupiter-params:$junit")
         testImplementation("org.junit.jupiter:junit-jupiter-api:$junit")
         testImplementation("org.junit.jupiter:junit-jupiter-engine:$junit")
 
-        val junitPlatform = "1.13.0"
-        testRuntimeOnly("org.junit.platform:junit-platform-launcher:$junitPlatform")
+        testRuntimeOnly("org.junit.platform:junit-platform-launcher:$junit")
 
         testImplementation("org.assertj:assertj-core:3.27.3")
     }

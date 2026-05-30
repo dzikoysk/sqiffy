@@ -1,7 +1,5 @@
-import com.google.devtools.ksp.gradle.KspTask
-
 plugins {
-    id("com.google.devtools.ksp") version "1.9.25-1.0.20"
+    id("com.google.devtools.ksp") version "2.3.0"
     jacoco
 }
 
@@ -10,31 +8,31 @@ dependencies {
     kspTest(project(":sqiffy-symbol-processor"))
     testImplementation(project(":sqiffy-symbol-processor"))
 
-    testImplementation("ch.qos.logback:logback-classic:1.5.18")
+    testImplementation("ch.qos.logback:logback-classic:1.5.33")
 
-    testImplementation("org.mariadb.jdbc:mariadb-java-client:3.5.4")
-    testImplementation("io.zonky.test:embedded-postgres:2.1.0")
-    testImplementation("org.postgresql:postgresql:42.7.7")
-    testImplementation("com.h2database:h2:2.3.232")
-    testImplementation("mysql:mysql-connector-java:8.0.33")
-    testImplementation("org.xerial:sqlite-jdbc:3.50.2.0")
+    testImplementation("org.mariadb.jdbc:mariadb-java-client:3.5.8")
+    testImplementation("io.zonky.test:embedded-postgres:2.2.2")
+    testImplementation("org.postgresql:postgresql:42.7.11")
+    testImplementation("com.h2database:h2:2.4.240")
+    testImplementation("com.mysql:mysql-connector-j:9.7.0")
+    testImplementation("org.xerial:sqlite-jdbc:3.53.1.0")
 
-    val liquibase = "4.25.0"
+    val liquibase = "4.33.0"
     testImplementation("org.liquibase:liquibase-core:$liquibase")
 
-    val testcontainers = "1.21.3"
-    testImplementation("org.testcontainers:postgresql:$testcontainers")
-    testImplementation("org.testcontainers:mysql:$testcontainers")
-    testImplementation("org.testcontainers:mariadb:$testcontainers")
+    val testcontainers = "2.0.5"
+    testImplementation("org.testcontainers:testcontainers-postgresql:$testcontainers")
+    testImplementation("org.testcontainers:testcontainers-mysql:$testcontainers")
+    testImplementation("org.testcontainers:testcontainers-mariadb:$testcontainers")
     testImplementation("org.testcontainers:testcontainers:$testcontainers")
-    testImplementation("org.testcontainers:junit-jupiter:$testcontainers")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter:$testcontainers")
 }
 
 sourceSets.configureEach {
     kotlin.srcDir("${layout.buildDirectory.get()}/generated/ksp/$name/kotlin/")
 }
 
-tasks.withType<KspTask> {
+tasks.matching { it.name.startsWith("ksp") }.configureEach {
     dependsOn("clean")
 }
 

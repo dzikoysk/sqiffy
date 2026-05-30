@@ -3,7 +3,7 @@ description = "Sqiffy Library | Core implementation of Sqiffy specification"
 dependencies {
     implementation(kotlin("reflect"))
 
-    val jdbi = "3.49.0"
+    val jdbi = "3.53.0"
     api("org.jdbi:jdbi3-core:$jdbi")
     api("org.jdbi:jdbi3-sqlobject:$jdbi")
     api("org.jdbi:jdbi3-postgres:$jdbi")
@@ -12,6 +12,6 @@ dependencies {
     api("org.jdbi:jdbi3-kotlin-sqlobject:$jdbi")
     api("org.jdbi:jdbi3-jackson2:$jdbi")
 
-    val liquibase = "4.32.0"
+    val liquibase = "4.33.0"
     compileOnly("org.liquibase:liquibase-core:$liquibase")
 }

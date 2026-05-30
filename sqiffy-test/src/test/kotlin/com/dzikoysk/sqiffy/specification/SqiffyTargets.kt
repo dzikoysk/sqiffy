@@ -7,9 +7,9 @@ import com.dzikoysk.sqiffy.shared.createSQLiteDataSource
 import com.zaxxer.hikari.HikariDataSource
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
-import org.testcontainers.containers.MariaDBContainer
-import org.testcontainers.containers.MySQLContainer
-import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.mariadb.MariaDBContainer
+import org.testcontainers.mysql.MySQLContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 
 internal abstract class SqiffyTargetExtension : BeforeEachCallback {
@@ -37,9 +37,8 @@ internal class PostgresTarget : SqiffyTargetExtension() {
     override fun createDataSource(): HikariDataSource =
         createHikariDataSource("org.postgresql.Driver", CONTAINER.jdbcUrl, username = CONTAINER.username, password = CONTAINER.password)
 
-    private class Container(image: String) : PostgreSQLContainer<Container>(DockerImageName.parse(image))
     companion object {
-        private val CONTAINER by lazy { Container("postgres:11.12").also { it.start() } }
+        private val CONTAINER by lazy { PostgreSQLContainer(DockerImageName.parse("postgres:11.12")).also { it.start() } }
     }
 }
 
@@ -47,9 +46,8 @@ internal class MySqlTarget : SqiffyTargetExtension() {
     override fun createDataSource(): HikariDataSource =
         createHikariDataSource("com.mysql.cj.jdbc.Driver", CONTAINER.jdbcUrl, username = CONTAINER.username, password = CONTAINER.password)
 
-    private class Container(image: String) : MySQLContainer<Container>(DockerImageName.parse(image))
     companion object {
-        private val CONTAINER by lazy { Container("mysql:8.0.25").also { it.start() } }
+        private val CONTAINER by lazy { MySQLContainer(DockerImageName.parse("mysql:8.0.25")).also { it.start() } }
     }
 }
 
@@ -57,8 +55,7 @@ internal class MariaDbTarget : SqiffyTargetExtension() {
     override fun createDataSource(): HikariDataSource =
         createHikariDataSource("org.mariadb.jdbc.Driver", CONTAINER.jdbcUrl, username = CONTAINER.username, password = CONTAINER.password)
 
-    private class Container(image: String) : MariaDBContainer<Container>(DockerImageName.parse(image))
     companion object {
-        private val CONTAINER by lazy { Container("mariadb:10.6.1").also { it.start() } }
+        private val CONTAINER by lazy { MariaDBContainer(DockerImageName.parse("mariadb:10.6.1")).also { it.start() } }
     }
 }

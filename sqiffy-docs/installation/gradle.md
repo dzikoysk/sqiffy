@@ -9,11 +9,11 @@ All you need to configure Sqiffy with Gradle is to add the following dependencie
 
 ```kotlin
 plugins {
-    id("com.google.devtools.ksp") version "1.9.25-1.0.20" // for Kotlin 1.9.22
+    id("com.google.devtools.ksp") version "2.3.0" // for Kotlin 2.3.0
 }
 
 dependencies {
-    val sqiffy = "1.0.0-alpha.78"
+    val sqiffy = "1.0.0-alpha.79"
     ksp("com.dzikoysk.sqiffy:sqiffy-symbol-processor:$sqiffy")
     implementation("com.dzikoysk.sqiffy:sqiffy:$sqiffy")
 }
