@@ -40,14 +40,17 @@ class FileMigrator(
         val history = ChangelogHistory(database, metadataTable)
         val jdbi = database.getJdbi()
 
-        jdbi.useHandle<Exception> { history.ensureTable(it) }
+        jdbi.useHandle<Exception> {
+            history.ensureTable(it)
+        }
 
-        val applied = jdbi.withHandle<MutableMap<String, String>, Exception> { history.loadApplied(it) }
+        val applied = jdbi.withHandle<MutableMap<String, String>, Exception> {
+            history.loadApplied(it)
+        }
 
         val migrations = ChangelogIndex.read(indexPath, resourceLoader).map { path ->
             val body = normalizeLineEndings(
-                resourceLoader(path)
-                    ?: throw MigrationException("Migration script listed in $indexPath not found on classpath: $path")
+                resourceLoader(path) ?: throw MigrationException("Migration script listed in $indexPath not found on classpath: $path")
             )
             Migration(
                 path = path,
@@ -60,8 +63,9 @@ class FileMigrator(
         database.logger.log(Level.INFO, "Found ${migrations.size} migrations in $indexPath")
 
         if (applied.isEmpty() && liquibaseChangelogTable != null) {
-            importLiquibaseState(database, history, migrations, liquibaseChangelogTable)
-                .forEach { applied[it.path] = it.checksum }
+            importLiquibaseState(database = database, history = history, migrations = migrations, tableName = liquibaseChangelogTable).forEach {
+                applied[it.path] = it.checksum
+            }
         }
 
         val result = mutableListOf<String>()
@@ -70,12 +74,12 @@ class FileMigrator(
             val recordedChecksum = applied[migration.path]
 
             if (recordedChecksum != null) {
-                verifyChecksum(database, migration, recordedChecksum)
+                verifyChecksum(database = database, migration = migration, recordedChecksum = recordedChecksum)
                 continue
             }
 
             database.logger.log(Level.INFO, "Applying migration: ${migration.path}")
-            applyMigration(database, history, migration)
+            applyMigration(database = database, history = history, migration = migration)
             result.add(migration.path)
         }
 
@@ -92,15 +96,17 @@ class FileMigrator(
         val jdbi = database.getJdbi()
         try {
             if (migration.transactional) {
-                jdbi.useTransaction<Exception> { handle -> executeAndRecord(database, history, handle, migration) }
+                jdbi.useTransaction<Exception> {
+                    executeAndRecord(database = database, history = history, handle = it, migration = migration)
+                }
             } else {
                 // opted out via the no-transaction marker (e.g. CREATE INDEX CONCURRENTLY): run in autocommit
-                jdbi.useHandle<Exception> { handle ->
-                    val connection = handle.connection
+                jdbi.useHandle<Exception> {
+                    val connection = it.connection
                     val previousAutoCommit = connection.autoCommit
                     connection.autoCommit = true
                     try {
-                        executeAndRecord(database, history, handle, migration)
+                        executeAndRecord(database = database, history = history, handle = it, migration = migration)
                     } finally {
                         connection.autoCommit = previousAutoCommit
                     }
@@ -112,8 +118,8 @@ class FileMigrator(
     }
 
     private fun executeAndRecord(database: SqiffyDatabase, history: ChangelogHistory, handle: Handle, migration: Migration) {
-        executeBody(database, handle, migration.body)
-        history.record(handle, migration.path, migration.checksum)
+        executeBody(database = database, handle = handle, body = migration.body)
+        history.record(handle = handle, path = migration.path, checksum = migration.checksum)
     }
 
     private fun executeBody(database: SqiffyDatabase, handle: Handle, body: String) {
@@ -150,21 +156,30 @@ class FileMigrator(
         val jdbi = database.getJdbi()
 
         val liquibaseFilenames = jdbi.withHandle<List<String>, Exception> { handle ->
-            if (tableExists(handle, tableName)) {
-                handle.createQuery("SELECT filename FROM $tableName").mapTo(String::class.java).list()
-            } else {
-                emptyList()
+            when {
+                tableExists(handle, tableName) -> handle.createQuery("SELECT filename FROM $tableName").mapTo(String::class.java).list()
+                else -> emptyList()
             }
         }
-        if (liquibaseFilenames.isEmpty()) return emptyList()
+
+        if (liquibaseFilenames.isEmpty()) {
+            return emptyList()
+        }
 
         database.logger.log(
             Level.INFO,
             "Detected Liquibase changelog table '$tableName' with ${liquibaseFilenames.size} applied changesets, importing state"
         )
 
-        val imported = migrations.filter { migration -> liquibaseFilenames.any { liquibaseMatches(migration.path, it) } }
-        jdbi.useTransaction<Exception> { handle -> imported.forEach { history.record(handle, it.path, it.checksum) } }
+        val imported = migrations.filter { migration ->
+            liquibaseFilenames.any {
+                liquibaseMatches(resolvedPath = migration.path, liquibaseFilename = it)
+            }
+        }
+
+        jdbi.useTransaction<Exception> { handle ->
+            imported.forEach { history.record(handle, it.path, it.checksum) }
+        }
 
         database.logger.log(Level.INFO, "Imported ${imported.size} changesets from Liquibase state")
         return imported

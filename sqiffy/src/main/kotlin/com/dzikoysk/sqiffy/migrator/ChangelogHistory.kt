@@ -75,7 +75,8 @@ internal class ChangelogHistory(
         values[metadataTable.key] = CHANGESET_KEY_PREFIX + path
         values[metadataTable.value] = checksum
 
-        handle.createUpdate(query)
+        handle
+            .createUpdate(query)
             .bindArguments(arguments, values)
             .execute()
     }
