@@ -70,8 +70,8 @@ should be applied. Put it on the classpath, e.g. `src/main/resources/database/ch
 ```
 
 Paths are resolved relative to the index file's own location (so the entries above resolve to
-`database/1.0.0/...`). Each listed file is one migration: its whole body is executed as a single
-statement, so dollar-quoted PL/pgSQL functions and multi-statement scripts work as written. Every
+`database/1.0.0/...`). Each listed file is one migration, and a file may contain multiple statements
+(on PostgreSQL the whole body runs at once, so dollar-quoted PL/pgSQL functions work as written). Every
 script runs in its own transaction and is recorded - with a SHA-256 checksum - in the same
 `sqiffy_metadata` table used by the Sqiffy migrator. Re-runs are idempotent: already-applied scripts
 are skipped.
@@ -88,7 +88,7 @@ The migrator accepts a few optional settings:
 val migrator = FileMigrator(
   indexPath = "database/changelog.index",            // required
   checksumPolicy = ChecksumPolicy.FAIL,              // FAIL (default) | WARN | IGNORE on content drift
-  liquibaseImport = LiquibaseImport(),               // adopt existing Liquibase state (default on); null to disable
+  liquibaseChangelogTable = "databasechangelog",     // adopt existing Liquibase state (default on); null to disable
   metadataTable = SqiffyMetadataTable(),             // optional, shared with SqiffyMigrator
 )
 ```
@@ -111,12 +111,13 @@ So a typical Liquibase cutover is:
 2. Swap `LiquibaseMigrator` for `FileMigrator("database/changelog.index")`.
 3. Drop the `org.liquibase:liquibase-core` dependency.
 
-The import is on by default. Pass `liquibaseImport = null` to disable it once the cutover is done, or
-`LiquibaseImport(tableName = "...")` if your tracking table has a non-default name.
+The import is on by default. Set `liquibaseChangelogTable = null` to disable it once the cutover is
+done, or point it at a non-default tracking table name.
 
 ::: tip Notes
-- Whole-body execution relies on the driver running multi-statement strings. PostgreSQL does; on
-  SQLite (only the first statement runs) and MySQL (`allowMultiQueries=true`) keep one statement per script.
+- Multi-statement scripts work on every dialect: PostgreSQL runs the whole body in one go (so
+  dollar-quoted PL/pgSQL functions execute as written), while MySQL/SQLite split each script into
+  individual statements. PostgreSQL-only syntax (dollar quoting, `ALTER TYPE`) is, of course, still PostgreSQL-only.
 - DDL such as `ALTER TYPE ... ADD VALUE` inside a transaction needs PostgreSQL 12+; the migrator
   automatically retries a script outside a transaction if the database reports it can't run in one.
 - The migrator does not take a distributed lock, so run migrations once at startup with a single

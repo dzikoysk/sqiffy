@@ -8,16 +8,12 @@ import com.dzikoysk.sqiffy.dsl.generator.bindArguments
 import com.dzikoysk.sqiffy.dsl.generator.toQueryColumn
 import org.jdbi.v3.core.Handle
 
-/** Prefix for metadata rows that record an applied file-based changeset, keyed by its resolved path. */
 private const val CHANGESET_KEY_PREFIX = "changeset:"
 
 /**
- * Reads and writes the applied-changeset ledger inside the shared [SqiffyMetadataTable].
- *
- * Each applied migration is stored as a single row: `key = "changeset:<resolved path>"`,
- * `value = <sha-256 checksum of the script>`. This namespacing means the file-based migrator and
- * [SqiffyMigrator]'s `version` row can coexist in the same `sqiffy_metadata` table without
- * stepping on each other.
+ * Applied-changeset ledger in [SqiffyMetadataTable]: one row per migration
+ * (`key = "changeset:<path>"`, `value = <checksum>`), prefixed so it coexists with
+ * SqiffyMigrator's `version` row in the same table.
  */
 internal class ChangelogLedger(
     private val database: SqiffyDatabase,
@@ -34,7 +30,6 @@ internal class ChangelogLedger(
         )
     }
 
-    /** Returns a map of resolved-path -> stored checksum for every changeset already recorded. */
     fun loadApplied(handle: Handle): MutableMap<String, String> {
         val query = database.sqlQueryGenerator.createSelectQuery(
             tableName = metadataTable.getName(),

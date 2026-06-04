@@ -2,12 +2,11 @@ package com.dzikoysk.sqiffy.e2e
 
 import com.dzikoysk.sqiffy.e2e.specification.SqiffyE2ETestSpecification
 import com.dzikoysk.sqiffy.e2e.specification.postgresDataSource
-import com.dzikoysk.sqiffy.migrator.ChangesetSource
 import com.dzikoysk.sqiffy.migrator.ChecksumPolicy
-import com.dzikoysk.sqiffy.migrator.ClasspathResourceLoader
 import com.dzikoysk.sqiffy.migrator.FileMigrator
 import com.dzikoysk.sqiffy.migrator.MigrationException
-import com.dzikoysk.sqiffy.migrator.ResourceLoader
+import com.dzikoysk.sqiffy.migrator.classpathResource
+import com.dzikoysk.sqiffy.shared.createSQLiteDataSource
 import com.zaxxer.hikari.HikariDataSource
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -37,9 +36,8 @@ internal abstract class FileMigratorE2ETest : SqiffyE2ETestSpecification(runMigr
         // when: migrations are run against an empty database
         val applied = assertDoesNotThrow { database.runMigrations(FileMigrator(index)) }
 
-        // then: every script is applied, in order, as a freshly executed changeset
-        assertThat(applied.map { it.path }).isEqualTo(migrationPaths)
-        assertThat(applied.map { it.source }).containsOnly(ChangesetSource.APPLIED)
+        // then: every script is applied, in order
+        assertThat(applied).isEqualTo(migrationPaths)
 
         // and: the schema produced by the scripts actually exists and works
         assertThat(tableExists("users")).isTrue()
@@ -53,6 +51,21 @@ internal abstract class FileMigratorE2ETest : SqiffyE2ETestSpecification(runMigr
         val reRun = assertDoesNotThrow { database.runMigrations(FileMigrator(index)) }
         // then: nothing is re-applied
         assertThat(reRun).isEmpty()
+    }
+
+    @Test
+    fun `should run a path listed twice in the index only once`() {
+        val duplicatingIndex = "duplicating.index"
+        val loader: (String) -> String? = { requested ->
+            if (requested == duplicatingIndex) "${migrationPaths[0]}\n${migrationPaths[0]}" else classpathResource(requested)
+        }
+
+        // when: the same script path appears twice in the index
+        val applied = assertDoesNotThrow { database.runMigrations(FileMigrator(duplicatingIndex, resourceLoader = loader)) }
+
+        // then: it is applied exactly once (a second CREATE TABLE would otherwise fail)
+        assertThat(applied).containsExactly(migrationPaths[0])
+        assertThat(tableExists("users")).isTrue()
     }
 
     @Test
@@ -110,10 +123,10 @@ internal abstract class FileMigratorE2ETest : SqiffyE2ETestSpecification(runMigr
         }
 
         // when: the migrator runs with the Liquibase import disabled
-        val applied = assertDoesNotThrow { database.runMigrations(FileMigrator(index, liquibaseImport = null)) }
+        val applied = assertDoesNotThrow { database.runMigrations(FileMigrator(index, liquibaseChangelogTable = null)) }
 
         // then: the Liquibase table is ignored and every script is executed fresh
-        assertThat(applied.map { it.path }).isEqualTo(migrationPaths)
+        assertThat(applied).isEqualTo(migrationPaths)
         assertThat(tableExists("users")).isTrue()
         assertThat(tableExists("counters")).isTrue()
     }
@@ -154,7 +167,7 @@ internal abstract class FileMigratorE2ETest : SqiffyE2ETestSpecification(runMigr
         val applied = assertDoesNotThrow { database.runMigrations(FileMigrator(index)) }
 
         // then: only the third script (unknown to Liquibase) is executed
-        assertThat(applied.map { it.path }).containsExactly(migrationPaths[2])
+        assertThat(applied).containsExactly(migrationPaths[2])
         assertThat(tableExists("counters")).isTrue()
     }
 
@@ -163,11 +176,35 @@ internal abstract class FileMigratorE2ETest : SqiffyE2ETestSpecification(runMigr
             handle.connection.metaData.getTables(null, null, name, arrayOf("TABLE")).use { it.next() }
         }
 
-    private fun loaderWithOverride(path: String, content: String): ResourceLoader {
-        val delegate = ClasspathResourceLoader()
-        return ResourceLoader { requested ->
-            if (requested == path) content.byteInputStream() else delegate.open(requested)
-        }
+    private fun loaderWithOverride(path: String, content: String): (String) -> String? =
+        { requested -> if (requested == path) content else classpathResource(requested) }
+
+}
+
+internal class SqliteFileMigratorE2ETest : SqiffyE2ETestSpecification(runMigrations = false) {
+
+    override fun createDataSource(): HikariDataSource = createSQLiteDataSource()
+
+    @Test
+    fun `should apply every statement of a multi-statement script on sqlite`() {
+        val index = "filemigrator-sqlite/changelog.index"
+
+        // when: a two-statement script is applied
+        val applied = assertDoesNotThrow { database.runMigrations(FileMigrator(index)) }
+
+        // then: both statements ran — not just the first, which is what SQLite's driver does for a
+        // multi-statement execute()
+        assertThat(applied).containsExactly("filemigrator-sqlite/001-multi-statement.sql")
+        assertThat(tableExists("alpha")).isTrue()
+        assertThat(tableExists("beta")).isTrue()
+
+        // and: re-running is a no-op
+        assertThat(database.runMigrations(FileMigrator(index))).isEmpty()
     }
+
+    private fun tableExists(name: String): Boolean =
+        database.getJdbi().withHandle<Boolean, Exception> { handle ->
+            handle.connection.metaData.getTables(null, null, name, arrayOf("TABLE")).use { it.next() }
+        }
 
 }

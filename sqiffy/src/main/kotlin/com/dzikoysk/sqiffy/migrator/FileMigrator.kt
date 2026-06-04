@@ -1,56 +1,19 @@
 package com.dzikoysk.sqiffy.migrator
 
 import com.dzikoysk.sqiffy.SqiffyDatabase
+import com.dzikoysk.sqiffy.dialect.Dialect
 import org.jdbi.v3.core.Handle
 import org.slf4j.event.Level
 
-/** How the migrator reacts when an already-applied script's content no longer matches its stored checksum. */
 enum class ChecksumPolicy {
-    /** Abort the migration (default) — the safest behaviour, mirrors Liquibase. */
     FAIL,
-    /** Log a warning and continue, treating the changeset as already applied. */
     WARN,
-    /** Silently continue. */
     IGNORE
 }
 
-/** Where an entry in the ledger came from during a run. */
-enum class ChangesetSource {
-    /** The script was executed during this run. */
-    APPLIED,
-    /** The script was recorded as already-applied by importing pre-existing Liquibase state. */
-    IMPORTED
-}
-
-data class AppliedChangeset(
-    val path: String,
-    val checksum: String,
-    val source: ChangesetSource
-)
-
-/**
- * Configures the one-time import of state from a database previously managed by Liquibase.
- *
- * On the first run (when the Sqiffy ledger holds no changesets yet) the migrator reads the
- * Liquibase tracking table and marks every migration whose script matches an already-applied
- * Liquibase `filename` as applied — so the existing schema is adopted without re-executing
- * anything. After that first run the Liquibase table is left untouched and ignored.
- */
-data class LiquibaseImport(
-    val tableName: String = "databasechangelog"
-) {
-    init {
-        // The tracking table name is interpolated into a raw SQL query (table identifiers can't be bound
-        // as JDBC parameters), so constrain it to a plain, optionally schema-qualified identifier.
-        require(tableName.matches(IDENTIFIER_REGEX)) { "Invalid Liquibase changelog table name: '$tableName'" }
-    }
-
-    private companion object {
-        val IDENTIFIER_REGEX = Regex("[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)?")
-    }
-}
-
 class MigrationException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+
+private val IDENTIFIER_REGEX = Regex("[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)?")
 
 private data class Migration(
     val path: String,
@@ -59,41 +22,20 @@ private data class Migration(
 )
 
 /**
- * A file-based, Liquibase-free database migrator.
- *
- * Migrations are plain `.sql` scripts listed, in order, by a [changelog index][ChangelogIndex]
- * file on the classpath. Each script is one changeset: its whole body is executed as a single
- * statement (so dollar-quoted PL/pgSQL and multi-statement scripts work as-is) inside its own
- * transaction, and recorded in the shared `sqiffy_metadata` ledger keyed by its resolved path
- * together with a SHA-256 checksum.
- *
- * Re-runs are idempotent: already-recorded scripts are skipped (and, depending on
- * [checksumPolicy], checked for drift). Existing Liquibase-managed databases can be adopted
- * transparently via [liquibaseImport].
- *
- * Note: executing DDL inside a transaction requires PostgreSQL 12+ for statements such as
- * `ALTER TYPE ... ADD VALUE`; the migrator automatically retries a script outside a transaction
- * if the database reports it "cannot run inside a transaction block".
- *
- * Note: each script's whole body is sent to the driver as a single statement, which relies on the
- * database executing multi-statement strings. PostgreSQL does (including dollar-quoted bodies);
- * SQLite executes only the first statement and MySQL needs `allowMultiQueries=true`. On those
- * dialects keep one statement per script.
- *
- * Note: the migrator does not take a distributed lock, so callers must serialize migrations — run
- * them once at startup with a single instance migrating before others come up (e.g. a rolling
- * release where the new instance becomes healthy before the next starts). Two instances racing an
- * empty database fail safe (the loser aborts with [MigrationException]) but do not coordinate.
+ * Applies plain `.sql` scripts listed by a [changelog index][ChangelogIndex] file, tracking applied
+ * scripts with a checksum in the shared `sqiffy_metadata` ledger. Adopts an existing
+ * Liquibase-managed database when [liquibaseChangelogTable] is set. See the migrations guide for
+ * dialect and concurrency caveats.
  */
 class FileMigrator(
     private val indexPath: String,
     private val checksumPolicy: ChecksumPolicy = ChecksumPolicy.FAIL,
-    private val liquibaseImport: LiquibaseImport? = LiquibaseImport(),
+    private val liquibaseChangelogTable: String? = "databasechangelog",
     private val metadataTable: SqiffyMetadataTable = SqiffyMetadataTable(),
-    private val resourceLoader: ResourceLoader = ClasspathResourceLoader(),
-) : Migrator<List<AppliedChangeset>> {
+    private val resourceLoader: (path: String) -> String? = ::classpathResource,
+) : Migrator<List<String>> {
 
-    override fun runMigrations(database: SqiffyDatabase): List<AppliedChangeset> {
+    override fun runMigrations(database: SqiffyDatabase): List<String> {
         val ledger = ChangelogLedger(database, metadataTable)
         val jdbi = database.getJdbi()
 
@@ -103,7 +45,7 @@ class FileMigrator(
 
         val migrations = ChangelogIndex.read(indexPath, resourceLoader).map { path ->
             val body = normalizeLineEndings(
-                resourceLoader.readText(path)
+                resourceLoader(path)
                     ?: throw MigrationException("Migration script listed in $indexPath not found on classpath: $path")
             )
             Migration(path = path, body = body, checksum = sha256(body))
@@ -111,12 +53,12 @@ class FileMigrator(
 
         database.logger.log(Level.INFO, "Found ${migrations.size} migrations in $indexPath")
 
-        if (applied.isEmpty() && liquibaseImport != null) {
-            importLiquibaseState(database, ledger, migrations, liquibaseImport)
+        if (applied.isEmpty() && liquibaseChangelogTable != null) {
+            importLiquibaseState(database, ledger, migrations, liquibaseChangelogTable)
                 .forEach { applied[it.path] = it.checksum }
         }
 
-        val result = mutableListOf<AppliedChangeset>()
+        val result = mutableListOf<String>()
 
         for (migration in migrations) {
             val recordedChecksum = applied[migration.path]
@@ -128,13 +70,14 @@ class FileMigrator(
 
             database.logger.log(Level.INFO, "Applying migration: ${migration.path}")
             applyMigration(database, ledger, migration)
-            result.add(AppliedChangeset(migration.path, migration.checksum, ChangesetSource.APPLIED))
+            applied[migration.path] = migration.checksum // guard a duplicate path later in the same index
+            result.add(migration.path)
         }
 
         if (result.isEmpty()) {
             database.logger.log(Level.INFO, "Database scheme is up to date")
         } else {
-            database.logger.log(Level.INFO, "Applied ${result.size} migrations: ${result.joinToString(", ") { it.path }}")
+            database.logger.log(Level.INFO, "Applied ${result.size} migrations: ${result.joinToString(", ")}")
         }
 
         return result
@@ -145,7 +88,7 @@ class FileMigrator(
 
         try {
             jdbi.useTransaction<Exception> { handle ->
-                executeBody(handle, migration.body)
+                executeBody(database, handle, migration.body)
                 ledger.record(handle, migration.path, migration.checksum)
             }
         } catch (exception: Exception) {
@@ -160,7 +103,7 @@ class FileMigrator(
                 val previousAutoCommit = connection.autoCommit
                 connection.autoCommit = true
                 try {
-                    executeBody(handle, migration.body)
+                    executeBody(database, handle, migration.body)
                     ledger.record(handle, migration.path, migration.checksum)
                 } finally {
                     connection.autoCommit = previousAutoCommit
@@ -169,8 +112,14 @@ class FileMigrator(
         }
     }
 
-    private fun executeBody(handle: Handle, body: String) {
-        handle.connection.createStatement().use { it.execute(body) }
+    private fun executeBody(database: SqiffyDatabase, handle: Handle, body: String) {
+        // Postgres runs a whole multi-statement body (incl. dollar-quoted blocks) in one call; other
+        // drivers don't (SQLite would run only the first statement), so split into statements there.
+        if (database.getDialect() == Dialect.POSTGRESQL) {
+            handle.connection.createStatement().use { it.execute(body) }
+        } else {
+            handle.createScript(body).execute()
+        }
     }
 
     private fun verifyChecksum(database: SqiffyDatabase, migration: Migration, recordedChecksum: String) {
@@ -192,15 +141,17 @@ class FileMigrator(
         database: SqiffyDatabase,
         ledger: ChangelogLedger,
         migrations: List<Migration>,
-        config: LiquibaseImport
-    ): List<AppliedChangeset> {
+        tableName: String
+    ): List<Migration> {
+        // interpolated into SQL below (table identifiers can't be bound as parameters), so keep it an identifier
+        require(tableName.matches(IDENTIFIER_REGEX)) { "Invalid Liquibase changelog table name: '$tableName'" }
         val jdbi = database.getJdbi()
 
         val liquibaseFilenames = jdbi.withHandle<List<String>?, Exception> { handle ->
-            if (!tableExists(handle, config.tableName)) {
+            if (!tableExists(handle, tableName)) {
                 null
             } else {
-                handle.createQuery("SELECT filename FROM ${config.tableName}")
+                handle.createQuery("SELECT filename FROM $tableName")
                     .mapTo(String::class.java)
                     .list()
             }
@@ -212,16 +163,16 @@ class FileMigrator(
 
         database.logger.log(
             Level.INFO,
-            "Detected Liquibase changelog table '${config.tableName}' with ${liquibaseFilenames.size} applied changesets, importing state"
+            "Detected Liquibase changelog table '$tableName' with ${liquibaseFilenames.size} applied changesets, importing state"
         )
 
-        val imported = mutableListOf<AppliedChangeset>()
+        val imported = mutableListOf<Migration>()
 
         jdbi.useTransaction<Exception> { handle ->
             migrations.forEach { migration ->
                 if (liquibaseFilenames.any { liquibaseMatches(migration.path, it) }) {
                     ledger.record(handle, migration.path, migration.checksum)
-                    imported.add(AppliedChangeset(migration.path, migration.checksum, ChangesetSource.IMPORTED))
+                    imported.add(migration)
                 }
             }
         }
@@ -230,13 +181,18 @@ class FileMigrator(
         return imported
     }
 
-    private fun tableExists(handle: Handle, name: String): Boolean {
+    private fun tableExists(handle: Handle, qualifiedName: String): Boolean {
+        // JDBC wants schema and table separately, so split "schema.table" before probing
+        val schema = qualifiedName.substringBefore('.', "").ifBlank { null }
+        val table = qualifiedName.substringAfter('.')
         val metaData = handle.connection.metaData
 
-        for (candidate in linkedSetOf(name, name.lowercase(), name.uppercase())) {
-            metaData.getTables(null, null, candidate, arrayOf("TABLE")).use { resultSet ->
-                if (resultSet.next()) {
-                    return true
+        for (schemaCandidate in linkedSetOf(schema, schema?.lowercase(), schema?.uppercase())) {
+            for (tableCandidate in linkedSetOf(table, table.lowercase(), table.uppercase())) {
+                metaData.getTables(null, schemaCandidate, tableCandidate, arrayOf("TABLE")).use { resultSet ->
+                    if (resultSet.next()) {
+                        return true
+                    }
                 }
             }
         }

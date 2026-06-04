@@ -17,9 +17,7 @@ import org.slf4j.event.Level
 private const val VERSION_KEY = "version"
 
 class SqiffyMetadataTable(name: String = "sqiffy_metadata") : Table(name) {
-    // varchar(255): wide enough to hold FileMigrator changeset keys ("changeset:<resolved path>"),
-    // while still comfortably fitting SqiffyMigrator's single "version" row.
-    val key: Column<String> = text("key", "varchar(255)")
+    val key: Column<String> = text("key", "varchar(32)")
     val value: Column<String> = text("value", "text")
 }
 
