@@ -13,12 +13,13 @@ enum class ChecksumPolicy {
 
 class MigrationException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
-private val IDENTIFIER_REGEX = Regex("[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)?")
+private const val NON_TRANSACTIONAL_MARKER = "-- sqiffy: no-transaction"
 
 private data class Migration(
     val path: String,
     val body: String,
-    val checksum: String
+    val checksum: String,
+    val transactional: Boolean
 )
 
 /**
@@ -30,7 +31,7 @@ private data class Migration(
 class FileMigrator(
     private val indexPath: String,
     private val checksumPolicy: ChecksumPolicy = ChecksumPolicy.FAIL,
-    private val liquibaseChangelogTable: String? = "databasechangelog",
+    private val liquibaseChangelogTable: String? = null,
     private val metadataTable: SqiffyMetadataTable = SqiffyMetadataTable(),
     private val resourceLoader: (path: String) -> String? = ::classpathResource,
 ) : Migrator<List<String>> {
@@ -48,7 +49,12 @@ class FileMigrator(
                 resourceLoader(path)
                     ?: throw MigrationException("Migration script listed in $indexPath not found on classpath: $path")
             )
-            Migration(path = path, body = body, checksum = sha256(body))
+            Migration(
+                path = path,
+                body = body,
+                checksum = sha256(body),
+                transactional = body.lineSequence().none { it.trim().equals(NON_TRANSACTIONAL_MARKER, ignoreCase = true) }
+            )
         }
 
         database.logger.log(Level.INFO, "Found ${migrations.size} migrations in $indexPath")
@@ -84,17 +90,11 @@ class FileMigrator(
 
     private fun applyMigration(database: SqiffyDatabase, history: ChangelogHistory, migration: Migration) {
         val jdbi = database.getJdbi()
-
         try {
-            try {
+            if (migration.transactional) {
                 jdbi.useTransaction<Exception> { handle -> executeAndRecord(database, history, handle, migration) }
-            } catch (exception: Exception) {
-                if (!isTransactionBlockError(exception)) {
-                    throw exception
-                }
-
-                database.logger.log(Level.WARN, "Migration ${migration.path} cannot run inside a transaction block, retrying with autocommit")
-
+            } else {
+                // opted out via the no-transaction marker (e.g. CREATE INDEX CONCURRENTLY): run in autocommit
                 jdbi.useHandle<Exception> { handle ->
                     val connection = handle.connection
                     val previousAutoCommit = connection.autoCommit
@@ -147,39 +147,24 @@ class FileMigrator(
         migrations: List<Migration>,
         tableName: String
     ): List<Migration> {
-        // interpolated into SQL below (table identifiers can't be bound as parameters), so keep it an identifier
-        require(tableName.matches(IDENTIFIER_REGEX)) { "Invalid Liquibase changelog table name: '$tableName'" }
         val jdbi = database.getJdbi()
 
-        val liquibaseFilenames = jdbi.withHandle<List<String>?, Exception> { handle ->
-            if (!tableExists(handle, tableName)) {
-                null
+        val liquibaseFilenames = jdbi.withHandle<List<String>, Exception> { handle ->
+            if (tableExists(handle, tableName)) {
+                handle.createQuery("SELECT filename FROM $tableName").mapTo(String::class.java).list()
             } else {
-                handle.createQuery("SELECT filename FROM $tableName")
-                    .mapTo(String::class.java)
-                    .list()
+                emptyList()
             }
-        } ?: return emptyList()
-
-        if (liquibaseFilenames.isEmpty()) {
-            return emptyList()
         }
+        if (liquibaseFilenames.isEmpty()) return emptyList()
 
         database.logger.log(
             Level.INFO,
             "Detected Liquibase changelog table '$tableName' with ${liquibaseFilenames.size} applied changesets, importing state"
         )
 
-        val imported = mutableListOf<Migration>()
-
-        jdbi.useTransaction<Exception> { handle ->
-            migrations.forEach { migration ->
-                if (liquibaseFilenames.any { liquibaseMatches(migration.path, it) }) {
-                    history.record(handle, migration.path, migration.checksum)
-                    imported.add(migration)
-                }
-            }
-        }
+        val imported = migrations.filter { migration -> liquibaseFilenames.any { liquibaseMatches(migration.path, it) } }
+        jdbi.useTransaction<Exception> { handle -> imported.forEach { history.record(handle, it.path, it.checksum) } }
 
         database.logger.log(Level.INFO, "Imported ${imported.size} changesets from Liquibase state")
         return imported
@@ -191,34 +176,17 @@ class FileMigrator(
         val table = qualifiedName.substringAfter('.')
         val metaData = handle.connection.metaData
 
-        for (schemaCandidate in linkedSetOf(schema, schema?.lowercase(), schema?.uppercase())) {
-            for (tableCandidate in linkedSetOf(table, table.lowercase(), table.uppercase())) {
-                metaData.getTables(null, schemaCandidate, tableCandidate, arrayOf("TABLE")).use { resultSet ->
-                    if (resultSet.next()) {
-                        return true
-                    }
-                }
+        return linkedSetOf(schema, schema?.lowercase(), schema?.uppercase()).any { schemaCandidate ->
+            linkedSetOf(table, table.lowercase(), table.uppercase()).any { tableCandidate ->
+                metaData.getTables(null, schemaCandidate, tableCandidate, arrayOf("TABLE")).use { it.next() }
             }
         }
-
-        return false
     }
 
     private fun liquibaseMatches(resolvedPath: String, liquibaseFilename: String): Boolean {
         val path = resolvedPath.trimStart('/')
         val filename = liquibaseFilename.replace('\\', '/').trimStart('/')
         return path == filename || path.endsWith("/$filename") || filename.endsWith("/$path")
-    }
-
-    private fun isTransactionBlockError(throwable: Throwable?): Boolean {
-        var cause = throwable
-        while (cause != null) {
-            if (cause.message?.contains("cannot run inside a transaction block", ignoreCase = true) == true) {
-                return true
-            }
-            cause = cause.cause
-        }
-        return false
     }
 
 }

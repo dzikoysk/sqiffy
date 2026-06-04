@@ -113,7 +113,7 @@ internal abstract class FileMigratorE2ETest : SqiffyE2ETestSpecification(runMigr
     }
 
     @Test
-    fun `should ignore existing Liquibase state when import is disabled`() {
+    fun `should ignore existing Liquibase state by default`() {
         // given: a Liquibase changelog table exists, but no real schema (tables) yet
         database.getJdbi().useHandle<Exception> { handle ->
             handle.execute("CREATE TABLE databasechangelog (id varchar(255), author varchar(255), filename varchar(255))")
@@ -122,8 +122,8 @@ internal abstract class FileMigratorE2ETest : SqiffyE2ETestSpecification(runMigr
             }
         }
 
-        // when: the migrator runs with the Liquibase import disabled
-        val applied = assertDoesNotThrow { database.runMigrations(FileMigrator(index, liquibaseChangelogTable = null)) }
+        // when: the migrator runs without opting into the Liquibase import
+        val applied = assertDoesNotThrow { database.runMigrations(FileMigrator(index)) }
 
         // then: the Liquibase table is ignored and every script is executed fresh
         assertThat(applied).isEqualTo(migrationPaths)
@@ -141,8 +141,9 @@ internal abstract class FileMigratorE2ETest : SqiffyE2ETestSpecification(runMigr
             }
         }
 
-        // when: the file migrator runs for the first time
-        val applied = assertDoesNotThrow { database.runMigrations(FileMigrator(index)) }
+        // when: the file migrator runs for the first time, opting into the Liquibase import
+        val migrator = { FileMigrator(index, liquibaseChangelogTable = "databasechangelog") }
+        val applied = assertDoesNotThrow { database.runMigrations(migrator()) }
 
         // then: nothing is executed — the existing state is adopted
         assertThat(applied).isEmpty()
@@ -150,7 +151,7 @@ internal abstract class FileMigratorE2ETest : SqiffyE2ETestSpecification(runMigr
         assertThat(tableExists("users")).isFalse()
 
         // and: the imported state is persisted, so a subsequent run is also a no-op
-        assertThat(database.runMigrations(FileMigrator(index))).isEmpty()
+        assertThat(database.runMigrations(migrator())).isEmpty()
     }
 
     @Test
@@ -163,17 +164,54 @@ internal abstract class FileMigratorE2ETest : SqiffyE2ETestSpecification(runMigr
             handle.execute("INSERT INTO databasechangelog(id, author, filename) VALUES ('2', 'test', ?)", migrationPaths[1])
         }
 
-        // when: the file migrator runs
-        val applied = assertDoesNotThrow { database.runMigrations(FileMigrator(index)) }
+        // when: the file migrator runs, opting into the Liquibase import
+        val applied = assertDoesNotThrow { database.runMigrations(FileMigrator(index, liquibaseChangelogTable = "databasechangelog")) }
 
         // then: only the third script (unknown to Liquibase) is executed
         assertThat(applied).containsExactly(migrationPaths[2])
         assertThat(tableExists("counters")).isTrue()
     }
 
+    @Test
+    fun `should run a migration marked no-transaction outside a transaction`() {
+        val notxIndex = "filemigrator-notx/changelog.index"
+
+        // when: a CREATE INDEX CONCURRENTLY script carrying the no-transaction marker is applied
+        val applied = assertDoesNotThrow { database.runMigrations(FileMigrator(notxIndex)) }
+
+        // then: it runs (CONCURRENTLY cannot run inside a transaction) and the index exists
+        assertThat(applied).containsExactly(
+            "filemigrator-notx/001-create-widgets.sql",
+            "filemigrator-notx/002-add-index-concurrently.sql",
+        )
+        assertThat(indexExists("widgets_name_idx")).isTrue()
+    }
+
+    @Test
+    fun `should fail a CONCURRENTLY script when the no-transaction marker is missing`() {
+        val notxIndex = "filemigrator-notx/changelog.index"
+        // same script without the marker, so it runs inside a transaction
+        val withoutMarker = loaderWithOverride(
+            "filemigrator-notx/002-add-index-concurrently.sql",
+            "CREATE INDEX CONCURRENTLY widgets_name_idx ON widgets (name);"
+        )
+
+        // then: PostgreSQL refuses CONCURRENTLY inside a transaction and the migration aborts
+        assertThatThrownBy { database.runMigrations(FileMigrator(notxIndex, resourceLoader = withoutMarker)) }
+            .isInstanceOf(MigrationException::class.java)
+    }
+
     private fun tableExists(name: String): Boolean =
         database.getJdbi().withHandle<Boolean, Exception> { handle ->
             handle.connection.metaData.getTables(null, null, name, arrayOf("TABLE")).use { it.next() }
+        }
+
+    private fun indexExists(name: String): Boolean =
+        database.getJdbi().withHandle<Boolean, Exception> { handle ->
+            handle.createQuery("SELECT count(*) FROM pg_indexes WHERE indexname = :name")
+                .bind("name", name)
+                .mapTo(Int::class.java)
+                .one() > 0
         }
 
     private fun loaderWithOverride(path: String, content: String): (String) -> String? =

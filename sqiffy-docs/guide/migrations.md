@@ -72,10 +72,9 @@ should be applied. Put it on the classpath, e.g. `src/main/resources/database/ch
 Paths are resolved relative to the index file's own location (so the entries above resolve to
 `database/1.0.0/...`). Each listed file is one migration, and a file may contain multiple statements
 (on PostgreSQL the whole body runs at once, so dollar-quoted PL/pgSQL functions work as written). Every
-script runs in its own transaction (falling back to autocommit for statements a database refuses to run
-inside one, such as `ALTER TYPE ... ADD VALUE` on older PostgreSQL) and is recorded - with a SHA-256
-checksum - in the same `sqiffy_metadata` table used by the Sqiffy migrator. Re-runs are idempotent:
-already-applied scripts are skipped.
+script runs in its own transaction and is recorded - with a SHA-256 checksum - in the same
+`sqiffy_metadata` table used by the Sqiffy migrator. Re-runs are idempotent: already-applied scripts
+are skipped.
 
 To run it, point the migrator at the index file:
 
@@ -89,7 +88,7 @@ The migrator accepts a few optional settings:
 val migrator = FileMigrator(
   indexPath = "database/changelog.index",            // required
   checksumPolicy = ChecksumPolicy.FAIL,              // FAIL (default) | WARN | IGNORE on content drift
-  liquibaseChangelogTable = "databasechangelog",     // adopt existing Liquibase state (default on); null to disable
+  liquibaseChangelogTable = null,                    // null = no import (default); set to opt into Liquibase adoption
   metadataTable = SqiffyMetadataTable(),             // optional, shared with SqiffyMigrator
 )
 ```
@@ -99,28 +98,34 @@ val migrator = FileMigrator(
 
 ### Migrating from Liquibase
 
-If your database is already managed by Liquibase, the file migrator can adopt it with no manual step.
-On the **first** run (when `sqiffy_metadata` holds no file changesets yet) it looks for the existing
-`databasechangelog` table and, for every script whose path matches an already-applied Liquibase
-`filename`, records it as applied **without re-executing it**. Scripts Liquibase never saw are applied
-normally. After that first run the `databasechangelog` table is left untouched and ignored.
+If your database is already managed by Liquibase, the file migrator can adopt it when you opt in by
+naming the Liquibase tracking table. On the **first** run (when `sqiffy_metadata` holds no file
+changesets yet) it reads that table and, for every script whose path matches an already-applied
+Liquibase `filename`, records it as applied **without re-executing it**. Scripts Liquibase never saw
+are applied normally. After that first run the tracking table is left untouched and ignored.
 
 So a typical Liquibase cutover is:
 
 1. Add a `changelog.index` listing your existing `*.sql` files in order (the `--changeset`/`--liquibase`
    header comments in those files are ignored, so the files don't need to change).
-2. Swap `LiquibaseMigrator` for `FileMigrator("database/changelog.index")`.
+2. Swap `LiquibaseMigrator` for `FileMigrator("database/changelog.index", liquibaseChangelogTable = "databasechangelog")`.
 3. Drop the `org.liquibase:liquibase-core` dependency.
 
-The import is on by default. Set `liquibaseChangelogTable = null` to disable it once the cutover is
-done, or point it at a non-default tracking table name.
+The import is **opt-in**: it only runs when `liquibaseChangelogTable` is set (default `null`). Once the
+cutover has taken, you can drop the argument again so the migrator stops probing for that table.
 
 ::: tip Notes
 - Multi-statement scripts work on every dialect: PostgreSQL runs the whole body in one go (so
   dollar-quoted PL/pgSQL functions execute as written), while MySQL/SQLite split each script into
   individual statements. PostgreSQL-only syntax (dollar quoting, `ALTER TYPE`) is, of course, still PostgreSQL-only.
-- DDL such as `ALTER TYPE ... ADD VALUE` inside a transaction needs PostgreSQL 12+; the migrator
-  automatically retries a script outside a transaction if the database reports it can't run in one.
+- Each script runs inside a transaction by default. For a statement that can't run in one (e.g.
+  `CREATE INDEX CONCURRENTLY`), put `-- sqiffy: no-transaction` on its own line in the script and it
+  runs in autocommit instead. Such a script isn't atomic, so a mid-script failure leaves partial work:
+
+  ```sql
+  -- sqiffy: no-transaction
+  CREATE INDEX CONCURRENTLY users_ix_email ON users (email);
+  ```
 - The migrator does not take a distributed lock, so run migrations once at startup with a single
   instance migrating before the others come up (e.g. a rolling release).
 :::
