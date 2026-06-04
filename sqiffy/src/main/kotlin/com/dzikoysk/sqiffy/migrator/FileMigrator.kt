@@ -23,7 +23,7 @@ private data class Migration(
 
 /**
  * Applies plain `.sql` scripts listed by a [changelog index][ChangelogIndex] file, tracking applied
- * scripts with a checksum in the shared `sqiffy_metadata` ledger. Adopts an existing
+ * scripts with a checksum in the shared `sqiffy_metadata` history. Adopts an existing
  * Liquibase-managed database when [liquibaseChangelogTable] is set. See the migrations guide for
  * dialect and concurrency caveats.
  */
@@ -36,12 +36,12 @@ class FileMigrator(
 ) : Migrator<List<String>> {
 
     override fun runMigrations(database: SqiffyDatabase): List<String> {
-        val ledger = ChangelogLedger(database, metadataTable)
+        val history = ChangelogHistory(database, metadataTable)
         val jdbi = database.getJdbi()
 
-        jdbi.useHandle<Exception> { ledger.ensureTable(it) }
+        jdbi.useHandle<Exception> { history.ensureTable(it) }
 
-        val applied = jdbi.withHandle<MutableMap<String, String>, Exception> { ledger.loadApplied(it) }
+        val applied = jdbi.withHandle<MutableMap<String, String>, Exception> { history.loadApplied(it) }
 
         val migrations = ChangelogIndex.read(indexPath, resourceLoader).map { path ->
             val body = normalizeLineEndings(
@@ -54,7 +54,7 @@ class FileMigrator(
         database.logger.log(Level.INFO, "Found ${migrations.size} migrations in $indexPath")
 
         if (applied.isEmpty() && liquibaseChangelogTable != null) {
-            importLiquibaseState(database, ledger, migrations, liquibaseChangelogTable)
+            importLiquibaseState(database, history, migrations, liquibaseChangelogTable)
                 .forEach { applied[it.path] = it.checksum }
         }
 
@@ -69,7 +69,7 @@ class FileMigrator(
             }
 
             database.logger.log(Level.INFO, "Applying migration: ${migration.path}")
-            applyMigration(database, ledger, migration)
+            applyMigration(database, history, migration)
             result.add(migration.path)
         }
 
@@ -82,33 +82,38 @@ class FileMigrator(
         return result
     }
 
-    private fun applyMigration(database: SqiffyDatabase, ledger: ChangelogLedger, migration: Migration) {
+    private fun applyMigration(database: SqiffyDatabase, history: ChangelogHistory, migration: Migration) {
         val jdbi = database.getJdbi()
 
         try {
-            jdbi.useTransaction<Exception> { handle ->
-                executeBody(database, handle, migration.body)
-                ledger.record(handle, migration.path, migration.checksum)
-            }
-        } catch (exception: Exception) {
-            if (!isTransactionBlockError(exception)) {
-                throw MigrationException("Failed to apply migration: ${migration.path}", exception)
-            }
+            try {
+                jdbi.useTransaction<Exception> { handle -> executeAndRecord(database, history, handle, migration) }
+            } catch (exception: Exception) {
+                if (!isTransactionBlockError(exception)) {
+                    throw exception
+                }
 
-            database.logger.log(Level.WARN, "Migration ${migration.path} cannot run inside a transaction block, retrying with autocommit")
+                database.logger.log(Level.WARN, "Migration ${migration.path} cannot run inside a transaction block, retrying with autocommit")
 
-            jdbi.useHandle<Exception> { handle ->
-                val connection = handle.connection
-                val previousAutoCommit = connection.autoCommit
-                connection.autoCommit = true
-                try {
-                    executeBody(database, handle, migration.body)
-                    ledger.record(handle, migration.path, migration.checksum)
-                } finally {
-                    connection.autoCommit = previousAutoCommit
+                jdbi.useHandle<Exception> { handle ->
+                    val connection = handle.connection
+                    val previousAutoCommit = connection.autoCommit
+                    connection.autoCommit = true
+                    try {
+                        executeAndRecord(database, history, handle, migration)
+                    } finally {
+                        connection.autoCommit = previousAutoCommit
+                    }
                 }
             }
+        } catch (exception: Exception) {
+            throw MigrationException("Failed to apply migration: ${migration.path}", exception)
         }
+    }
+
+    private fun executeAndRecord(database: SqiffyDatabase, history: ChangelogHistory, handle: Handle, migration: Migration) {
+        executeBody(database, handle, migration.body)
+        history.record(handle, migration.path, migration.checksum)
     }
 
     private fun executeBody(database: SqiffyDatabase, handle: Handle, body: String) {
@@ -138,7 +143,7 @@ class FileMigrator(
 
     private fun importLiquibaseState(
         database: SqiffyDatabase,
-        ledger: ChangelogLedger,
+        history: ChangelogHistory,
         migrations: List<Migration>,
         tableName: String
     ): List<Migration> {
@@ -170,7 +175,7 @@ class FileMigrator(
         jdbi.useTransaction<Exception> { handle ->
             migrations.forEach { migration ->
                 if (liquibaseFilenames.any { liquibaseMatches(migration.path, it) }) {
-                    ledger.record(handle, migration.path, migration.checksum)
+                    history.record(handle, migration.path, migration.checksum)
                     imported.add(migration)
                 }
             }

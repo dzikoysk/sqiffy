@@ -12,11 +12,11 @@ import org.jdbi.v3.core.Handle
 private const val CHANGESET_KEY_PREFIX = "changeset:"
 
 /**
- * Applied-changeset ledger in [SqiffyMetadataTable]: one row per migration
+ * Applied-changeset history in [SqiffyMetadataTable]: one row per migration
  * (`key = "changeset:<path>"`, `value = <checksum>`), prefixed so it coexists with
  * SqiffyMigrator's `version` row in the same table.
  */
-internal class ChangelogLedger(
+internal class ChangelogHistory(
     private val database: SqiffyDatabase,
     private val metadataTable: SqiffyMetadataTable
 ) {
