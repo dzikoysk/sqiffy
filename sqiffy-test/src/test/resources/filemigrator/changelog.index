@@ -1,0 +1,6 @@
+# Sqiffy file-based migrator — test changelog
+# One migration script per line, applied top to bottom.
+
+1.0.0/001-create-users.sql
+1.0.0/002-add-email.sql
+1.0.0/003-add-counter-function.sql
