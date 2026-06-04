@@ -3,6 +3,7 @@ package com.dzikoysk.sqiffy.migrator
 import com.dzikoysk.sqiffy.SqiffyDatabase
 import com.dzikoysk.sqiffy.changelog.Enums
 import com.dzikoysk.sqiffy.dsl.Values
+import com.dzikoysk.sqiffy.dsl.like
 import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
 import com.dzikoysk.sqiffy.dsl.generator.bindArguments
 import com.dzikoysk.sqiffy.dsl.generator.toQueryColumn
@@ -31,18 +32,25 @@ internal class ChangelogLedger(
     }
 
     fun loadApplied(handle: Handle): MutableMap<String, String> {
+        val (where, whereArguments) = database.sqlQueryGenerator.createExpression(
+            allocator = ParameterAllocator(),
+            expression = metadataTable.key like "$CHANGESET_KEY_PREFIX%"
+        )
+
         val query = database.sqlQueryGenerator.createSelectQuery(
             tableName = metadataTable.getName(),
             selected = listOf(metadataTable.key, metadataTable.value),
+            where = where,
         ).query
 
         val applied = mutableMapOf<String, String>()
 
         handle.createQuery(query)
+            .bindArguments(whereArguments)
             .map { rs, _ -> rs.getString(1) to rs.getString(2) }
             .list()
             .forEach { (key, value) ->
-                if (key != null && key.startsWith(CHANGESET_KEY_PREFIX)) {
+                if (key != null) {
                     applied[key.removePrefix(CHANGESET_KEY_PREFIX)] = value ?: ""
                 }
             }

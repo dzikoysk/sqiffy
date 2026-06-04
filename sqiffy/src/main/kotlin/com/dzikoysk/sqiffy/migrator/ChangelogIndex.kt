@@ -21,6 +21,7 @@ object ChangelogIndex {
             .map { it.trim() }
             .filter { it.isNotEmpty() && !it.startsWith("#") }
             .map { resolve(baseDir, it) }
+            .distinct() // a path listed twice is the same migration; keep it once
             .toList()
     }
 

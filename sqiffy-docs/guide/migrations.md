@@ -72,9 +72,10 @@ should be applied. Put it on the classpath, e.g. `src/main/resources/database/ch
 Paths are resolved relative to the index file's own location (so the entries above resolve to
 `database/1.0.0/...`). Each listed file is one migration, and a file may contain multiple statements
 (on PostgreSQL the whole body runs at once, so dollar-quoted PL/pgSQL functions work as written). Every
-script runs in its own transaction and is recorded - with a SHA-256 checksum - in the same
-`sqiffy_metadata` table used by the Sqiffy migrator. Re-runs are idempotent: already-applied scripts
-are skipped.
+script runs in its own transaction (falling back to autocommit for statements a database refuses to run
+inside one, such as `ALTER TYPE ... ADD VALUE` on older PostgreSQL) and is recorded - with a SHA-256
+checksum - in the same `sqiffy_metadata` table used by the Sqiffy migrator. Re-runs are idempotent:
+already-applied scripts are skipped.
 
 To run it, point the migrator at the index file:
 

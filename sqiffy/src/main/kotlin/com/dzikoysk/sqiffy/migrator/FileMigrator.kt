@@ -70,12 +70,11 @@ class FileMigrator(
 
             database.logger.log(Level.INFO, "Applying migration: ${migration.path}")
             applyMigration(database, ledger, migration)
-            applied[migration.path] = migration.checksum // guard a duplicate path later in the same index
             result.add(migration.path)
         }
 
         if (result.isEmpty()) {
-            database.logger.log(Level.INFO, "Database scheme is up to date")
+            database.logger.log(Level.INFO, "Database schema is up to date")
         } else {
             database.logger.log(Level.INFO, "Applied ${result.size} migrations: ${result.joinToString(", ")}")
         }
