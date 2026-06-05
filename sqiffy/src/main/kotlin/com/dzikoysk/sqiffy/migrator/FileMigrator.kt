@@ -84,9 +84,9 @@ class FileMigrator(
         }
 
         if (result.isEmpty()) {
-            database.logger.log(Level.INFO, "Database schema is up to date")
+            database.logger.log(Level.INFO, "Database schema is up to date (${migrations.size} migrations applied)")
         } else {
-            database.logger.log(Level.INFO, "Applied ${result.size} migrations: ${result.joinToString(", ")}")
+            database.logger.log(Level.INFO, "Applied ${result.size} of ${migrations.size} migrations: ${result.joinToString(", ")}")
         }
 
         return result
