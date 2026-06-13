@@ -20,7 +20,7 @@ abstract class SqiffyE2ETestSpecification(
     private val migrationProvider: ChangelogProvider = ChangelogProvider.SQIFFY
 ) {
 
-    lateinit var database: SqiffyDatabase
+    lateinit var database: SqiffyDatabase<*>
 
     abstract fun createDataSource(): HikariDataSource
 

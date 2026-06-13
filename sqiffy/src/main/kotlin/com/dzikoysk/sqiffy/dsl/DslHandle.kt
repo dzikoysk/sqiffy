@@ -11,9 +11,9 @@ import com.dzikoysk.sqiffy.transaction.HandleAccessor
 import java.sql.ResultSet
 import org.jdbi.v3.core.Handle
 
-interface DslHandle {
+interface DslHandle<DATABASE : SqiffyDatabase<DATABASE>> {
 
-    fun getDatabase(): SqiffyDatabase
+    fun getDatabase(): DATABASE
 
     fun getHandleAccessor(): HandleAccessor
 
@@ -44,10 +44,10 @@ interface DslHandle {
 
 }
 
-open class JdbiDslHandle<DATABASE : SqiffyDatabase>(
+open class JdbiDslHandle<DATABASE : SqiffyDatabase<DATABASE>>(
     protected val internalDatabase: DATABASE,
     protected val handle: Handle,
-) : DslHandle, HandleAccessor {
+) : DslHandle<DATABASE>, HandleAccessor {
 
     override fun <R> inHandle(body: (Handle) -> R): R =
         body.invoke(handle)

@@ -23,7 +23,7 @@ class UpdateValues : Values() {
 }
 
 open class UpdateStatement(
-    protected val database: SqiffyDatabase,
+    protected val database: SqiffyDatabase<*>,
     protected val handleAccessor: HandleAccessor,
     protected val table: Table,
     protected val values: UpdateValues

@@ -36,7 +36,7 @@ class FileMigrator(
     private val resourceLoader: (path: String) -> String? = ::classpathResource,
 ) : Migrator<List<String>> {
 
-    override fun runMigrations(database: SqiffyDatabase): List<String> {
+    override fun runMigrations(database: SqiffyDatabase<*>): List<String> {
         val history = ChangelogHistory(database, metadataTable)
         val jdbi = database.getJdbi()
 
@@ -92,7 +92,7 @@ class FileMigrator(
         return result
     }
 
-    private fun applyMigration(database: SqiffyDatabase, history: ChangelogHistory, migration: Migration) {
+    private fun applyMigration(database: SqiffyDatabase<*>, history: ChangelogHistory, migration: Migration) {
         val jdbi = database.getJdbi()
         try {
             if (migration.transactional) {
@@ -117,12 +117,12 @@ class FileMigrator(
         }
     }
 
-    private fun executeAndRecord(database: SqiffyDatabase, history: ChangelogHistory, handle: Handle, migration: Migration) {
+    private fun executeAndRecord(database: SqiffyDatabase<*>, history: ChangelogHistory, handle: Handle, migration: Migration) {
         executeBody(database = database, handle = handle, body = migration.body)
         history.record(handle = handle, path = migration.path, checksum = migration.checksum)
     }
 
-    private fun executeBody(database: SqiffyDatabase, handle: Handle, body: String) {
+    private fun executeBody(database: SqiffyDatabase<*>, handle: Handle, body: String) {
         // Postgres runs a whole multi-statement body (incl. dollar-quoted blocks) in one call; other
         // drivers don't (SQLite would run only the first statement), so split into statements there.
         if (database.getDialect() == Dialect.POSTGRESQL) {
@@ -132,7 +132,7 @@ class FileMigrator(
         }
     }
 
-    private fun verifyChecksum(database: SqiffyDatabase, migration: Migration, recordedChecksum: String) {
+    private fun verifyChecksum(database: SqiffyDatabase<*>, migration: Migration, recordedChecksum: String) {
         if (migration.checksum == recordedChecksum || recordedChecksum.isEmpty()) {
             return
         }
@@ -148,7 +148,7 @@ class FileMigrator(
     }
 
     private fun importLiquibaseState(
-        database: SqiffyDatabase,
+        database: SqiffyDatabase<*>,
         history: ChangelogHistory,
         migrations: List<Migration>,
         tableName: String

@@ -11,7 +11,7 @@ import com.dzikoysk.sqiffy.transaction.HandleAccessor
 import org.slf4j.event.Level
 
 open class DeleteStatement(
-    protected val database: SqiffyDatabase,
+    protected val database: SqiffyDatabase<*>,
     protected val handleAccessor: HandleAccessor,
     protected val table: Table,
 ) : Statement {

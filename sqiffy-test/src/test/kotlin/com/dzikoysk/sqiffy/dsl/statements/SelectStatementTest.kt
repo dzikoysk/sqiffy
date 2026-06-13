@@ -152,6 +152,21 @@ internal abstract class SelectStatementTest : IntegrationSpecification() {
     }
 
     @Test
+    fun `should order by multiple columns`() {
+        database.insert(UserTable).values(UnidentifiedUser(uuid = UUID.randomUUID(), name = "A2", role = Role.USER, displayName = "X")).map { }
+        database.insert(UserTable).values(UnidentifiedUser(uuid = UUID.randomUUID(), name = "A1", role = Role.USER, displayName = "X")).map { }
+        database.insert(UserTable).values(UnidentifiedUser(uuid = UUID.randomUUID(), name = "B1", role = Role.USER, displayName = "Y")).map { }
+
+        val ordered = database.select(UserTable)
+            .orderBy(UserTable.displayName to Order.ASC, UserTable.name to Order.DESC)
+            .map { it[UserTable.name] }
+            .toList()
+
+        // displayName ASC groups the two "X" rows first, then name DESC orders them A2 before A1
+        assertThat(ordered).containsExactly("A2", "A1", "B1")
+    }
+
+    @Test
     fun `should limit and offset`() {
         listOf("Alice", "Bob", "Charlie").forEach {
             database.insert(UserTable).values(UnidentifiedUser(uuid = UUID.randomUUID(), name = it, role = Role.USER, displayName = null)).map { }

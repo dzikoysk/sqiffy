@@ -27,7 +27,7 @@ class LiquibaseMigrator(
     private val changelogFile: String = "/liquibase/changelog-master.xml"
 ) : Migrator<Unit> {
 
-    override fun runMigrations(database: SqiffyDatabase) {
+    override fun runMigrations(database: SqiffyDatabase<*>) {
         val config = mutableMapOf<String, Any>()
 
         config[Attr.logService.name] = object : LogService {

@@ -190,7 +190,7 @@ internal abstract class DslE2ETest(
     }
 
     private fun deleteGuild(id: Int, transaction: Transaction = NoTransaction): Int =
-        transaction.invoke(database)
+        transaction(database)
             .delete(GuildTable)
             .where { GuildTable.id eq id }
             .execute()

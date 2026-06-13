@@ -33,13 +33,13 @@ enum class Order {
     DESC
 }
 
-data class OrderBy(
+open class OrderBy(
     val selectable: Selectable,
-    val order: Order
+    val order: Order,
 )
 
 open class SelectStatement(
-    protected val database: SqiffyDatabase,
+    protected val database: SqiffyDatabase<*>,
     protected val handleAccessor: HandleAccessor,
     protected val from: Table,
 ) : Statement {

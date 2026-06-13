@@ -38,7 +38,7 @@ class SqiffyMigrator(
     private val versionCallbacks: VersionCallbacks = VersionCallbacks(),
 ) : Migrator<List<Version>> {
 
-    override fun runMigrations(database: SqiffyDatabase): List<Version> {
+    override fun runMigrations(database: SqiffyDatabase<*>): List<Version> {
         val tableName = metadataTable.getName()
 
         database.getJdbi().useHandle<Exception> { handle ->

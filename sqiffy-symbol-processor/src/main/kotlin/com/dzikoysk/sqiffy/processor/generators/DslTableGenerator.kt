@@ -22,6 +22,7 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
@@ -86,7 +87,7 @@ class DslTableGenerator(private val context: KspContext) {
             }
             .also { typeBuilder ->
                 typeBuilder.addFunction(FunSpec.builder("insert")
-                    .receiver(DslHandle::class)
+                    .receiver(DslHandle::class.asTypeName().parameterizedBy(STAR))
                     .addParameter(
                         ParameterSpec.builder("table", ClassName.bestGuess(objectName))
                             .addAnnotation(AnnotationSpec.builder(Suppress::class)
@@ -126,12 +127,12 @@ class DslTableGenerator(private val context: KspContext) {
             TypeSpec.classBuilder("${objectName}InsertValues")
                 .primaryConstructor(FunSpec.constructorBuilder()
                     .addParameter(ParameterSpec
-                        .builder("database", DslHandle::class)
+                        .builder("database", DslHandle::class.asTypeName().parameterizedBy(STAR))
                         .build())
                     .build()
                 )
                 .addProperty(PropertySpec
-                    .builder("database", DslHandle::class)
+                    .builder("database", DslHandle::class.asTypeName().parameterizedBy(STAR))
                     .initializer("database")
                     .build()
                 )

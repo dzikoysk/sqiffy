@@ -18,17 +18,32 @@ val userFromDatabase = database.select(UserTable)
 
 Other parameters:
 
-| Parameter | Example | Description |
-| --- | --- | --- |
-| Distinct | `distinct()` | Only return distinct rows |
-| Limit | `limit(10)` | Limit the number of rows returned |
-| Limit with offset | `limit(10, offset = 5)` | Limit the number of rows returned with an offset |
-| Order by | `orderBy(UserTable.name to SortOrder.ASC)` | Order the results by a column 
-| Group by | `groupBy(UserTable.name)` | Group the results by a column |
-| Having | `having { UserTable.name eq "Panda" }` | Filter the results after grouping |
-| Join | `innerJoin(INNER/LEFT/RIGHT/FULL, GuildTable.owner, UserTable.id)` | Join two tables |
-| Slice | `slice(UserTable.name, UserTable.age)` | Only return specific columns |
-| Exists | `exists()` | Returns true if at least one row matches |
+| Parameter         | Example                                                              | Description                                      |
+|-------------------|----------------------------------------------------------------------|--------------------------------------------------|
+| Distinct          | `distinct()`                                                         | Only return distinct rows                        |
+| Limit             | `limit(10)`                                                          | Limit the number of rows returned                |
+| Limit with offset | `limit(10, offset = 5)`                                              | Limit the number of rows returned with an offset |
+| Order by          | `orderBy(UserTable.role to Order.DESC, UserTable.name to Order.ASC)` | Order the results by one or more columns         |
+| Group by          | `groupBy(UserTable.name)`                                            | Group the results by a column                    |
+| Having            | `having { UserTable.name eq "Panda" }`                               | Filter the results after grouping                |
+| Join              | `innerJoin(INNER/LEFT/RIGHT/FULL, GuildTable.owner, UserTable.id)`   | Join two tables                                  |
+| Slice             | `slice(UserTable.name, UserTable.age)`                               | Only return specific columns                     |
+| Exists            | `exists()`                                                           | Returns true if at least one row matches         |
+
+### Ordering with nulls
+
+PostgreSQL supports the `NULLS FIRST` / `NULLS LAST` ordering attributes. Because they are not portable
+across all dialects, they are only available on a `PostgresDatabase` select, through the `orderBy { }` block.
+Each column is added with `asc()` / `desc()`, optionally refined with `nullsFirst()` / `nullsLast()`:
+
+```kotlin
+postgresDatabase.select(UserTable)
+    .orderBy {
+        UserTable.displayName.asc().nullsFirst()
+        UserTable.name.desc()
+    }
+    .map { it.toUser() }
+```
 
 ## Insert
 

@@ -19,7 +19,7 @@ internal abstract class IntegrationSpecification {
     @JvmField var _extensionInitialized = false
     @JvmField var _dataSource: HikariDataSource? = null
 
-    lateinit var database: SqiffyDatabase
+    lateinit var database: SqiffyDatabase<*>
 
     @BeforeEach
     fun bootDatabase() {

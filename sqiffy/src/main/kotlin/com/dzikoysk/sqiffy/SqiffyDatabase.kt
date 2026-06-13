@@ -31,7 +31,7 @@ data class SqiffyDatabaseConfig(
     val handleAccessor: HandleAccessor = StandardHandleAccessor(localJdbi),
 )
 
-abstract class SqiffyDatabase(state: SqiffyDatabaseConfig) : DslHandle, TransactionManager, Closeable {
+abstract class SqiffyDatabase<DATABASE : SqiffyDatabase<DATABASE>>(state: SqiffyDatabaseConfig) : DslHandle<DATABASE>, TransactionManager, Closeable {
 
     internal val logger: SqiffyLogger = state.logger
     internal val dialect: Dialect = state.dialect
@@ -57,15 +57,15 @@ abstract class SqiffyDatabase(state: SqiffyDatabaseConfig) : DslHandle, Transact
             block.invoke(JdbiTransaction(handle))
         }
 
-    operator fun invoke(transaction: Transaction?): DslHandle =
+    operator fun invoke(transaction: Transaction?): DslHandle<DATABASE> =
         when (transaction) {
-            is JdbiTransaction -> JdbiDslHandle(this, transaction.handle)
+            is JdbiTransaction -> JdbiDslHandle(getDatabase(), transaction.handle)
             else -> this
         }
 
-    fun with(transaction: Transaction?): DslHandle =
+    fun with(transaction: Transaction?): DslHandle<DATABASE> =
         when (transaction) {
-            is JdbiTransaction -> JdbiDslHandle(this, transaction.handle)
+            is JdbiTransaction -> JdbiDslHandle(getDatabase(), transaction.handle)
             else -> this
         }
 
@@ -78,7 +78,8 @@ abstract class SqiffyDatabase(state: SqiffyDatabaseConfig) : DslHandle, Transact
     override fun getHandleAccessor(): HandleAccessor =
         handleAccessor
 
-    override fun getDatabase(): SqiffyDatabase =
-        this
+    @Suppress("UNCHECKED_CAST")
+    override fun getDatabase(): DATABASE =
+        this as DATABASE
 
 }

@@ -8,9 +8,19 @@ import com.dzikoysk.sqiffy.dsl.generator.ParameterAllocator
 import com.dzikoysk.sqiffy.dsl.generator.QueryColumn
 import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator.GeneratorResult
 import com.dzikoysk.sqiffy.dsl.generator.SqlQueryGenerator.InsertGeneratorResult
+import com.dzikoysk.sqiffy.dialect.postgres.PostgresOrderBy
+import com.dzikoysk.sqiffy.dsl.statements.OrderBy
 import com.dzikoysk.sqiffy.shared.multiline
 
 object PostgreSqlQueryGenerator : GenericQueryGenerator() {
+
+    override fun createOrderByClause(orderBy: List<OrderBy>?): String =
+        orderBy?.let {
+            "ORDER BY ${it.joinToString(separator = ", ") { col ->
+                val nulls = (col as? PostgresOrderBy)?.nullsOrder?.let { order -> " NULLS $order" } ?: ""
+                "${col.selectable.toIdentifier()} ${col.order}$nulls"
+            }}"
+        } ?: ""
 
     override fun createInsertQuery(
         allocator: ParameterAllocator,

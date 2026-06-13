@@ -29,6 +29,9 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
             .map { (column, expression) -> "${column.name.toQuoted()} = $expression" }
             .joinToString(separator = ", ")
 
+    protected open fun createOrderByClause(orderBy: List<OrderBy>?): String =
+        orderBy?.let { "ORDER BY ${it.joinToString(separator = ", ") { col -> "${col.selectable.toIdentifier()} ${col.order}" }}" } ?: ""
+
     override fun createSelectQuery(
         tableName: String,
         distinct: Boolean,
@@ -74,7 +77,7 @@ abstract class GenericQueryGenerator : SqlQueryGenerator {
                 ${where?.let { "WHERE $it" } ?: ""}
                 ${groupBy?.let { "GROUP BY ${groupBy.joinToString(separator = ", ") { it.quotedIdentifier.toString(quoteType()) }}" } ?: ""}
                 ${having?.let { "HAVING $it" } ?: ""}
-                ${orderBy?.let { "ORDER BY ${orderBy.joinToString(separator = ", ") { "${it.selectable.toIdentifier()} ${it.order}" }}" } ?: ""}
+                ${createOrderByClause(orderBy)}
                 ${limit?.let { "LIMIT $it" } ?: ""}
                 ${offset?.let { "OFFSET $it" } ?: ""} 
             """)

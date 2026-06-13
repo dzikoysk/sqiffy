@@ -17,7 +17,7 @@ private const val CHANGESET_KEY_PREFIX = "changeset:"
  * SqiffyMigrator's `version` row in the same table.
  */
 internal class ChangelogHistory(
-    private val database: SqiffyDatabase,
+    private val database: SqiffyDatabase<*>,
     private val metadataTable: SqiffyMetadataTable
 ) {
 

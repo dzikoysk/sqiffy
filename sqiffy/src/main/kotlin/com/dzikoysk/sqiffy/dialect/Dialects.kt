@@ -37,7 +37,7 @@ enum class Dialect {
     SQLITE
 }
 
-class MySqlDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase(state) {
+class MySqlDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase<MySqlDatabase>(state) {
     companion object {
         fun createMySQLDatabase(
             logger: SqiffyLogger = StdoutSqiffyLogger(),
@@ -59,7 +59,7 @@ class MySqlDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase(state) {
     }
 }
 
-class SqliteDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase(state) {
+class SqliteDatabase(state: SqiffyDatabaseConfig) : SqiffyDatabase<SqliteDatabase>(state) {
     companion object {
         fun createSqliteDatabase(
             logger: SqiffyLogger = StdoutSqiffyLogger(),
